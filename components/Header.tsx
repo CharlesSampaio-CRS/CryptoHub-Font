@@ -1,18 +1,21 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
+import { useTheme } from "../contexts/ThemeContext"
 
 export function Header() {
+  const { colors } = useTheme()
+  
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
       <View>
-        <Text style={styles.title}>CryptoHub</Text>
-        <Text style={styles.subtitle}>Seus investimentos unificados</Text>
+        <Text style={[styles.title, { color: colors.text }]}>CryptoHub</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Seus investimentos unificados</Text>
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]}>
           <Text style={styles.iconText}>🔔</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]}>
           <Text style={styles.iconText}>⚙️</Text>
         </TouchableOpacity>
       </View>
@@ -27,18 +30,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#0a0a0a",
     borderBottomWidth: 1,
-    borderBottomColor: "#1a1a1a",
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#ffffff",
   },
   subtitle: {
     fontSize: 12,
-    color: "#888888",
     marginTop: 2,
   },
   actions: {

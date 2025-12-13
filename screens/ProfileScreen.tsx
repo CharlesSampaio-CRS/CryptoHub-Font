@@ -203,38 +203,25 @@ export function ProfileScreen() {
         <View style={styles.menuSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Aparência</Text>
           
-          <View style={styles.themeSelector}>
+          <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={styles.menuItemLeft}>
+              <Text style={styles.menuIcon}>{theme === 'dark' ? '🌙' : '☀️'}</Text>
+              <View>
+                <Text style={[styles.menuItemText, { color: colors.text }]}>Modo Escuro</Text>
+                <Text style={[styles.themeSubtext, { color: colors.textSecondary }]}>
+                  {theme === 'dark' ? 'Ativado' : 'Desativado'}
+                </Text>
+              </View>
+            </View>
             <TouchableOpacity 
-              style={[
-                styles.themeOption, 
-                { backgroundColor: colors.card, borderColor: theme === 'light' ? colors.primary : colors.cardBorder }
-              ]}
-              onPress={() => setTheme('light')}
+              style={[styles.toggle, theme === 'dark' && styles.toggleActive]}
+              onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
-              <Text style={styles.themeIcon}>☀️</Text>
-              <Text style={[styles.themeText, { color: theme === 'light' ? colors.primary : colors.textSecondary }]}>Light</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[
-                styles.themeOption, 
-                { backgroundColor: colors.card, borderColor: theme === 'dark' ? colors.primary : colors.cardBorder }
-              ]}
-              onPress={() => setTheme('dark')}
-            >
-              <Text style={styles.themeIcon}>🌙</Text>
-              <Text style={[styles.themeText, { color: theme === 'dark' ? colors.primary : colors.textSecondary }]}>Dark</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[
-                styles.themeOption, 
-                { backgroundColor: colors.card, borderColor: theme === 'system' ? colors.primary : colors.cardBorder }
-              ]}
-              onPress={() => setTheme('system')}
-            >
-              <Text style={styles.themeIcon}>💻</Text>
-              <Text style={[styles.themeText, { color: theme === 'system' ? colors.primary : colors.textSecondary }]}>System</Text>
+              <View style={[
+                styles.toggleThumb, 
+                theme === 'dark' && styles.toggleThumbActive,
+                { backgroundColor: theme === 'dark' ? '#fff' : '#9ca3af' }
+              ]} />
             </TouchableOpacity>
           </View>
         </View>
@@ -451,34 +438,29 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
   },
-  // Theme Selector
-  themeSelector: {
-    flexDirection: "row",
-    gap: 12,
+  // Theme Toggle
+  themeSubtext: {
+    fontSize: 12,
+    marginTop: 2,
   },
-  themeOption: {
-    flex: 1,
-    backgroundColor: "#111827",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#1f2937",
+  toggle: {
+    width: 51,
+    height: 31,
+    borderRadius: 16,
+    backgroundColor: "#374151",
+    padding: 2,
+    justifyContent: "center",
   },
-  themeOptionActive: {
-    borderColor: "#10b981",
-    backgroundColor: "#1f2937",
+  toggleActive: {
+    backgroundColor: "#10b981",
   },
-  themeIcon: {
-    fontSize: 28,
-    marginBottom: 8,
+  toggleThumb: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    backgroundColor: "#9ca3af",
   },
-  themeText: {
-    fontSize: 14,
-    color: "#9ca3af",
-    fontWeight: "600",
-  },
-  themeTextActive: {
-    color: "#10b981",
+  toggleThumbActive: {
+    alignSelf: "flex-end",
   },
 })

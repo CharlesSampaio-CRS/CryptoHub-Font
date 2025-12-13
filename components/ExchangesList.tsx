@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
+import { useTheme } from "@/contexts/ThemeContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
@@ -18,6 +19,7 @@ const exchangeLogos: Record<string, any> = {
 }
 
 export function ExchangesList() {
+  const { colors } = useTheme()
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

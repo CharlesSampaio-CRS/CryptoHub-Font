@@ -3,8 +3,10 @@ import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
+import { useTheme } from "@/contexts/ThemeContext"
 
 export function PortfolioOverview() {
+  const { colors } = useTheme()
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,9 +91,9 @@ export function PortfolioOverview() {
   const isPositive = change24h > 0
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Text style={styles.label}>Patrimônio Total</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>Patrimônio Total</Text>
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={handleRefresh}
@@ -99,16 +101,16 @@ export function PortfolioOverview() {
           activeOpacity={0.7}
         >
           {refreshing ? (
-            <ActivityIndicator size="small" color="#10b981" />
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <View style={styles.refreshIconContainer}>
-              <Text style={styles.refreshIcon}>↻</Text>
+            <View style={[styles.refreshIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+              <Text style={[styles.refreshIcon, { color: colors.primary }]}>↻</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.value}>
+      <Text style={[styles.value, { color: colors.text }]}>
         {apiService.formatUSD(totalValue)}
       </Text>
 
@@ -132,12 +134,10 @@ export function PortfolioOverview() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#141414",
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#1a1a1a",
   },
   header: {
     flexDirection: "row",
@@ -147,14 +147,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    color: "#9ca3af",
     fontWeight: "500",
   },
   refreshButton: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -167,13 +165,11 @@ const styles = StyleSheet.create({
   refreshIcon: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#10b981",
     opacity: 0.9,
   },
   value: {
     fontSize: 36,
     fontWeight: "700",
-    color: "#f9fafb",
     letterSpacing: -0.5,
     marginBottom: 12,
   },

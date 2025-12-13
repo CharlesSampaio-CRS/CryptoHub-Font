@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useColorScheme } from 'react-native'
+import React, { createContext, useContext, useState } from 'react'
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'dark'
 
 interface ThemeColors {
   background: string
@@ -21,7 +20,6 @@ interface ThemeColors {
 
 interface ThemeContextType {
   theme: Theme
-  effectiveTheme: 'light' | 'dark'
   colors: ThemeColors
   setTheme: (theme: Theme) => void
 }
@@ -61,18 +59,12 @@ const darkColors: ThemeColors = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useColorScheme()
   const [theme, setTheme] = useState<Theme>('dark') // Default to dark
 
-  const effectiveTheme: 'light' | 'dark' = 
-    theme === 'system' 
-      ? (systemColorScheme === 'light' ? 'light' : 'dark')
-      : theme
-
-  const colors = effectiveTheme === 'light' ? lightColors : darkColors
+  const colors = theme === 'light' ? lightColors : darkColors
 
   return (
-    <ThemeContext.Provider value={{ theme, effectiveTheme, colors, setTheme }}>
+    <ThemeContext.Provider value={{ theme, colors, setTheme }}>
       {children}
     </ThemeContext.Provider>
   )

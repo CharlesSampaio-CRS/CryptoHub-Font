@@ -3,10 +3,13 @@ import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { QuickChart } from "../components/QuickChart"
 import { ExchangesList } from "../components/ExchangesList"
+import { useTheme } from "../contexts/ThemeContext"
 
 export function HomeScreen() {
+  const { colors } = useTheme()
+  
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Header />
       <ScrollView
         style={styles.scrollView}
@@ -24,7 +27,6 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0a0a",
   },
   scrollView: {
     flex: 1,
