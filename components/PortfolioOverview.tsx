@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
 import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
@@ -8,23 +8,46 @@ export function PortfolioOverview() {
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     fetchBalances()
   }, [])
 
-  const fetchBalances = async () => {
+  const fetchBalances = async (forceRefresh = false) => {
     try {
-      setLoading(true)
+      if (forceRefresh) {
+        setRefreshing(true)
+        console.log('🔄 Forçando atualização dos balances...')
+      } else {
+        setLoading(true)
+      }
       setError(null)
-      const response = await apiService.getBalances(config.userId)
+      
+      const url = forceRefresh 
+        ? `http://localhost:5000/api/v1/balances?user_id=${config.userId}&force_refresh=true`
+        : undefined
+      
+      const response = url 
+        ? await fetch(url).then(res => res.json())
+        : await apiService.getBalances(config.userId)
+      
       setData(response)
+      
+      if (forceRefresh) {
+        console.log('✅ Balances atualizados com sucesso!')
+      }
     } catch (err) {
       setError("Erro ao carregar dados")
       console.error(err)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
+  }
+
+  const handleRefresh = () => {
+    fetchBalances(true)
   }
 
   if (loading) {
@@ -51,7 +74,21 @@ export function PortfolioOverview() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Patrimônio Total</Text>
+      <View style={styles.header}>
+        <Text style={styles.label}>Patrimônio Total</Text>
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+          disabled={refreshing}
+          activeOpacity={0.7}
+        >
+          {refreshing ? (
+            <ActivityIndicator size="small" color="#10b981" />
+          ) : (
+            <Text style={styles.refreshIcon}>🔄</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.value}>
         {apiService.formatUSD(totalValue)}
@@ -84,11 +121,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1a1a1a",
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   label: {
     fontSize: 13,
     color: "#9ca3af",
     fontWeight: "500",
-    marginBottom: 8,
+  },
+  refreshButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.2)",
+  },
+  refreshIcon: {
+    fontSize: 14,
+    opacity: 0.8,
   },
   value: {
     fontSize: 36,

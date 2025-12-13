@@ -24,46 +24,23 @@ export function ExchangesList() {
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
   const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     fetchBalances()
   }, [])
 
-  const fetchBalances = async (forceRefresh = false) => {
+  const fetchBalances = async () => {
     try {
-      if (forceRefresh) {
-        setRefreshing(true)
-        console.log('🔄 Forçando atualização dos balances...')
-      } else {
-        setLoading(true)
-      }
+      setLoading(true)
       setError(null)
-      
-      const url = forceRefresh 
-        ? `http://localhost:5000/api/v1/balances?user_id=${config.userId}&force_refresh=true`
-        : undefined
-      
-      const response = url 
-        ? await fetch(url).then(res => res.json())
-        : await apiService.getBalances(config.userId)
-      
+      const response = await apiService.getBalances(config.userId)
       setData(response)
-      
-      if (forceRefresh) {
-        console.log('✅ Balances atualizados com sucesso!')
-      }
     } catch (err) {
       setError("Erro ao carregar exchanges")
       console.error(err)
     } finally {
       setLoading(false)
-      setRefreshing(false)
     }
-  }
-
-  const handleRefresh = () => {
-    fetchBalances(true)
   }
 
   if (loading) {
@@ -100,22 +77,9 @@ export function ExchangesList() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Exchanges</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <ActivityIndicator size="small" color="#10b981" />
-            ) : (
-              <Text style={styles.refreshButtonText}>🔄</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ Adicionar</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.addButton}>
+          <Text style={styles.addButtonText}>+ Adicionar</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Toggles de Filtro */}
@@ -265,25 +229,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#f9fafb",
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  refreshButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "#141414",
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    minWidth: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  refreshButtonText: {
-    fontSize: 16,
   },
   addButton: {
     paddingHorizontal: 12,
