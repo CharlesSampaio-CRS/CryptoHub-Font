@@ -5,12 +5,13 @@ import { HomeScreen } from "./screens/HomeScreen"
 import { ExchangesScreen } from "./screens/ExchangesScreen"
 import { WalletScreen } from "./screens/WalletScreen"
 import { ProfileScreen } from "./screens/ProfileScreen"
+import { ThemeProvider } from "./contexts/ThemeContext"
 
 const Tab = createBottomTabNavigator()
 
 export default function App() {
   return (
-    <>
+    <ThemeProvider>
       <StatusBar style="light" />
       <NavigationContainer>
         <Tab.Navigator
@@ -65,7 +66,7 @@ export default function App() {
           />
         </Tab.Navigator>
       </NavigationContainer>
-    </>
+    </ThemeProvider>
   )
 }
 
