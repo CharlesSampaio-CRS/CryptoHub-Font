@@ -91,7 +91,6 @@ export function ExchangesManager() {
 
       if (response.ok && data.success) {
         console.log('✅ Sucesso! Exchange conectada')
-        alert(`Exchange ${exchangeName} conectada com sucesso!`)
         
         // Recarregar lista de exchanges
         await fetchExchanges()
@@ -146,7 +145,6 @@ export function ExchangesManager() {
 
       if (response.ok && data.success) {
         console.log('✅ Sucesso! Exchange desconectada')
-        alert(`Exchange ${confirmExchangeName} desconectada com sucesso!`)
         
         // Recarregar lista de exchanges
         await fetchExchanges()
@@ -201,7 +199,6 @@ export function ExchangesManager() {
 
       if (response.ok && data.success) {
         console.log('✅ Sucesso! Exchange deletada')
-        alert(`Exchange ${confirmExchangeName} deletada com sucesso!`)
         
         // Recarregar lista de exchanges
         await fetchExchanges()
@@ -285,7 +282,6 @@ export function ExchangesManager() {
 
       if (response.ok && data.success) {
         console.log('✅ Sucesso! Exchange conectada')
-        alert(`Exchange ${selectedExchange.nome} conectada com sucesso!`)
         closeConnectModal()
         
         // Recarregar lista de exchanges
