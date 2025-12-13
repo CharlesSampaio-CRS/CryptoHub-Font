@@ -85,7 +85,9 @@ export function PortfolioOverview() {
           {refreshing ? (
             <ActivityIndicator size="small" color="#10b981" />
           ) : (
-            <Text style={styles.refreshIcon}>🔄</Text>
+            <View style={styles.refreshIconContainer}>
+              <Text style={styles.refreshIcon}>↻</Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -136,15 +138,21 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    backgroundColor: "rgba(16, 185, 129, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.2)",
+    borderColor: "rgba(16, 185, 129, 0.15)",
+  },
+  refreshIconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   refreshIcon: {
-    fontSize: 14,
-    opacity: 0.8,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#10b981",
+    opacity: 0.9,
   },
   value: {
     fontSize: 36,
