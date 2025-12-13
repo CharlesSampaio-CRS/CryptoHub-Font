@@ -1,0 +1,97 @@
+import { BalanceResponse, AvailableExchangesResponse, LinkedExchangesResponse } from '@/types/api';
+import { config } from '@/lib/config';
+
+const API_BASE_URL = config.apiBaseUrl;
+
+export const apiService = {
+  /**
+   * Busca os balances de todas as exchanges para um usuário
+   * @param userId ID do usuário
+   * @returns Promise com os dados de balance
+   */
+  async getBalances(userId: string): Promise<BalanceResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/balances?user_id=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: BalanceResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching balances:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca todas as exchanges disponíveis para conexão
+   * @param userId ID do usuário
+   * @returns Promise com a lista de exchanges disponíveis
+   */
+  async getAvailableExchanges(userId: string): Promise<AvailableExchangesResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/exchanges/available?user_id=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: AvailableExchangesResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching available exchanges:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca as exchanges já conectadas do usuário
+   * @param userId ID do usuário
+   * @returns Promise com a lista de exchanges conectadas
+   */
+  async getLinkedExchanges(userId: string): Promise<LinkedExchangesResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/exchanges/linked?user_id=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: LinkedExchangesResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching linked exchanges:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Formata valores USD para exibição
+   */
+  formatUSD(value: string | number): string {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numValue);
+  },
+
+  /**
+   * Formata quantidade de tokens
+   */
+  formatTokenAmount(amount: string): string {
+    const numValue = parseFloat(amount);
+    if (numValue === 0) return '0';
+    if (numValue < 0.01) {
+      return numValue.toExponential(2);
+    }
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8,
+    }).format(numValue);
+  }
+};
