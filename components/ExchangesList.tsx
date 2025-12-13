@@ -31,7 +31,7 @@ export function ExchangesList() {
     // Listener para atualização de balances
     const handleBalancesUpdate = () => {
       console.log('📡 ExchangesList recebeu evento de atualização')
-      fetchBalances()
+      fetchBalances(true) // Force refresh quando receber evento
     }
     
     window.addEventListener('balancesUpdated', handleBalancesUpdate)
@@ -41,12 +41,24 @@ export function ExchangesList() {
     }
   }, [])
 
-  const fetchBalances = async () => {
+  const fetchBalances = async (forceRefresh = false) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await apiService.getBalances(config.userId)
+      
+      const url = forceRefresh 
+        ? `http://localhost:5000/api/v1/balances?user_id=${config.userId}&force_refresh=true`
+        : undefined
+      
+      const response = url 
+        ? await fetch(url).then(res => res.json())
+        : await apiService.getBalances(config.userId)
+      
       setData(response)
+      
+      if (forceRefresh) {
+        console.log('✅ ExchangesList atualizado com sucesso!')
+      }
     } catch (err) {
       setError("Erro ao carregar exchanges")
       console.error(err)
