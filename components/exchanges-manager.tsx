@@ -32,6 +32,12 @@ export function ExchangesManager() {
   const [apiSecret, setApiSecret] = useState('')
   const [passphrase, setPassphrase] = useState('')
   const [connecting, setConnecting] = useState(false)
+  
+  // Modal de confirmação (delete/disconnect)
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'delete' | 'disconnect' | null>(null)
+  const [confirmExchangeId, setConfirmExchangeId] = useState<string>('')
+  const [confirmExchangeName, setConfirmExchangeName] = useState<string>('')
 
   useEffect(() => {
     fetchExchanges()
@@ -57,100 +63,114 @@ export function ExchangesManager() {
     }
   }
 
-  const handleDisconnect = async (exchangeId: string, exchangeName: string) => {
+  const handleDisconnect = (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
-    
-    console.log('handleDisconnect chamado com:', { exchangeId, exchangeName })
-    
-    Alert.alert(
-      'Confirmar Desconexão',
-      `Tem certeza que deseja desconectar a exchange ${exchangeName}?`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Desconectar',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('🔴 Botão DESCONECTAR confirmado! Iniciando chamada...')
-            try {
-              const url = `http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`
-              console.log('🌐 Chamando DELETE em:', url)
-              
-              const response = await fetch(url, {
-                method: 'DELETE',
-              })
-
-              console.log('Response status:', response.status)
-              const data = await response.json()
-              console.log('Response data:', data)
-
-              if (response.ok && data.success) {
-                Alert.alert('Sucesso', `Exchange ${exchangeName} desconectada com sucesso!`)
-                await fetchExchanges() // Recarregar lista
-              } else {
-                Alert.alert('Erro', data.error || 'Falha ao desconectar exchange')
-              }
-            } catch (err) {
-              console.error('Erro ao desconectar exchange:', err)
-              Alert.alert('Erro', 'Não foi possível desconectar a exchange')
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    )
+    setConfirmExchangeId(exchangeId)
+    setConfirmExchangeName(exchangeName)
+    setConfirmAction('disconnect')
+    setConfirmModalVisible(true)
   }
 
-  const handleDelete = async (exchangeId: string, exchangeName: string) => {
+  const confirmDisconnect = async () => {
+    console.log('confirmDisconnect chamado com:', { confirmExchangeId, confirmExchangeName })
+    setConfirmModalVisible(false)
+    
+    console.log('🔴 Confirmação aceita! Iniciando chamada...')
+    
+    try {
+      const url = 'http://localhost:5000/api/v1/exchanges/disconnect'
+      console.log('🌐 Chamando POST em:', url)
+      console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: confirmExchangeId })
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: 'charles_test_user',
+          exchange_id: confirmExchangeId,
+        }),
+      })
+
+      console.log('✅ Response status:', response.status)
+      const data = await response.json()
+      console.log('📦 Response data:', data)
+
+      if (response.ok && data.success) {
+        console.log('✅ Sucesso! Exchange desconectada')
+        alert(`Exchange ${confirmExchangeName} desconectada com sucesso!`)
+        
+        // Recarregar lista de exchanges
+        await fetchExchanges()
+        
+        // Forçar atualização dos balances
+        console.log('🔄 Atualizando balances...')
+        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        console.log('✅ Balances atualizados!')
+      } else {
+        console.log('❌ Erro na resposta:', data.error)
+        alert(data.error || 'Falha ao desconectar exchange')
+      }
+    } catch (err) {
+      console.error('❌ Erro ao desconectar exchange:', err)
+      alert('Não foi possível desconectar a exchange')
+    }
+  }
+
+  const handleDelete = (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
-    
-    console.log('handleDelete chamado com:', { exchangeId, exchangeName })
-    
-    Alert.alert(
-      'Confirmar Exclusão',
-      `Tem certeza que deseja deletar a exchange ${exchangeName}? Esta ação não pode ser desfeita.`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Deletar',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('🔴 Botão DELETAR confirmado! Iniciando chamada...')
-            try {
-              const url = `http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`
-              console.log('🌐 Chamando DELETE em:', url)
-              
-              const response = await fetch(url, {
-                method: 'DELETE',
-              })
+    setConfirmExchangeId(exchangeId)
+    setConfirmExchangeName(exchangeName)
+    setConfirmAction('delete')
+    setConfirmModalVisible(true)
+  }
 
-              console.log('✅ Response status:', response.status)
-              const data = await response.json()
-              console.log('📦 Response data:', data)
-
-              if (response.ok && data.success) {
-                console.log('✅ Sucesso! Exchange deletada')
-                Alert.alert('Sucesso', `Exchange ${exchangeName} deletada com sucesso!`)
-                await fetchExchanges() // Recarregar lista
-              } else {
-                console.log('❌ Erro na resposta:', data.error)
-                Alert.alert('Erro', data.error || 'Falha ao deletar exchange')
-              }
-            } catch (err) {
-              console.error('❌ Erro ao deletar exchange:', err)
-              Alert.alert('Erro', 'Não foi possível deletar a exchange')
-            }
-          },
+  const confirmDelete = async () => {
+    console.log('confirmDelete chamado com:', { confirmExchangeId, confirmExchangeName })
+    setConfirmModalVisible(false)
+    
+    console.log('🔴 Confirmação aceita! Iniciando chamada DELETE...')
+    
+    try {
+      const url = 'http://localhost:5000/api/v1/exchanges/delete'
+      console.log('🌐 Chamando DELETE em:', url)
+      console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: confirmExchangeId })
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ],
-      { cancelable: true }
-    )
+        body: JSON.stringify({
+          user_id: 'charles_test_user',
+          exchange_id: confirmExchangeId,
+        }),
+      })
+
+      console.log('✅ Response status:', response.status)
+      const data = await response.json()
+      console.log('📦 Response data:', data)
+
+      if (response.ok && data.success) {
+        console.log('✅ Sucesso! Exchange deletada')
+        alert(`Exchange ${confirmExchangeName} deletada com sucesso!`)
+        
+        // Recarregar lista de exchanges
+        await fetchExchanges()
+        
+        // Forçar atualização dos balances
+        console.log('🔄 Atualizando balances...')
+        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        console.log('✅ Balances atualizados!')
+      } else {
+        console.log('❌ Erro na resposta:', data.error)
+        alert(data.error || 'Falha ao deletar exchange')
+      }
+    } catch (err) {
+      console.error('❌ Erro ao deletar exchange:', err)
+      alert('Não foi possível deletar a exchange')
+    }
   }
 
   const toggleMenu = (exchangeId: string) => {
@@ -176,45 +196,65 @@ export function ExchangesManager() {
   const handleConnect = async () => {
     if (!selectedExchange) return
     
+    console.log('🔗 handleConnect chamado')
+    console.log('📦 Exchange selecionada:', selectedExchange)
+    
     if (!apiKey.trim() || !apiSecret.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha API Key e API Secret')
+      alert('Por favor, preencha API Key e API Secret')
       return
     }
 
     if (selectedExchange.requires_passphrase && !passphrase.trim()) {
-      Alert.alert('Erro', 'Esta exchange requer uma Passphrase')
+      alert('Esta exchange requer uma Passphrase')
       return
     }
 
     try {
       setConnecting(true)
       
-      const response = await fetch('http://localhost:5000/api/v1/exchanges/link', {
+      const url = 'http://localhost:5000/api/v1/exchanges/link'
+      const payload = {
+        user_id: config.userId,
+        exchange_id: selectedExchange._id, // Usando o _id da exchange
+        api_key: apiKey.trim(),
+        api_secret: apiSecret.trim(),
+        ...(selectedExchange.requires_passphrase && { passphrase: passphrase.trim() })
+      }
+      
+      console.log('🌐 Chamando POST em:', url)
+      console.log('📦 Payload:', { ...payload, api_key: '***', api_secret: '***', passphrase: '***' })
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          user_id: config.userId,
-          exchange_id: selectedExchange.ccxt_id,
-          api_key: apiKey.trim(),
-          api_secret: apiSecret.trim(),
-          ...(selectedExchange.requires_passphrase && { passphrase: passphrase.trim() })
-        })
+        body: JSON.stringify(payload)
       })
 
+      console.log('✅ Response status:', response.status)
       const data = await response.json()
+      console.log('📦 Response data:', data)
 
       if (response.ok && data.success) {
-        Alert.alert('Sucesso', `Exchange ${selectedExchange.nome} conectada com sucesso!`)
+        console.log('✅ Sucesso! Exchange conectada')
+        alert(`Exchange ${selectedExchange.nome} conectada com sucesso!`)
         closeConnectModal()
-        await fetchExchanges() // Recarregar lista
+        
+        // Recarregar lista de exchanges
+        await fetchExchanges()
+        
+        // Forçar atualização dos balances
+        console.log('🔄 Atualizando balances...')
+        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        console.log('✅ Balances atualizados!')
       } else {
-        Alert.alert('Erro', data.error || 'Falha ao conectar exchange')
+        console.log('❌ Erro na resposta:', data.error)
+        alert(data.error || 'Falha ao conectar exchange')
       }
     } catch (err) {
-      console.error('Erro ao conectar exchange:', err)
-      Alert.alert('Erro', 'Não foi possível conectar a exchange')
+      console.error('❌ Erro ao conectar exchange:', err)
+      alert('Não foi possível conectar a exchange')
     } finally {
       setConnecting(false)
     }
@@ -594,6 +634,62 @@ export function ExchangesManager() {
             )}
           </View>
         </View>
+      </Modal>
+
+      {/* Modal de Confirmação (Delete/Disconnect) */}
+      <Modal
+        visible={confirmModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setConfirmModalVisible(false)}
+        >
+          <Pressable 
+            style={styles.confirmModalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.confirmModalHeader}>
+              <Text style={styles.confirmModalTitle}>
+                {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
+              </Text>
+            </View>
+
+            <View style={styles.confirmModalBody}>
+              <Text style={styles.confirmModalMessage}>
+                {confirmAction === 'delete' 
+                  ? `Tem certeza que deseja deletar permanentemente a exchange ${confirmExchangeName}? Esta ação não pode ser desfeita.`
+                  : `Tem certeza que deseja desconectar a exchange ${confirmExchangeName}?`
+                }
+              </Text>
+            </View>
+
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity
+                style={styles.confirmCancelButton}
+                onPress={() => setConfirmModalVisible(false)}
+              >
+                <Text style={styles.confirmCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmSubmitButton, confirmAction === 'delete' && styles.confirmDeleteButton]}
+                onPress={() => {
+                  if (confirmAction === 'delete') {
+                    confirmDelete()
+                  } else {
+                    confirmDisconnect()
+                  }
+                }}
+              >
+                <Text style={styles.confirmSubmitButtonText}>
+                  {confirmAction === 'delete' ? 'Deletar' : 'Desconectar'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </Pressable>
   )
@@ -979,6 +1075,69 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+  confirmModalContent: {
+    backgroundColor: "#141414",
+    borderRadius: 16,
+    width: "90%",
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    overflow: "hidden",
+  },
+  confirmModalHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2a2a2a",
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#f9fafb",
+  },
+  confirmModalBody: {
+    padding: 20,
+  },
+  confirmModalMessage: {
+    fontSize: 15,
+    color: "#d1d5db",
+    lineHeight: 22,
+  },
+  confirmModalActions: {
+    flexDirection: "row",
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#2a2a2a",
+  },
+  confirmCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+  },
+  confirmCancelButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#9ca3af",
+  },
+  confirmSubmitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#f59e0b",
+    alignItems: "center",
+  },
+  confirmDeleteButton: {
+    backgroundColor: "#ef4444",
+  },
+  confirmSubmitButtonText: {
     fontSize: 15,
     fontWeight: "600",
     color: "#ffffff",
