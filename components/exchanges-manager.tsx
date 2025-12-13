@@ -543,18 +543,17 @@ export function ExchangesManager() {
                         e.stopPropagation()
                         if (exchange) {
                           if (isActive) {
-                            console.log('Desconectar - Exchange:', exchange)
+                            console.log('Desativar - Exchange:', exchange)
                             handleDisconnect(exchange.exchange_id, exchange.name)
                           } else {
-                            console.log('Conectar - Exchange:', exchange)
+                            console.log('Ativar - Exchange:', exchange)
                             handleConnect(exchange.exchange_id, exchange.name)
                           }
                         }
                       }}
                     >
-                      <Text style={styles.menuItemIcon}>{isActive ? '⏸' : '▶'}</Text>
                       <Text style={styles.menuItemText}>
-                        {isActive ? 'Pausar' : 'Ativar'}
+                        {isActive ? 'Desativar' : 'Ativar'}
                       </Text>
                     </TouchableOpacity>
                     
@@ -571,7 +570,6 @@ export function ExchangesManager() {
                         }
                       }}
                     >
-                      <Text style={styles.menuItemIcon}>🗑️</Text>
                       <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
                     </TouchableOpacity>
                   </>
@@ -790,15 +788,15 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 16,
     paddingHorizontal: 20,
-    gap: 12,
   },
   menuItemIcon: {
     fontSize: 20,
   },
   menuItemText: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#f9fafb",
     fontWeight: "500",
   },
