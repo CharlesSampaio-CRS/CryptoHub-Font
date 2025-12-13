@@ -22,8 +22,8 @@ export function ExchangesList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
-  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
-  const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
+  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(true)
+  const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(true)
 
   useEffect(() => {
     fetchBalances()
