@@ -424,39 +424,45 @@ export function ExchangesManager() {
           style={styles.menuModalOverlay}
           onPress={() => setOpenMenuId(null)}
         >
-          <View style={styles.menuModal}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
-                if (index >= 0 && linkedExchanges[index]) {
-                  const exchange = linkedExchanges[index]
-                  console.log('Desconectar - Exchange:', exchange)
-                  handleDisconnect(exchange.exchange_id, exchange.name)
-                }
-              }}
-            >
-              <Text style={styles.menuItemIcon}>🔌</Text>
-              <Text style={styles.menuItemText}>Desconectar</Text>
-            </TouchableOpacity>
-            
-            <View style={styles.menuDivider} />
-            
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
-                if (index >= 0 && linkedExchanges[index]) {
-                  const exchange = linkedExchanges[index]
-                  console.log('Deletar - Exchange:', exchange)
-                  handleDelete(exchange.exchange_id, exchange.name)
-                }
-              }}
-            >
-              <Text style={styles.menuItemIcon}>🗑️</Text>
-              <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
-            </TouchableOpacity>
-          </View>
+          <Pressable>
+            <View style={styles.menuModal}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                activeOpacity={0.7}
+                onPress={(e) => {
+                  e.stopPropagation()
+                  const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
+                  if (index >= 0 && linkedExchanges[index]) {
+                    const exchange = linkedExchanges[index]
+                    console.log('Desconectar - Exchange:', exchange)
+                    handleDisconnect(exchange.exchange_id, exchange.name)
+                  }
+                }}
+              >
+                <Text style={styles.menuItemIcon}>🔌</Text>
+                <Text style={styles.menuItemText}>Desconectar</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.menuDivider} />
+              
+              <TouchableOpacity
+                style={styles.menuItem}
+                activeOpacity={0.7}
+                onPress={(e) => {
+                  e.stopPropagation()
+                  const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
+                  if (index >= 0 && linkedExchanges[index]) {
+                    const exchange = linkedExchanges[index]
+                    console.log('Deletar - Exchange:', exchange)
+                    handleDelete(exchange.exchange_id, exchange.name)
+                  }
+                }}
+              >
+                <Text style={styles.menuItemIcon}>🗑️</Text>
+                <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
