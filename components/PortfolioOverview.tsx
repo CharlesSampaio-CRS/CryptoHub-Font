@@ -12,6 +12,18 @@ export function PortfolioOverview() {
 
   useEffect(() => {
     fetchBalances()
+    
+    // Listener para atualização de balances
+    const handleBalancesUpdate = () => {
+      console.log('📡 PortfolioOverview recebeu evento de atualização')
+      fetchBalances()
+    }
+    
+    window.addEventListener('balancesUpdated', handleBalancesUpdate)
+    
+    return () => {
+      window.removeEventListener('balancesUpdated', handleBalancesUpdate)
+    }
   }, [])
 
   const fetchBalances = async (forceRefresh = false) => {
@@ -36,6 +48,8 @@ export function PortfolioOverview() {
       
       if (forceRefresh) {
         console.log('✅ Balances atualizados com sucesso!')
+        // Disparar evento para atualizar outros componentes
+        window.dispatchEvent(new Event('balancesUpdated'))
       }
     } catch (err) {
       setError("Erro ao carregar dados")

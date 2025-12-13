@@ -27,6 +27,18 @@ export function ExchangesList() {
 
   useEffect(() => {
     fetchBalances()
+    
+    // Listener para atualização de balances
+    const handleBalancesUpdate = () => {
+      console.log('📡 ExchangesList recebeu evento de atualização')
+      fetchBalances()
+    }
+    
+    window.addEventListener('balancesUpdated', handleBalancesUpdate)
+    
+    return () => {
+      window.removeEventListener('balancesUpdated', handleBalancesUpdate)
+    }
   }, [])
 
   const fetchBalances = async () => {

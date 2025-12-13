@@ -99,6 +99,9 @@ export function ExchangesManager() {
         console.log('🔄 Atualizando balances...')
         await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
+        
+        // Notificar outros componentes
+        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao conectar exchange')
@@ -153,6 +156,9 @@ export function ExchangesManager() {
         console.log('🔄 Atualizando balances...')
         await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
+        
+        // Notificar outros componentes
+        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao desconectar exchange')
@@ -207,6 +213,9 @@ export function ExchangesManager() {
         console.log('🔄 Atualizando balances...')
         await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
+        
+        // Notificar outros componentes
+        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao deletar exchange')
@@ -291,6 +300,9 @@ export function ExchangesManager() {
         console.log('🔄 Atualizando balances...')
         await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
+        
+        // Notificar outros componentes
+        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao conectar exchange')
