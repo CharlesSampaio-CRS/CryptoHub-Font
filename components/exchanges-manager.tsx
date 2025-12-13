@@ -286,12 +286,6 @@ export function ExchangesManager() {
                         <Text style={styles.detailLabel}>País:</Text>
                         <Text style={styles.detailValue}>{linkedExchange.country}</Text>
                       </View>
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Última atualização:</Text>
-                        <Text style={styles.detailValue}>
-                          {new Date(linkedExchange.updated_at).toLocaleDateString('pt-BR')}
-                        </Text>
-                      </View>
                     </View>
                   </View>
                 )
@@ -583,6 +577,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1a1a1a",
     marginBottom: 12,
+    position: "relative",
+    overflow: "visible",
   },
   cardHeader: {
     flexDirection: "row",
@@ -742,8 +738,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
-    zIndex: 1000,
+    elevation: 10,
+    zIndex: 9999,
   },
   dropdownItem: {
     paddingVertical: 12,
