@@ -217,7 +217,7 @@ export function ExchangesList() {
                               </Text>
                               {priceUSD > 0 && (
                                 <Text style={styles.tokenPrice}>
-                                  @ {apiService.formatUSD(priceUSD)}
+                                  {apiService.formatUSD(priceUSD)}
                                 </Text>
                               )}
                             </View>
