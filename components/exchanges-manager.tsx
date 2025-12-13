@@ -254,14 +254,6 @@ export function ExchangesManager() {
         </TouchableOpacity>
       </View>
 
-      {/* Backdrop when menu is open */}
-      {openMenuId && (
-        <Pressable 
-          style={styles.backdrop}
-          onPress={() => setOpenMenuId(null)}
-        />
-      )}
-
       {/* Content */}
       <ScrollView style={styles.content}>
         {activeTab === 'linked' ? (
@@ -317,33 +309,12 @@ export function ExchangesManager() {
                           </Text>
                         </View>
                       </View>
-                      <View>
-                        <TouchableOpacity 
-                          style={styles.optionsButton}
-                          onPress={() => toggleMenu(menuId)}
-                        >
-                          <Text style={styles.optionsIcon}>⋮</Text>
-                        </TouchableOpacity>
-                        {isMenuOpen && (
-                          <View style={styles.dropdown}>
-                            <TouchableOpacity
-                              style={styles.dropdownItem}
-                              onPress={() => handleDisconnect(linkedExchange.exchange_id, linkedExchange.name)}
-                            >
-                              <Text style={styles.dropdownItemText}>🔌 Desconectar</Text>
-                            </TouchableOpacity>
-                            <View style={styles.dropdownDivider} />
-                            <TouchableOpacity
-                              style={styles.dropdownItem}
-                              onPress={() => handleDelete(linkedExchange.exchange_id, linkedExchange.name)}
-                            >
-                              <Text style={[styles.dropdownItemText, styles.dropdownItemDanger]}>
-                                🗑️ Deletar
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
-                      </View>
+                      <TouchableOpacity 
+                        style={styles.optionsButton}
+                        onPress={() => toggleMenu(menuId)}
+                      >
+                        <Text style={styles.optionsIcon}>⋮</Text>
+                      </TouchableOpacity>
                     </View>
                     <View style={styles.cardDetails}>
                       <View style={styles.detailRow}>
@@ -427,6 +398,49 @@ export function ExchangesManager() {
           </View>
         )}
       </ScrollView>
+
+      {/* Modal de Menu de Opções */}
+      <Modal
+        visible={!!openMenuId}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpenMenuId(null)}
+      >
+        <Pressable 
+          style={styles.menuModalOverlay}
+          onPress={() => setOpenMenuId(null)}
+        >
+          <View style={styles.menuModal}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                const exchange = linkedExchanges.find((e, i) => 
+                  (e.exchange_id + '_' + i) === openMenuId
+                )
+                if (exchange) handleDisconnect(exchange.exchange_id, exchange.name)
+              }}
+            >
+              <Text style={styles.menuItemIcon}>🔌</Text>
+              <Text style={styles.menuItemText}>Desconectar</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.menuDivider} />
+            
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                const exchange = linkedExchanges.find((e, i) => 
+                  (e.exchange_id + '_' + i) === openMenuId
+                )
+                if (exchange) handleDelete(exchange.exchange_id, exchange.name)
+              }}
+            >
+              <Text style={styles.menuItemIcon}>🗑️</Text>
+              <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Modal de Conexão */}
       <Modal
@@ -562,14 +576,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0a0a0a",
   },
-  backdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    zIndex: 100,
+  // Menu Modal Styles
+  menuModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuModal: {
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    minWidth: 200,
+    overflow: "hidden",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  menuItemIcon: {
+    fontSize: 20,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: "#f9fafb",
+    fontWeight: "500",
+  },
+  menuItemDanger: {
+    color: "#ef4444",
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: "#2a2a2a",
   },
   loadingContainer: {
     flex: 1,
@@ -644,12 +686,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    zIndex: 50,
   },
   list: {
     paddingHorizontal: 20,
     gap: 12,
-    zIndex: 1,
   },
   card: {
     backgroundColor: "#141414",
@@ -708,8 +748,6 @@ const styles = StyleSheet.create({
   },
   optionsButton: {
     padding: 8,
-    position: "relative",
-    zIndex: 10,
   },
   optionsIcon: {
     fontSize: 20,
@@ -806,38 +844,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#ffffff",
   },
-  dropdown: {
-    position: "absolute",
-    top: 35,
-    right: 0,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    minWidth: 160,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 20,
-    zIndex: 99999,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    color: "#f9fafb",
-    fontWeight: "500",
-  },
-  dropdownItemDanger: {
-    color: "#ef4444",
-  },
-  dropdownDivider: {
-    height: 1,
-    backgroundColor: "#2a2a2a",
-  },
+
   // Modal styles
   modalOverlay: {
     flex: 1,
