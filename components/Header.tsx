@@ -5,17 +5,17 @@ export function Header() {
   const { colors } = useTheme()
   
   return (
-    <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+    <View style={[styles.header, { backgroundColor: colors.background }]}>
       <View>
         <Text style={[styles.title, { color: colors.text }]}>CryptoHub</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Seus investimentos unificados</Text>
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]}>
+        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={styles.iconText}>🔔</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]}>
+        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={styles.iconText}>⚙️</Text>
         </TouchableOpacity>
       </View>
@@ -28,31 +28,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
+    fontWeight: "400",
   },
   actions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   iconButton: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 8,
-    backgroundColor: "#1a1a1a",
+    borderRadius: 10,
+    borderWidth: 1,
   },
   iconText: {
-    fontSize: 16,
+    fontSize: 18,
   },
 })

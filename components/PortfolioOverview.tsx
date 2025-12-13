@@ -134,9 +134,9 @@ export function PortfolioOverview() {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
     borderWidth: 1,
   },
   header: {
@@ -148,30 +148,28 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "500",
+    letterSpacing: 0.2,
   },
   refreshButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.15)",
   },
   refreshIconContainer: {
     alignItems: "center",
     justifyContent: "center",
   },
   refreshIcon: {
-    fontSize: 18,
-    fontWeight: "700",
-    opacity: 0.9,
+    fontSize: 20,
+    fontWeight: "600",
   },
   value: {
-    fontSize: 36,
-    fontWeight: "700",
-    letterSpacing: -0.5,
-    marginBottom: 12,
+    fontSize: 42,
+    fontWeight: "600",
+    letterSpacing: -1,
+    marginBottom: 16,
   },
   changeContainer: {
     flexDirection: "row",
@@ -179,19 +177,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   badgePositive: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    backgroundColor: "rgba(16, 185, 129, 0.08)",
   },
   badgeNegative: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
   },
   badgeText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   textPositive: {
     color: "#10b981",

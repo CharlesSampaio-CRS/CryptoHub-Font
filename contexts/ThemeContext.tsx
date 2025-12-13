@@ -25,35 +25,35 @@ interface ThemeContextType {
 }
 
 const lightColors: ThemeColors = {
-  background: '#f9fafb',
+  background: '#fafafa',
   surface: '#ffffff',
-  surfaceSecondary: '#f3f4f6',
-  border: '#e5e7eb',
-  text: '#111827',
-  textSecondary: '#6b7280',
+  surfaceSecondary: '#f5f5f5',
+  border: '#e8e8e8',
+  text: '#1a1a1a',
+  textSecondary: '#737373',
   primary: '#10b981',
   primaryDark: '#059669',
   success: '#10b981',
-  danger: '#dc2626',
+  danger: '#ef4444',
   warning: '#f59e0b',
   card: '#ffffff',
-  cardBorder: '#e5e7eb',
+  cardBorder: '#f0f0f0',
 }
 
 const darkColors: ThemeColors = {
-  background: '#0a0a0a',
-  surface: '#111827',
-  surfaceSecondary: '#1f2937',
-  border: '#1f2937',
-  text: '#f9fafb',
-  textSecondary: '#9ca3af',
+  background: '#0f0f0f',
+  surface: '#1a1a1a',
+  surfaceSecondary: '#262626',
+  border: '#2a2a2a',
+  text: '#fafafa',
+  textSecondary: '#a3a3a3',
   primary: '#10b981',
   primaryDark: '#059669',
   success: '#10b981',
-  danger: '#dc2626',
+  danger: '#ef4444',
   warning: '#f59e0b',
-  card: '#111827',
-  cardBorder: '#1f2937',
+  card: '#1a1a1a',
+  cardBorder: '#262626',
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
