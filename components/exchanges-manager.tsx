@@ -60,6 +60,8 @@ export function ExchangesManager() {
   const handleDisconnect = async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
+    console.log('handleDisconnect chamado com:', { exchangeId, exchangeName })
+    
     Alert.alert(
       'Confirmar Desconexão',
       `Tem certeza que deseja desconectar a exchange ${exchangeName}?`,
@@ -73,11 +75,16 @@ export function ExchangesManager() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(`http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`, {
+              const url = `http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`
+              console.log('Chamando DELETE em:', url)
+              
+              const response = await fetch(url, {
                 method: 'DELETE',
               })
 
+              console.log('Response status:', response.status)
               const data = await response.json()
+              console.log('Response data:', data)
 
               if (response.ok && data.success) {
                 Alert.alert('Sucesso', `Exchange ${exchangeName} desconectada com sucesso!`)
@@ -99,6 +106,8 @@ export function ExchangesManager() {
   const handleDelete = async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
+    console.log('handleDelete chamado com:', { exchangeId, exchangeName })
+    
     Alert.alert(
       'Confirmar Exclusão',
       `Tem certeza que deseja deletar a exchange ${exchangeName}? Esta ação não pode ser desfeita.`,
@@ -112,11 +121,16 @@ export function ExchangesManager() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(`http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`, {
+              const url = `http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`
+              console.log('Chamando DELETE em:', url)
+              
+              const response = await fetch(url, {
                 method: 'DELETE',
               })
 
+              console.log('Response status:', response.status)
               const data = await response.json()
+              console.log('Response data:', data)
 
               if (response.ok && data.success) {
                 Alert.alert('Sucesso', `Exchange ${exchangeName} deletada com sucesso!`)
@@ -414,10 +428,12 @@ export function ExchangesManager() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                const exchange = linkedExchanges.find((e, i) => 
-                  (e.exchange_id + '_' + i) === openMenuId
-                )
-                if (exchange) handleDisconnect(exchange.exchange_id, exchange.name)
+                const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
+                if (index >= 0 && linkedExchanges[index]) {
+                  const exchange = linkedExchanges[index]
+                  console.log('Desconectar - Exchange:', exchange)
+                  handleDisconnect(exchange.exchange_id, exchange.name)
+                }
               }}
             >
               <Text style={styles.menuItemIcon}>🔌</Text>
@@ -429,10 +445,12 @@ export function ExchangesManager() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                const exchange = linkedExchanges.find((e, i) => 
-                  (e.exchange_id + '_' + i) === openMenuId
-                )
-                if (exchange) handleDelete(exchange.exchange_id, exchange.name)
+                const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
+                if (index >= 0 && linkedExchanges[index]) {
+                  const exchange = linkedExchanges[index]
+                  console.log('Deletar - Exchange:', exchange)
+                  handleDelete(exchange.exchange_id, exchange.name)
+                }
               }}
             >
               <Text style={styles.menuItemIcon}>🗑️</Text>
