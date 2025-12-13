@@ -411,17 +411,17 @@ export function ExchangesManager() {
                           </Text>
                           <View style={[
                             styles.statusBadge,
-                            linkedExchange.status === 'connected' ? styles.statusBadgeActive : styles.statusBadgeInactive
+                            linkedExchange.status === 'active' ? styles.statusBadgeActive : styles.statusBadgeInactive
                           ]}>
                             <View style={[
                               styles.statusDot,
-                              linkedExchange.status === 'connected' ? styles.statusDotActive : styles.statusDotInactive
+                              linkedExchange.status === 'active' ? styles.statusDotActive : styles.statusDotInactive
                             ]} />
                             <Text style={[
                               styles.statusText,
-                              linkedExchange.status === 'connected' ? styles.statusTextActive : styles.statusTextInactive
+                              linkedExchange.status === 'active' ? styles.statusTextActive : styles.statusTextInactive
                             ]}>
-                              {linkedExchange.status === 'connected' ? 'Conectada' : 'Desconectada'}
+                              {linkedExchange.status === 'active' ? 'Ativa' : 'Inativa'}
                             </Text>
                           </View>
                         </View>
@@ -532,7 +532,7 @@ export function ExchangesManager() {
               {(() => {
                 const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
                 const exchange = index >= 0 ? linkedExchanges[index] : null
-                const isConnected = exchange?.status === 'connected'
+                const isActive = exchange?.status === 'active'
                 
                 return (
                   <>
@@ -542,7 +542,7 @@ export function ExchangesManager() {
                       onPress={(e) => {
                         e.stopPropagation()
                         if (exchange) {
-                          if (isConnected) {
+                          if (isActive) {
                             console.log('Desconectar - Exchange:', exchange)
                             handleDisconnect(exchange.exchange_id, exchange.name)
                           } else {
@@ -552,9 +552,9 @@ export function ExchangesManager() {
                         }
                       }}
                     >
-                      <Text style={styles.menuItemIcon}>{isConnected ? '🔌' : '🔗'}</Text>
+                      <Text style={styles.menuItemIcon}>{isActive ? '⏸' : '▶'}</Text>
                       <Text style={styles.menuItemText}>
-                        {isConnected ? 'Desconectar' : 'Conectar'}
+                        {isActive ? 'Pausar' : 'Ativar'}
                       </Text>
                     </TouchableOpacity>
                     

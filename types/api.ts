@@ -50,7 +50,7 @@ export interface LinkedExchange {
   icon: string;
   country: string;
   url: string;
-  status: 'connected' | 'disconnected';
+  status: 'active' | 'inactive';
   is_active?: boolean;
   linked_at: string;
   updated_at: string;
