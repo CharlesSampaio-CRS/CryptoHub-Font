@@ -125,8 +125,15 @@ export function ExchangesList() {
           
           const tokenCount = tokens.length
           const balance = parseFloat(exchange.total_usd)
-          const logoSource = exchangeLogos[exchange.name]
+          const exchangeNameLower = exchange.name.toLowerCase()
+          const logoSource = exchangeLogos[exchangeNameLower]
           const isExpanded = expandedExchangeId === exchange.exchange_id
+          
+          // Debug log
+          if (!logoSource) {
+            console.log('Logo not found for:', exchange.name, '(lowercase:', exchangeNameLower + ')')
+            console.log('Available logos:', Object.keys(exchangeLogos))
+          }
 
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
