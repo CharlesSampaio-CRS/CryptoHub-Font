@@ -72,11 +72,18 @@ export const apiService = {
    */
   formatUSD(value: string | number): string {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (numValue === 0) return '$0.00';
+    
+    // Para valores muito pequenos, mostra até 10 casas decimais
+    if (numValue < 0.01) {
+      return '$' + numValue.toFixed(10).replace(/\.?0+$/, '');
+    }
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 10,
     }).format(numValue);
   },
 
@@ -86,12 +93,15 @@ export const apiService = {
   formatTokenAmount(amount: string): string {
     const numValue = parseFloat(amount);
     if (numValue === 0) return '0';
-    if (numValue < 0.01) {
-      return numValue.toExponential(2);
+    
+    // Para valores muito pequenos, mostra até 10 casas decimais sem notação científica
+    if (numValue < 0.000001) {
+      return numValue.toFixed(10).replace(/\.?0+$/, '');
     }
+    
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 8,
+      maximumFractionDigits: 10,
     }).format(numValue);
   }
 };
