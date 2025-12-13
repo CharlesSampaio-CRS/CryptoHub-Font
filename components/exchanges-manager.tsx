@@ -74,9 +74,10 @@ export function ExchangesManager() {
           text: 'Desconectar',
           style: 'destructive',
           onPress: async () => {
+            console.log('🔴 Botão DESCONECTAR confirmado! Iniciando chamada...')
             try {
               const url = `http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`
-              console.log('Chamando DELETE em:', url)
+              console.log('🌐 Chamando DELETE em:', url)
               
               const response = await fetch(url, {
                 method: 'DELETE',
@@ -120,26 +121,29 @@ export function ExchangesManager() {
           text: 'Deletar',
           style: 'destructive',
           onPress: async () => {
+            console.log('🔴 Botão DELETAR confirmado! Iniciando chamada...')
             try {
               const url = `http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`
-              console.log('Chamando DELETE em:', url)
+              console.log('🌐 Chamando DELETE em:', url)
               
               const response = await fetch(url, {
                 method: 'DELETE',
               })
 
-              console.log('Response status:', response.status)
+              console.log('✅ Response status:', response.status)
               const data = await response.json()
-              console.log('Response data:', data)
+              console.log('📦 Response data:', data)
 
               if (response.ok && data.success) {
+                console.log('✅ Sucesso! Exchange deletada')
                 Alert.alert('Sucesso', `Exchange ${exchangeName} deletada com sucesso!`)
                 await fetchExchanges() // Recarregar lista
               } else {
+                console.log('❌ Erro na resposta:', data.error)
                 Alert.alert('Erro', data.error || 'Falha ao deletar exchange')
               }
             } catch (err) {
-              console.error('Erro ao deletar exchange:', err)
+              console.error('❌ Erro ao deletar exchange:', err)
               Alert.alert('Erro', 'Não foi possível deletar a exchange')
             }
           },
