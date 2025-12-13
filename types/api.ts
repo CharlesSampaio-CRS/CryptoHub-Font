@@ -42,16 +42,19 @@ export interface AvailableExchangesResponse {
 }
 
 export interface LinkedExchange {
-  _id: string;
-  user_id: string;
+  _id?: string;
+  user_id?: string;
   exchange_id: string;
-  exchange_name?: string;
+  ccxt_id: string;
+  name: string;
+  icon: string;
+  country: string;
+  url: string;
+  linked_at: string;
+  updated_at: string;
   api_key?: string;
   api_secret?: string;
   passphrase?: string;
-  created_at?: string;
-  updated_at?: string;
-  is_active?: boolean;
 }
 
 export interface LinkedExchangesResponse {

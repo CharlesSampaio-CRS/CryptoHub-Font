@@ -70,7 +70,6 @@ export function PortfolioOverview() {
         </Text>
 
         <Text style={styles.timeframe}>últimas 24h</Text>
-        <Text style={styles.exchangesCount}>• {data.summary.exchanges_count} exchanges</Text>
       </View>
     </View>
   )

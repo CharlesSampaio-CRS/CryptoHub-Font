@@ -38,9 +38,6 @@ export function ExchangesManager() {
         apiService.getLinkedExchanges(config.userId)
       ])
       
-      console.log('Available exchanges:', availableData)
-      console.log('Linked exchanges:', linkedData)
-      
       setAvailableExchanges(availableData.exchanges)
       setLinkedExchanges(linkedData.exchanges)
     } catch (err) {
@@ -122,62 +119,37 @@ export function ExchangesManager() {
             </View>
           ) : (
             <View style={styles.list}>
-              {linkedExchanges.map((linkedExchange) => {
-                // Buscar dados da exchange disponível para pegar ícone e nome correto
-                const exchangeInfo = availableExchanges.find(
-                  ex => ex._id === linkedExchange.exchange_id
-                )
-                
-                // Debug
-                const exchangeName = exchangeInfo?.nome || linkedExchange.exchange_name || ''
-                console.log('Linked Exchange:', {
-                  id: linkedExchange._id,
-                  exchange_id: linkedExchange.exchange_id,
-                  exchange_name: linkedExchange.exchange_name,
-                  exchangeInfo: exchangeInfo,
-                  finalName: exchangeName,
-                  localIconKey: exchangeName.toLowerCase(),
-                  hasLocalIcon: !!exchangeLogos[exchangeName.toLowerCase()]
-                })
+              {linkedExchanges.map((linkedExchange, index) => {
+                const exchangeNameLower = linkedExchange.name.toLowerCase()
+                const localIcon = exchangeLogos[exchangeNameLower]
                 
                 return (
-                  <View key={linkedExchange._id} style={styles.card}>
+                  <View key={linkedExchange.exchange_id + '_' + index} style={styles.card}>
                     <View style={styles.cardHeader}>
                       <View style={styles.cardLeft}>
                         <View style={styles.iconContainer}>
-                          {(() => {
-                            const localIcon = exchangeLogos[exchangeName.toLowerCase()]
-                            
-                            if (localIcon) {
-                              return (
-                                <Image 
-                                  source={localIcon} 
-                                  style={styles.exchangeIcon}
-                                  resizeMode="contain"
-                                />
-                              )
-                            } else if (exchangeInfo?.icon) {
-                              return (
-                                <Image 
-                                  source={{ uri: exchangeInfo.icon }} 
-                                  style={styles.exchangeIcon}
-                                  resizeMode="contain"
-                                />
-                              )
-                            } else {
-                              return <Text style={styles.iconText}>🔗</Text>
-                            }
-                          })()}
+                          {localIcon ? (
+                            <Image 
+                              source={localIcon} 
+                              style={styles.exchangeIcon}
+                              resizeMode="contain"
+                            />
+                          ) : linkedExchange.icon ? (
+                            <Image 
+                              source={{ uri: linkedExchange.icon }} 
+                              style={styles.exchangeIcon}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <Text style={styles.iconText}>🔗</Text>
+                          )}
                         </View>
                         <View>
                           <Text style={styles.exchangeName}>
-                            {exchangeName || 'Exchange'}
+                            {linkedExchange.name}
                           </Text>
-                          <Text style={[
-                            styles.exchangeStatus,
-                            linkedExchange.is_active ? styles.statusActive : styles.statusInactive
-                          ]}>
-                            {linkedExchange.is_active ? '✓ Ativa' : '✗ Inativa'}
+                          <Text style={[styles.exchangeStatus, styles.statusActive]}>
+                            ✓ Conectada
                           </Text>
                         </View>
                       </View>
@@ -189,18 +161,19 @@ export function ExchangesManager() {
                       <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Conectada em:</Text>
                         <Text style={styles.detailValue}>
-                          {linkedExchange.created_at 
-                            ? new Date(linkedExchange.created_at).toLocaleDateString('pt-BR')
-                            : 'N/A'
-                          }
+                          {new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')}
                         </Text>
                       </View>
-                      {exchangeInfo?.pais_de_origem && (
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>País:</Text>
-                          <Text style={styles.detailValue}>{exchangeInfo.pais_de_origem}</Text>
-                        </View>
-                      )}
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>País:</Text>
+                        <Text style={styles.detailValue}>{linkedExchange.country}</Text>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Última atualização:</Text>
+                        <Text style={styles.detailValue}>
+                          {new Date(linkedExchange.updated_at).toLocaleDateString('pt-BR')}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 )
