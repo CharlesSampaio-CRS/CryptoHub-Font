@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert } from "react-native"
 import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
@@ -24,6 +24,14 @@ export function ExchangesManager() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'available' | 'linked'>('linked')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  
+  // Modal de conexão
+  const [connectModalVisible, setConnectModalVisible] = useState(false)
+  const [selectedExchange, setSelectedExchange] = useState<AvailableExchange | null>(null)
+  const [apiKey, setApiKey] = useState('')
+  const [apiSecret, setApiSecret] = useState('')
+  const [passphrase, setPassphrase] = useState('')
+  const [connecting, setConnecting] = useState(false)
 
   useEffect(() => {
     fetchExchanges()
@@ -67,6 +75,69 @@ export function ExchangesManager() {
 
   const toggleMenu = (exchangeId: string) => {
     setOpenMenuId(openMenuId === exchangeId ? null : exchangeId)
+  }
+
+  const openConnectModal = (exchange: AvailableExchange) => {
+    setSelectedExchange(exchange)
+    setApiKey('')
+    setApiSecret('')
+    setPassphrase('')
+    setConnectModalVisible(true)
+  }
+
+  const closeConnectModal = () => {
+    setConnectModalVisible(false)
+    setSelectedExchange(null)
+    setApiKey('')
+    setApiSecret('')
+    setPassphrase('')
+  }
+
+  const handleConnect = async () => {
+    if (!selectedExchange) return
+    
+    if (!apiKey.trim() || !apiSecret.trim()) {
+      Alert.alert('Erro', 'Por favor, preencha API Key e API Secret')
+      return
+    }
+
+    if (selectedExchange.requires_passphrase && !passphrase.trim()) {
+      Alert.alert('Erro', 'Esta exchange requer uma Passphrase')
+      return
+    }
+
+    try {
+      setConnecting(true)
+      
+      const response = await fetch('http://localhost:5000/api/v1/exchanges/link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: config.userId,
+          exchange_id: selectedExchange.ccxt_id,
+          api_key: apiKey.trim(),
+          api_secret: apiSecret.trim(),
+          ...(selectedExchange.requires_passphrase && { passphrase: passphrase.trim() })
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        Alert.alert('Sucesso', `Exchange ${selectedExchange.nome} conectada com sucesso!`)
+        closeConnectModal()
+        await fetchExchanges() // Recarregar lista
+      } else {
+        Alert.alert('Erro', data.error || 'Falha ao conectar exchange')
+      }
+    } catch (err) {
+      console.error('Erro ao conectar exchange:', err)
+      Alert.alert('Erro', 'Não foi possível conectar a exchange')
+    } finally {
+      setConnecting(false)
+    }
   }
 
   if (loading) {
@@ -273,7 +344,10 @@ export function ExchangesManager() {
                         <Text style={styles.connectedBadgeText}>✓ Conectada</Text>
                       </View>
                     ) : (
-                      <TouchableOpacity style={styles.connectButton}>
+                      <TouchableOpacity 
+                        style={styles.connectButton}
+                        onPress={() => openConnectModal(exchange)}
+                      >
                         <Text style={styles.connectButtonText}>Conectar</Text>
                       </TouchableOpacity>
                     )}
@@ -289,6 +363,132 @@ export function ExchangesManager() {
           </View>
         )}
       </ScrollView>
+
+      {/* Modal de Conexão */}
+      <Modal
+        visible={connectModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeConnectModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Header do Modal */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Conectar Exchange</Text>
+              <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedExchange && (
+              <>
+                {/* Info da Exchange */}
+                <View style={styles.exchangeInfo}>
+                  <View style={styles.iconContainer}>
+                    {(() => {
+                      const localIcon = exchangeLogos[selectedExchange.nome.toLowerCase()]
+                      if (localIcon) {
+                        return (
+                          <Image 
+                            source={localIcon} 
+                            style={styles.exchangeIcon}
+                            resizeMode="contain"
+                          />
+                        )
+                      } else if (selectedExchange.icon) {
+                        return (
+                          <Image 
+                            source={{ uri: selectedExchange.icon }} 
+                            style={styles.exchangeIcon}
+                            resizeMode="contain"
+                          />
+                        )
+                      }
+                      return <Text style={styles.iconText}>🔗</Text>
+                    })()}
+                  </View>
+                  <View>
+                    <Text style={styles.modalExchangeName}>{selectedExchange.nome}</Text>
+                    <Text style={styles.modalExchangeCountry}>{selectedExchange.pais_de_origem}</Text>
+                  </View>
+                </View>
+
+                {/* Formulário */}
+                <View style={styles.form}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>API Key *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={apiKey}
+                      onChangeText={setApiKey}
+                      placeholder="Digite sua API Key"
+                      placeholderTextColor="#6b7280"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>API Secret *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={apiSecret}
+                      onChangeText={setApiSecret}
+                      placeholder="Digite seu API Secret"
+                      placeholderTextColor="#6b7280"
+                      secureTextEntry
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+
+                  {selectedExchange.requires_passphrase && (
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Passphrase *</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={passphrase}
+                        onChangeText={setPassphrase}
+                        placeholder="Digite sua Passphrase"
+                        placeholderTextColor="#6b7280"
+                        secureTextEntry
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <Text style={styles.inputHint}>
+                        ℹ️ Esta exchange requer uma passphrase
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Botões */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={closeConnectModal}
+                    disabled={connecting}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.submitButton, connecting && styles.submitButtonDisabled]}
+                    onPress={handleConnect}
+                    disabled={connecting}
+                  >
+                    {connecting ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>Conectar</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </Pressable>
   )
 }
@@ -560,5 +760,115 @@ const styles = StyleSheet.create({
   dropdownDivider: {
     height: 1,
     backgroundColor: "#2a2a2a",
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#141414",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: "90%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f9fafb",
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: "#9ca3af",
+    fontWeight: "300",
+  },
+  exchangeInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  modalExchangeName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#f9fafb",
+  },
+  modalExchangeCountry: {
+    fontSize: 14,
+    color: "#9ca3af",
+    marginTop: 2,
+  },
+  form: {
+    gap: 20,
+    marginBottom: 24,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#f9fafb",
+  },
+  input: {
+    backgroundColor: "#1a1a1a",
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 15,
+    color: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+  },
+  inputHint: {
+    fontSize: 12,
+    color: "#60a5fa",
+    marginTop: 4,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#9ca3af",
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: "#10b981",
+    alignItems: "center",
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#ffffff",
   },
 })
