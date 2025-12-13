@@ -63,6 +63,53 @@ export function ExchangesManager() {
     }
   }
 
+  const handleConnect = async (exchangeId: string, exchangeName: string) => {
+    setOpenMenuId(null)
+    
+    console.log('handleConnect chamado com:', { exchangeId, exchangeName })
+    console.log('🔴 Iniciando reconexão...')
+    
+    try {
+      const url = 'http://localhost:5000/api/v1/exchanges/connect'
+      console.log('🌐 Chamando POST em:', url)
+      console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: exchangeId })
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: 'charles_test_user',
+          exchange_id: exchangeId,
+        }),
+      })
+
+      console.log('✅ Response status:', response.status)
+      const data = await response.json()
+      console.log('📦 Response data:', data)
+
+      if (response.ok && data.success) {
+        console.log('✅ Sucesso! Exchange conectada')
+        alert(`Exchange ${exchangeName} conectada com sucesso!`)
+        
+        // Recarregar lista de exchanges
+        await fetchExchanges()
+        
+        // Forçar atualização dos balances
+        console.log('🔄 Atualizando balances...')
+        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        console.log('✅ Balances atualizados!')
+      } else {
+        console.log('❌ Erro na resposta:', data.error)
+        alert(data.error || 'Falha ao conectar exchange')
+      }
+    } catch (err) {
+      console.error('❌ Erro ao conectar exchange:', err)
+      alert('Não foi possível conectar a exchange')
+    }
+  }
+
   const handleDisconnect = (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     setConfirmExchangeId(exchangeId)
@@ -193,10 +240,10 @@ export function ExchangesManager() {
     setPassphrase('')
   }
 
-  const handleConnect = async () => {
+  const handleLinkExchange = async () => {
     if (!selectedExchange) return
     
-    console.log('🔗 handleConnect chamado')
+    console.log('🔗 handleLinkExchange chamado')
     console.log('📦 Exchange selecionada:', selectedExchange)
     
     if (!apiKey.trim() || !apiSecret.trim()) {
@@ -358,13 +405,25 @@ export function ExchangesManager() {
                             <Text style={styles.iconText}>🔗</Text>
                           )}
                         </View>
-                        <View>
+                        <View style={styles.exchangeNameContainer}>
                           <Text style={styles.exchangeName}>
                             {linkedExchange.name}
                           </Text>
-                          <Text style={[styles.exchangeStatus, styles.statusActive]}>
-                            ✓ Conectada
-                          </Text>
+                          <View style={[
+                            styles.statusBadge,
+                            linkedExchange.status === 'connected' ? styles.statusBadgeActive : styles.statusBadgeInactive
+                          ]}>
+                            <View style={[
+                              styles.statusDot,
+                              linkedExchange.status === 'connected' ? styles.statusDotActive : styles.statusDotInactive
+                            ]} />
+                            <Text style={[
+                              styles.statusText,
+                              linkedExchange.status === 'connected' ? styles.statusTextActive : styles.statusTextInactive
+                            ]}>
+                              {linkedExchange.status === 'connected' ? 'Conectada' : 'Desconectada'}
+                            </Text>
+                          </View>
                         </View>
                       </View>
                       <TouchableOpacity 
@@ -470,41 +529,54 @@ export function ExchangesManager() {
         >
           <Pressable>
             <View style={styles.menuModal}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                activeOpacity={0.7}
-                onPress={(e) => {
-                  e.stopPropagation()
-                  const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
-                  if (index >= 0 && linkedExchanges[index]) {
-                    const exchange = linkedExchanges[index]
-                    console.log('Desconectar - Exchange:', exchange)
-                    handleDisconnect(exchange.exchange_id, exchange.name)
-                  }
-                }}
-              >
-                <Text style={styles.menuItemIcon}>🔌</Text>
-                <Text style={styles.menuItemText}>Desconectar</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.menuDivider} />
-              
-              <TouchableOpacity
-                style={styles.menuItem}
-                activeOpacity={0.7}
-                onPress={(e) => {
-                  e.stopPropagation()
-                  const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
-                  if (index >= 0 && linkedExchanges[index]) {
-                    const exchange = linkedExchanges[index]
-                    console.log('Deletar - Exchange:', exchange)
-                    handleDelete(exchange.exchange_id, exchange.name)
-                  }
-                }}
-              >
-                <Text style={styles.menuItemIcon}>🗑️</Text>
-                <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
-              </TouchableOpacity>
+              {(() => {
+                const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
+                const exchange = index >= 0 ? linkedExchanges[index] : null
+                const isConnected = exchange?.status === 'connected'
+                
+                return (
+                  <>
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      activeOpacity={0.7}
+                      onPress={(e) => {
+                        e.stopPropagation()
+                        if (exchange) {
+                          if (isConnected) {
+                            console.log('Desconectar - Exchange:', exchange)
+                            handleDisconnect(exchange.exchange_id, exchange.name)
+                          } else {
+                            console.log('Conectar - Exchange:', exchange)
+                            handleConnect(exchange.exchange_id, exchange.name)
+                          }
+                        }
+                      }}
+                    >
+                      <Text style={styles.menuItemIcon}>{isConnected ? '🔌' : '🔗'}</Text>
+                      <Text style={styles.menuItemText}>
+                        {isConnected ? 'Desconectar' : 'Conectar'}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <View style={styles.menuDivider} />
+                    
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      activeOpacity={0.7}
+                      onPress={(e) => {
+                        e.stopPropagation()
+                        if (exchange) {
+                          console.log('Deletar - Exchange:', exchange)
+                          handleDelete(exchange.exchange_id, exchange.name)
+                        }
+                      }}
+                    >
+                      <Text style={styles.menuItemIcon}>🗑️</Text>
+                      <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
+                    </TouchableOpacity>
+                  </>
+                )
+              })()}
             </View>
           </Pressable>
         </Pressable>
@@ -620,7 +692,7 @@ export function ExchangesManager() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.submitButton, connecting && styles.submitButtonDisabled]}
-                    onPress={handleConnect}
+                    onPress={handleLinkExchange}
                     disabled={connecting}
                   >
                     {connecting ? (
@@ -850,11 +922,54 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
+  exchangeNameContainer: {
+    flex: 1,
+  },
   exchangeName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#f9fafb",
-    marginBottom: 2,
+    marginBottom: 6,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  statusBadgeActive: {
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.3)",
+  },
+  statusBadgeInactive: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusDotActive: {
+    backgroundColor: "#10b981",
+  },
+  statusDotInactive: {
+    backgroundColor: "#ef4444",
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  statusTextActive: {
+    color: "#10b981",
+  },
+  statusTextInactive: {
+    color: "#ef4444",
   },
   exchangeStatus: {
     fontSize: 12,

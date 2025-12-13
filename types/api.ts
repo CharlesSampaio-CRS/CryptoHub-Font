@@ -50,8 +50,12 @@ export interface LinkedExchange {
   icon: string;
   country: string;
   url: string;
+  status: 'connected' | 'disconnected';
+  is_active?: boolean;
   linked_at: string;
   updated_at: string;
+  disconnected_at?: string;
+  reconnected_at?: string;
   api_key?: string;
   api_secret?: string;
   passphrase?: string;
