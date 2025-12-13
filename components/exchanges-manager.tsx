@@ -70,7 +70,7 @@ export function ExchangesManager() {
     console.log('🔴 Iniciando reconexão...')
     
     try {
-      const url = 'http://localhost:5000/api/v1/exchanges/connect'
+      const url = `${config.apiBaseUrl}/exchanges/connect`
       console.log('🌐 Chamando POST em:', url)
       console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: exchangeId })
       
@@ -97,7 +97,7 @@ export function ExchangesManager() {
         
         // Forçar atualização dos balances
         console.log('🔄 Atualizando balances...')
-        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
@@ -127,7 +127,7 @@ export function ExchangesManager() {
     console.log('🔴 Confirmação aceita! Iniciando chamada...')
     
     try {
-      const url = 'http://localhost:5000/api/v1/exchanges/disconnect'
+      const url = '${config.apiBaseUrl}/exchanges/disconnect'
       console.log('🌐 Chamando POST em:', url)
       console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: confirmExchangeId })
       
@@ -154,7 +154,7 @@ export function ExchangesManager() {
         
         // Forçar atualização dos balances
         console.log('🔄 Atualizando balances...')
-        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
@@ -184,7 +184,7 @@ export function ExchangesManager() {
     console.log('🔴 Confirmação aceita! Iniciando chamada DELETE...')
     
     try {
-      const url = 'http://localhost:5000/api/v1/exchanges/delete'
+      const url = '${config.apiBaseUrl}/exchanges/delete'
       console.log('🌐 Chamando DELETE em:', url)
       console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: confirmExchangeId })
       
@@ -211,7 +211,7 @@ export function ExchangesManager() {
         
         // Forçar atualização dos balances
         console.log('🔄 Atualizando balances...')
-        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
@@ -265,7 +265,7 @@ export function ExchangesManager() {
     try {
       setConnecting(true)
       
-      const url = 'http://localhost:5000/api/v1/exchanges/link'
+      const url = '${config.apiBaseUrl}/exchanges/link'
       const payload = {
         user_id: config.userId,
         exchange_id: selectedExchange._id, // Usando o _id da exchange
@@ -298,7 +298,7 @@ export function ExchangesManager() {
         
         // Forçar atualização dos balances
         console.log('🔄 Atualizando balances...')
-        await fetch(`http://localhost:5000/api/v1/balances?user_id=charles_test_user&force_refresh=true`)
+        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
         console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes

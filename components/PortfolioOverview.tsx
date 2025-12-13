@@ -39,7 +39,7 @@ export function PortfolioOverview() {
       setError(null)
       
       const url = forceRefresh 
-        ? `http://localhost:5000/api/v1/balances?user_id=${config.userId}&force_refresh=true`
+        ? `${config.apiBaseUrl}/balances?user_id=${config.userId}&force_refresh=true`
         : undefined
       
       const response = url 

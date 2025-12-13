@@ -12,5 +12,5 @@ export const config = {
   /**
    * URL base da API
    */
-  apiBaseUrl: 'http://localhost:5000/api/v1',
+  apiBaseUrl: 'https://automatic-anfg.onrender.com/api/v1',
 } as const;
