@@ -6,15 +6,15 @@ import { config } from "@/lib/config"
 
 // Mapeamento dos logos locais das exchanges
 const exchangeLogos: Record<string, any> = {
-  "Binance": require("@/assets/binance.png"),
-  "NovaDAX": require("@/assets/novadax.png"),
-  "MEXC": require("@/assets/mexc.png"),
-  "Coinbase": require("@/assets/coinbase.jpeg"),
-  "Kraken": require("@/assets/kraken.png"),
-  "Bybit": require("@/assets/bybit.png"),
-  "Gate.io": require("@/assets/gateio.png"),
-  "KuCoin": require("@/assets/kucoin.png"),
-  "OKX": require("@/assets/okx.png"),
+  "binance": require("@/assets/binance.png"),
+  "novadax": require("@/assets/novadax.png"),
+  "mexc": require("@/assets/mexc.png"),
+  "coinbase": require("@/assets/coinbase.jpeg"),
+  "kraken": require("@/assets/kraken.png"),
+  "bybit": require("@/assets/bybit.png"),
+  "gate.io": require("@/assets/gateio.png"),
+  "kucoin": require("@/assets/kucoin.png"),
+  "okx": require("@/assets/okx.png"),
 }
 
 export function ExchangesManager() {
@@ -128,13 +128,24 @@ export function ExchangesManager() {
                   ex => ex._id === linkedExchange.exchange_id
                 )
                 
+                // Debug
+                const exchangeName = exchangeInfo?.nome || linkedExchange.exchange_name || ''
+                console.log('Linked Exchange:', {
+                  id: linkedExchange._id,
+                  exchange_id: linkedExchange.exchange_id,
+                  exchange_name: linkedExchange.exchange_name,
+                  exchangeInfo: exchangeInfo,
+                  finalName: exchangeName,
+                  localIconKey: exchangeName.toLowerCase(),
+                  hasLocalIcon: !!exchangeLogos[exchangeName.toLowerCase()]
+                })
+                
                 return (
                   <View key={linkedExchange._id} style={styles.card}>
                     <View style={styles.cardHeader}>
                       <View style={styles.cardLeft}>
                         <View style={styles.iconContainer}>
                           {(() => {
-                            const exchangeName = exchangeInfo?.nome || linkedExchange.exchange_name || ''
                             const localIcon = exchangeLogos[exchangeName.toLowerCase()]
                             
                             if (localIcon) {
@@ -160,7 +171,7 @@ export function ExchangesManager() {
                         </View>
                         <View>
                           <Text style={styles.exchangeName}>
-                            {exchangeInfo?.nome || linkedExchange.exchange_name || 'Exchange'}
+                            {exchangeName || 'Exchange'}
                           </Text>
                           <Text style={[
                             styles.exchangeStatus,

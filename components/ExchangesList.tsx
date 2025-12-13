@@ -6,15 +6,15 @@ import { config } from "@/lib/config"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
-  "Binance": require("@/assets/binance.png"),
-  "NovaDAX": require("@/assets/novadax.png"),
-  "MEXC": require("@/assets/mexc.png"),
-  "Coinbase": require("@/assets/coinbase.jpeg"),
-  "Kraken": require("@/assets/kraken.png"),
-  "Bybit": require("@/assets/bybit.png"),
-  "Gate.io": require("@/assets/gateio.png"),
-  "KuCoin": require("@/assets/kucoin.png"),
-  "OKX": require("@/assets/okx.png"),
+  "binance": require("@/assets/binance.png"),
+  "novadax": require("@/assets/novadax.png"),
+  "mexc": require("@/assets/mexc.png"),
+  "coinbase": require("@/assets/coinbase.jpeg"),
+  "kraken": require("@/assets/kraken.png"),
+  "bybit": require("@/assets/bybit.png"),
+  "gate.io": require("@/assets/gateio.png"),
+  "kucoin": require("@/assets/kucoin.png"),
+  "okx": require("@/assets/okx.png"),
 }
 
 export function ExchangesList() {
