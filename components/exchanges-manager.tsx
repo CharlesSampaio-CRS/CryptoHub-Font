@@ -254,6 +254,14 @@ export function ExchangesManager() {
         </TouchableOpacity>
       </View>
 
+      {/* Backdrop when menu is open */}
+      {openMenuId && (
+        <Pressable 
+          style={styles.backdrop}
+          onPress={() => setOpenMenuId(null)}
+        />
+      )}
+
       {/* Content */}
       <ScrollView style={styles.content}>
         {activeTab === 'linked' ? (
@@ -554,6 +562,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0a0a0a",
   },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    zIndex: 100,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -627,10 +644,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    zIndex: 50,
   },
   list: {
     paddingHorizontal: 20,
     gap: 12,
+    zIndex: 1,
   },
   card: {
     backgroundColor: "#141414",
@@ -639,8 +658,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1a1a1a",
     marginBottom: 12,
-    position: "relative",
-    overflow: "visible",
   },
   cardHeader: {
     flexDirection: "row",
@@ -691,6 +708,8 @@ const styles = StyleSheet.create({
   },
   optionsButton: {
     padding: 8,
+    position: "relative",
+    zIndex: 10,
   },
   optionsIcon: {
     fontSize: 20,
@@ -789,7 +808,7 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     position: "absolute",
-    top: 40,
+    top: 35,
     right: 0,
     backgroundColor: "#1a1a1a",
     borderRadius: 8,
@@ -798,10 +817,10 @@ const styles = StyleSheet.create({
     minWidth: 160,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-    zIndex: 9999,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 20,
+    zIndex: 99999,
   },
   dropdownItem: {
     paddingVertical: 12,
