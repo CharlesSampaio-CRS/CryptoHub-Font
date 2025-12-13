@@ -58,19 +58,81 @@ export function ExchangesManager() {
   }
 
   const handleDisconnect = async (exchangeId: string, exchangeName: string) => {
-    // TODO: Implementar chamada à API para desconectar
-    console.log('Desconectar exchange:', exchangeId, exchangeName)
     setOpenMenuId(null)
-    // Atualizar lista após desconectar
-    // await fetchExchanges()
+    
+    Alert.alert(
+      'Confirmar Desconexão',
+      `Tem certeza que deseja desconectar a exchange ${exchangeName}?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Desconectar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`, {
+                method: 'DELETE',
+              })
+
+              const data = await response.json()
+
+              if (response.ok && data.success) {
+                Alert.alert('Sucesso', `Exchange ${exchangeName} desconectada com sucesso!`)
+                await fetchExchanges() // Recarregar lista
+              } else {
+                Alert.alert('Erro', data.error || 'Falha ao desconectar exchange')
+              }
+            } catch (err) {
+              console.error('Erro ao desconectar exchange:', err)
+              Alert.alert('Erro', 'Não foi possível desconectar a exchange')
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    )
   }
 
   const handleDelete = async (exchangeId: string, exchangeName: string) => {
-    // TODO: Implementar chamada à API para deletar
-    console.log('Deletar exchange:', exchangeId, exchangeName)
     setOpenMenuId(null)
-    // Atualizar lista após deletar
-    // await fetchExchanges()
+    
+    Alert.alert(
+      'Confirmar Exclusão',
+      `Tem certeza que deseja deletar a exchange ${exchangeName}? Esta ação não pode ser desfeita.`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Deletar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`http://localhost:5000/api/v1/exchanges/unlink/${exchangeId}`, {
+                method: 'DELETE',
+              })
+
+              const data = await response.json()
+
+              if (response.ok && data.success) {
+                Alert.alert('Sucesso', `Exchange ${exchangeName} deletada com sucesso!`)
+                await fetchExchanges() // Recarregar lista
+              } else {
+                Alert.alert('Erro', data.error || 'Falha ao deletar exchange')
+              }
+            } catch (err) {
+              console.error('Erro ao deletar exchange:', err)
+              Alert.alert('Erro', 'Não foi possível deletar a exchange')
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    )
   }
 
   const toggleMenu = (exchangeId: string) => {
