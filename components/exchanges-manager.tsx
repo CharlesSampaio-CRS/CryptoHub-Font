@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable } from "react-native"
 import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
@@ -23,6 +23,7 @@ export function ExchangesManager() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'available' | 'linked'>('linked')
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchExchanges()
@@ -48,6 +49,26 @@ export function ExchangesManager() {
     }
   }
 
+  const handleDisconnect = async (exchangeId: string, exchangeName: string) => {
+    // TODO: Implementar chamada à API para desconectar
+    console.log('Desconectar exchange:', exchangeId, exchangeName)
+    setOpenMenuId(null)
+    // Atualizar lista após desconectar
+    // await fetchExchanges()
+  }
+
+  const handleDelete = async (exchangeId: string, exchangeName: string) => {
+    // TODO: Implementar chamada à API para deletar
+    console.log('Deletar exchange:', exchangeId, exchangeName)
+    setOpenMenuId(null)
+    // Atualizar lista após deletar
+    // await fetchExchanges()
+  }
+
+  const toggleMenu = (exchangeId: string) => {
+    setOpenMenuId(openMenuId === exchangeId ? null : exchangeId)
+  }
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -71,7 +92,7 @@ export function ExchangesManager() {
   }
 
   return (
-    <View style={styles.container}>
+    <Pressable style={styles.container} onPress={() => setOpenMenuId(null)}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Gerenciar Exchanges</Text>
@@ -122,9 +143,11 @@ export function ExchangesManager() {
               {linkedExchanges.map((linkedExchange, index) => {
                 const exchangeNameLower = linkedExchange.name.toLowerCase()
                 const localIcon = exchangeLogos[exchangeNameLower]
+                const menuId = linkedExchange.exchange_id + '_' + index
+                const isMenuOpen = openMenuId === menuId
                 
                 return (
-                  <View key={linkedExchange.exchange_id + '_' + index} style={styles.card}>
+                  <View key={menuId} style={styles.card}>
                     <View style={styles.cardHeader}>
                       <View style={styles.cardLeft}>
                         <View style={styles.iconContainer}>
@@ -153,9 +176,33 @@ export function ExchangesManager() {
                           </Text>
                         </View>
                       </View>
-                      <TouchableOpacity style={styles.optionsButton}>
-                        <Text style={styles.optionsIcon}>⋮</Text>
-                      </TouchableOpacity>
+                      <View>
+                        <TouchableOpacity 
+                          style={styles.optionsButton}
+                          onPress={() => toggleMenu(menuId)}
+                        >
+                          <Text style={styles.optionsIcon}>⋮</Text>
+                        </TouchableOpacity>
+                        {isMenuOpen && (
+                          <View style={styles.dropdown}>
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={() => handleDisconnect(linkedExchange.exchange_id, linkedExchange.name)}
+                            >
+                              <Text style={styles.dropdownItemText}>🔌 Desconectar</Text>
+                            </TouchableOpacity>
+                            <View style={styles.dropdownDivider} />
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={() => handleDelete(linkedExchange.exchange_id, linkedExchange.name)}
+                            >
+                              <Text style={[styles.dropdownItemText, styles.dropdownItemDanger]}>
+                                🗑️ Deletar
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
                     </View>
                     <View style={styles.cardDetails}>
                       <View style={styles.detailRow}>
@@ -242,7 +289,7 @@ export function ExchangesManager() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </Pressable>
   )
 }
 
@@ -481,5 +528,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#ffffff",
+  },
+  dropdown: {
+    position: "absolute",
+    top: 40,
+    right: 0,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    minWidth: 160,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: "#f9fafb",
+    fontWeight: "500",
+  },
+  dropdownItemDanger: {
+    color: "#ef4444",
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#2a2a2a",
   },
 })
