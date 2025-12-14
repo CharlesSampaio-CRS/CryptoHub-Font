@@ -52,8 +52,8 @@ export default function App() {
             name="Wallet"
             component={WalletScreen}
             options={{
-              tabBarLabel: "Carteira",
-              tabBarIcon: ({ color }) => <WalletIcon color={color} />,
+              tabBarLabel: "Estratégias",
+              tabBarIcon: ({ color }) => <RobotIcon color={color} />,
             }}
           />
           <Tab.Screen
@@ -83,11 +83,15 @@ const ExchangeIcon = ({ color }: { color: string }) => (
   </svg>
 )
 
-const WalletIcon = ({ color }: { color: string }) => (
+const RobotIcon = ({ color }: { color: string }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" stroke={color} strokeWidth="2" />
-    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" stroke={color} strokeWidth="2" />
-    <path d="M18 12a2 2 0 0 0 0 4h4v-4z" stroke={color} strokeWidth="2" />
+    <rect x="5" y="11" width="14" height="10" rx="2" stroke={color} strokeWidth="2" />
+    <circle cx="9" cy="16" r="1" fill={color} />
+    <circle cx="15" cy="16" r="1" fill={color} />
+    <path d="M9 19h6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 3v5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <circle cx="12" cy="3" r="1" fill={color} />
+    <path d="M5 14h2M17 14h2" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </svg>
 )
 
