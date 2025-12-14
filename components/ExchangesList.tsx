@@ -71,7 +71,7 @@ export function ExchangesList() {
       <View style={styles.container}>
         <Text style={styles.title}>Exchanges</Text>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10b981" />
+          <ActivityIndicator size="large" color="#3b82f6" />
         </View>
       </View>
     )
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#10b981",
+    color: "#3b82f6",
   },
   filtersContainer: {
     paddingHorizontal: 4,
@@ -282,15 +282,15 @@ const styles = StyleSheet.create({
     width: 38,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     padding: 2,
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#374151",
   },
   toggleActive: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
+    backgroundColor: "#3b82f6",
+    borderColor: "#3b82f6",
   },
   toggleThumb: {
     width: 16,
@@ -305,11 +305,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: "#141414",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#1a1a1a",
+    borderColor: "#e3f2fd",
   },
   cardMargin: {
     marginBottom: 12,
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   changePositive: {
-    color: "#10b981",
+    color: "#3b82f6",
   },
   changeNegative: {
     color: "#ef4444",
@@ -388,12 +388,12 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
   tokensContainer: {
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#f0f7ff",
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: "#1a1a1a",
+    borderColor: "#e3f2fd",
   },
   tokensTitle: {
     fontSize: 13,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#1a1a1a",
+    borderBottomColor: "#e3f2fd",
   },
   tokenLeft: {
     flexDirection: "row",
@@ -424,17 +424,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenSymbolBadge: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#10b981",
+    borderColor: "#3b82f6",
   },
   tokenSymbol: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#10b981",
+    color: "#3b82f6",
     letterSpacing: 0.5,
   },
   tokenInfo: {

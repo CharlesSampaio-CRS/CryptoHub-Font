@@ -18,14 +18,14 @@ export default function App() {
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: "#0a0a0a",
-              borderTopColor: "#1a1a1a",
+              backgroundColor: "#ffffff",
+              borderTopColor: "#e0f2fe",
               height: 70,
               paddingBottom: 10,
               paddingTop: 10,
             },
-            tabBarActiveTintColor: "#10b981",
-            tabBarInactiveTintColor: "#6b7280",
+            tabBarActiveTintColor: "#3b82f6",
+            tabBarInactiveTintColor: "#94a3b8",
             tabBarLabelStyle: {
               fontSize: 12,
               fontWeight: "400",

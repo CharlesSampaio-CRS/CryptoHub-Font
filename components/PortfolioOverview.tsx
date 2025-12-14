@@ -67,7 +67,7 @@ export function PortfolioOverview() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#10b981" />
+        <ActivityIndicator size="large" color="#3b82f6" />
       </View>
     )
   }
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   badgePositive: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
+    backgroundColor: "rgba(59, 130, 246, 0.08)",
   },
   badgeNegative: {
     backgroundColor: "rgba(239, 68, 68, 0.08)",
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   textPositive: {
-    color: "#10b981",
+    color: "#3b82f6",
   },
   textNegative: {
     color: "#ef4444",

@@ -272,7 +272,7 @@ export function ExchangesManager() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10b981" />
+          <ActivityIndicator size="large" color="#3b82f6" />
           <Text style={styles.loadingText}>Carregando exchanges...</Text>
         </View>
       </View>
@@ -726,7 +726,7 @@ export function ExchangesManager() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#f0f7ff",
   },
   // Menu Modal Styles
   menuModalOverlay: {
@@ -736,10 +736,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuModal: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#bbdefb",
     minWidth: 200,
     overflow: "hidden",
   },
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
   },
   menuDivider: {
     height: 1,
-    backgroundColor: "#2a2a2a",
+    backgroundColor: "#bbdefb",
   },
   loadingContainer: {
     flex: 1,
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   retryButton: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -819,14 +819,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: "#141414",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#1a1a1a",
+    borderColor: "#e3f2fd",
   },
   tabActive: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
+    backgroundColor: "#3b82f6",
+    borderColor: "#3b82f6",
   },
   tabText: {
     fontSize: 14,
@@ -844,11 +844,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: "#141414",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#1a1a1a",
+    borderColor: "#e3f2fd",
     marginBottom: 12,
   },
   cardHeader: {
@@ -897,9 +897,9 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   statusBadgeActive: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    borderColor: "rgba(59, 130, 246, 0.3)",
   },
   statusBadgeInactive: {
     backgroundColor: "rgba(239, 68, 68, 0.1)",
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusDotActive: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
   },
   statusDotInactive: {
     backgroundColor: "#ef4444",
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   statusTextActive: {
-    color: "#10b981",
+    color: "#3b82f6",
   },
   statusTextInactive: {
     color: "#ef4444",
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   statusActive: {
-    color: "#10b981",
+    color: "#3b82f6",
   },
   statusInactive: {
     color: "#ef4444",
@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#1a1a1a",
+    borderTopColor: "#e3f2fd",
     gap: 8,
   },
   detailRow: {
@@ -970,20 +970,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   connectedBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#10b981",
+    borderColor: "#3b82f6",
   },
   connectedBadgeText: {
     fontSize: 12,
     fontWeight: "400",
-    color: "#10b981",
+    color: "#3b82f6",
   },
   connectButton: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   primaryButton: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#141414",
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -1077,7 +1077,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 16,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     borderRadius: 12,
     marginBottom: 24,
   },
@@ -1104,13 +1104,13 @@ const styles = StyleSheet.create({
     color: "#f9fafb",
   },
   input: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     borderRadius: 8,
     padding: 14,
     fontSize: 15,
     color: "#f9fafb",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#bbdefb",
   },
   inputHint: {
     fontSize: 12,
@@ -1125,10 +1125,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#bbdefb",
   },
   cancelButtonText: {
     fontSize: 15,
@@ -1139,7 +1139,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
     alignItems: "center",
   },
   submitButtonDisabled: {
@@ -1151,18 +1151,18 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   confirmModalContent: {
-    backgroundColor: "#141414",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     width: "90%",
     maxWidth: 400,
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#bbdefb",
     overflow: "hidden",
   },
   confirmModalHeader: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#2a2a2a",
+    borderBottomColor: "#bbdefb",
   },
   confirmModalTitle: {
     fontSize: 18,
@@ -1182,16 +1182,16 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: "#2a2a2a",
+    borderTopColor: "#bbdefb",
   },
   confirmCancelButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#e3f2fd",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#bbdefb",
   },
   confirmCancelButtonText: {
     fontSize: 15,

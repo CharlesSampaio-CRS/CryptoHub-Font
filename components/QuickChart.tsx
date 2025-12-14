@@ -8,7 +8,7 @@ const chartData = {
   datasets: [
     {
       data: [128000, 132000, 129500, 138000, 142000, 139000, 142580],
-      color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+      color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
       strokeWidth: 3,
     },
   ],
@@ -24,11 +24,11 @@ export function QuickChart() {
         width={screenWidth - 64}
         height={200}
         chartConfig={{
-          backgroundColor: "#141414",
-          backgroundGradientFrom: "#141414",
-          backgroundGradientTo: "#141414",
+          backgroundColor: "#ffffff",
+          backgroundGradientFrom: "#ffffff",
+          backgroundGradientTo: "#ffffff",
           decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+          color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
           labelColor: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
           style: {
             borderRadius: 16,
@@ -36,11 +36,11 @@ export function QuickChart() {
           propsForDots: {
             r: "4",
             strokeWidth: "2",
-            stroke: "#10b981",
+            stroke: "#3b82f6",
           },
           propsForBackgroundLines: {
             strokeDasharray: "",
-            stroke: "#1a1a1a",
+            stroke: "#e3f2fd",
             strokeWidth: 1,
           },
         }}
@@ -59,12 +59,12 @@ export function QuickChart() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#141414",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#1a1a1a",
+    borderColor: "#e3f2fd",
   },
   title: {
     fontSize: 15,

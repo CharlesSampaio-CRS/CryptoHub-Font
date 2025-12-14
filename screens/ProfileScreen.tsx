@@ -267,7 +267,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#f0f7ff",
   },
   scrollView: {
     flex: 1,
@@ -292,13 +292,13 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 2,
-    borderColor: "#10b981",
+    borderColor: "#3b82f6",
   },
   editAvatarButton: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "400",
-    color: "#10b981",
+    color: "#3b82f6",
     marginBottom: 6,
   },
   statLabel: {
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleActive: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#3b82f6",
   },
   toggleThumb: {
     width: 26,

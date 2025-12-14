@@ -16,7 +16,7 @@ export function WalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#f0f7ff",
   },
   scrollView: {
     flex: 1,
