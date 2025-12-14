@@ -30,7 +30,6 @@ const styles = StyleSheet.create({
   comingSoon: {
     fontSize: 24,
     fontWeight: "500",
-    color: "#f9fafb",
     marginBottom: 8,
   },
   description: {

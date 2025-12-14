@@ -76,7 +76,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "500",
-    color: "#f9fafb",
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -122,7 +121,6 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 18,
     fontWeight: "500",
-    color: "#f9fafb",
   },
   tokenDetails: {
     gap: 8,
@@ -139,7 +137,6 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#f9fafb",
   },
   totalCard: {
     backgroundColor: "#ffffff",

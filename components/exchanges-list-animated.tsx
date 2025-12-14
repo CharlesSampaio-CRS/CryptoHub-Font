@@ -236,7 +236,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "400",
-    color: "#f9fafb",
   },
   addButton: {
     paddingHorizontal: 12,
@@ -290,7 +289,6 @@ const styles = StyleSheet.create({
   exchangeName: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 2,
   },
   assetsCount: {
@@ -303,7 +301,6 @@ const styles = StyleSheet.create({
   balance: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 2,
   },
   expandIcon: {
@@ -366,7 +363,6 @@ const styles = StyleSheet.create({
   tokenAmount: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 2,
   },
   tokenPrice: {
@@ -376,7 +372,6 @@ const styles = StyleSheet.create({
   tokenValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#f9fafb",
   },
   tokenValueZero: {
     color: "#6b7280",

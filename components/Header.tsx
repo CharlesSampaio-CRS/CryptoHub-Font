@@ -46,14 +46,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iconButton: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
   },
   iconText: {
-    fontSize: 18,
+    fontSize: 16,
   },
 })

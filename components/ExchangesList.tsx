@@ -69,7 +69,7 @@ export function ExchangesList() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Exchanges</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Exchanges</Text>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3b82f6" />
         </View>
@@ -80,7 +80,7 @@ export function ExchangesList() {
   if (error || !data) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Exchanges</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Exchanges</Text>
         <Text style={styles.errorText}>{error || "Dados não disponíveis"}</Text>
       </View>
     )
@@ -99,7 +99,7 @@ export function ExchangesList() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Exchanges</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Exchanges</Text>
         <TouchableOpacity style={styles.addButton}>
           <Text style={styles.addButtonText}>+ Adicionar</Text>
         </TouchableOpacity>
@@ -249,7 +249,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "400",
-    color: "#f9fafb",
   },
   addButton: {
     paddingHorizontal: 12,
@@ -325,14 +324,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   logoContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    padding: 6,
+    padding: 5,
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
@@ -341,12 +340,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   logoFallback: {
-    fontSize: 20,
+    fontSize: 16,
   },
   exchangeName: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 2,
   },
   assetsCount: {
@@ -359,7 +357,6 @@ const styles = StyleSheet.create({
   balance: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 2,
   },
   change: {
@@ -443,7 +440,6 @@ const styles = StyleSheet.create({
   tokenAmount: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 2,
   },
   tokenPrice: {
@@ -453,7 +449,6 @@ const styles = StyleSheet.create({
   tokenValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#f9fafb",
   },
   tokenValueZero: {
     color: "#6b7280",

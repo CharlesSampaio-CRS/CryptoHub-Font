@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuIcon: {
-    fontSize: 20,
+    fontSize: 18,
     marginRight: 12,
   },
   menuItemText: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     fontWeight: "300",
   },
   menuItemArrow: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "300",
     opacity: 0.4,
   },

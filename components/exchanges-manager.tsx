@@ -755,7 +755,6 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
-    color: "#f9fafb",
     fontWeight: "500",
   },
   menuItemDanger: {
@@ -801,7 +800,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "500",
-    color: "#f9fafb",
     marginBottom: 4,
   },
   headerSubtitle: {
@@ -884,7 +882,6 @@ const styles = StyleSheet.create({
   exchangeName: {
     fontSize: 16,
     fontWeight: "400",
-    color: "#f9fafb",
     marginBottom: 6,
   },
   statusBadge: {
@@ -966,7 +963,6 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 13,
-    color: "#f9fafb",
     fontWeight: "500",
   },
   connectedBadge: {
@@ -1018,7 +1014,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: "500",
-    color: "#f9fafb",
     marginBottom: 8,
     textAlign: "center",
   },
@@ -1062,7 +1057,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "500",
-    color: "#f9fafb",
   },
   closeButton: {
     padding: 8,
@@ -1084,7 +1078,6 @@ const styles = StyleSheet.create({
   modalExchangeName: {
     fontSize: 18,
     fontWeight: "400",
-    color: "#f9fafb",
   },
   modalExchangeCountry: {
     fontSize: 14,
@@ -1101,14 +1094,12 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#f9fafb",
   },
   input: {
     backgroundColor: "#e3f2fd",
     borderRadius: 8,
     padding: 14,
     fontSize: 15,
-    color: "#f9fafb",
     borderWidth: 1,
     borderColor: "#bbdefb",
   },
@@ -1167,7 +1158,6 @@ const styles = StyleSheet.create({
   confirmModalTitle: {
     fontSize: 18,
     fontWeight: "500",
-    color: "#f9fafb",
   },
   confirmModalBody: {
     padding: 20,
