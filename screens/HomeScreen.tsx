@@ -1,4 +1,5 @@
-import { StyleSheet, ScrollView, SafeAreaView } from "react-native"
+import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
+import { useRef, useState } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { QuickChart } from "../components/QuickChart"
@@ -7,19 +8,43 @@ import { useTheme } from "../contexts/ThemeContext"
 
 export function HomeScreen() {
   const { colors } = useTheme()
+  const scrollY = useRef(new Animated.Value(0)).current
+  const [isScrollingDown, setIsScrollingDown] = useState(false)
+  const lastScrollY = useRef(0)
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: true,
+      listener: (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y
+        
+        // Detectar direção do scroll
+        if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+          setIsScrollingDown(true)
+        } else if (currentScrollY < lastScrollY.current) {
+          setIsScrollingDown(false)
+        }
+        
+        lastScrollY.current = currentScrollY
+      },
+    }
+  )
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header />
-      <ScrollView
+      <Header hideIcons={isScrollingDown} />
+      <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         <PortfolioOverview />
         <QuickChart />
         <ExchangesList />
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   )
 }
