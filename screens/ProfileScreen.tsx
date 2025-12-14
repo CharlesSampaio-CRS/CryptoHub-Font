@@ -124,20 +124,13 @@ export function ProfileScreen() {
         <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={styles.avatarContainer}>
             <Image 
-              source={{ uri: 'https://ui-avatars.com/api/?name=Charles+Roberto&background=10b981&color=fff&size=120' }}
+              source={{ uri: 'https://ui-avatars.com/api/?name=Charles+Roberto&background=3b82f6&color=fff&size=120' }}
               style={styles.avatar}
             />
-            <TouchableOpacity style={[styles.editAvatarButton, { borderColor: colors.card }]}>
-              <Text style={styles.editAvatarText}>✏️</Text>
-            </TouchableOpacity>
           </View>
           
           <Text style={[styles.userName, { color: colors.text }]}>Charles Roberto</Text>
           <Text style={[styles.userEmail, { color: colors.textSecondary }]}>charles.roberto@example.com</Text>
-          
-          <TouchableOpacity style={[styles.editProfileButton, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-            <Text style={[styles.editProfileText, { color: colors.text }]}>Editar Perfil</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Estatísticas */}
@@ -277,180 +270,160 @@ const styles = StyleSheet.create({
   },
   // Profile Card
   profileCard: {
-    borderRadius: 20,
-    padding: 28,
+    borderRadius: 16,
+    padding: 24,
     alignItems: "center",
-    marginBottom: 20,
-    borderWidth: 1,
+    marginBottom: 16,
+    borderWidth: 0,
   },
   avatarContainer: {
-    position: "relative",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 2,
-    borderColor: "#3b82f6",
-  },
-  editAvatarButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "#3b82f6",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-  },
-  editAvatarText: {
-    fontSize: 13,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 0,
   },
   userName: {
-    fontSize: 22,
-    fontWeight: "400",
+    fontSize: 20,
+    fontWeight: "300",
     letterSpacing: -0.3,
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
-    marginBottom: 18,
-  },
-  editProfileButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 11,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  editProfileText: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "300",
   },
   // Stats
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: 20,
+    gap: 10,
   },
   statCard: {
     flex: 1,
-    borderRadius: 16,
-    padding: 18,
+    borderRadius: 12,
+    padding: 16,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: "400",
+    fontSize: 18,
+    fontWeight: "300",
     color: "#3b82f6",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "300",
     color: "#9ca3af",
     textAlign: "center",
   },
   // Menu
   menuSection: {
-    marginBottom: 26,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: "400",
-    marginBottom: 14,
-    paddingHorizontal: 2,
-    letterSpacing: 0.2,
+    fontSize: 13,
+    fontWeight: "300",
+    marginBottom: 12,
+    paddingHorizontal: 4,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    opacity: 0.6,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 10,
-    borderWidth: 1,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 0,
   },
   menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   menuIcon: {
-    fontSize: 22,
-    marginRight: 14,
+    fontSize: 20,
+    marginRight: 12,
   },
   menuItemText: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "300",
   },
   menuItemArrow: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "300",
-    opacity: 0.5,
+    opacity: 0.4,
   },
   // Logout
   logoutButton: {
     backgroundColor: "#ef4444",
-    padding: 16,
-    borderRadius: 14,
+    padding: 14,
+    borderRadius: 12,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
+    marginTop: 8,
   },
   logoutText: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "300",
   },
   version: {
     textAlign: "center",
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: "300",
     marginBottom: 32,
-    opacity: 0.5,
+    opacity: 0.4,
   },
   // Animated Header
   animatedHeader: {
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 16,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "400",
+    fontSize: 20,
+    fontWeight: "300",
     marginBottom: 2,
     letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: "300",
   },
   // Theme Toggle
   themeSubtext: {
-    fontSize: 13,
-    marginTop: 4,
-    opacity: 0.7,
+    fontSize: 12,
+    fontWeight: "300",
+    marginTop: 3,
+    opacity: 0.6,
   },
   toggle: {
-    width: 54,
-    height: 32,
-    borderRadius: 16,
+    width: 50,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#d4d4d4",
-    padding: 3,
+    padding: 2,
     justifyContent: "center",
   },
   toggleActive: {
     backgroundColor: "#3b82f6",
   },
   toggleThumb: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: "#ffffff",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
     elevation: 2,
   },
   toggleThumbActive: {

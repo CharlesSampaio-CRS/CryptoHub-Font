@@ -32,12 +32,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "500",
-    letterSpacing: -0.3,
+    fontSize: 18,
+    fontWeight: "300",
+    letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 2,
     fontWeight: "300",
   },

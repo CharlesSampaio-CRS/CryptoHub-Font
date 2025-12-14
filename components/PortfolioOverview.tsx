@@ -162,8 +162,8 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   value: {
-    fontSize: 42,
-    fontWeight: "300",
+    fontSize: 38,
+    fontWeight: "200",
     letterSpacing: -1,
     marginBottom: 16,
   },
