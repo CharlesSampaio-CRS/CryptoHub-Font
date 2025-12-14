@@ -170,7 +170,6 @@ export function ExchangesListAnimated() {
       setData(response)
     } catch (err) {
       setError("Erro ao carregar exchanges")
-      console.error(err)
     } finally {
       setLoading(false)
     }

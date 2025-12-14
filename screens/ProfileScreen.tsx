@@ -75,7 +75,6 @@ export function ProfileScreen() {
         totalValueUSD,
       })
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error)
     } finally {
       setLoading(false)
     }
@@ -89,7 +88,6 @@ export function ProfileScreen() {
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Sair', style: 'destructive', onPress: () => {
           // Implementar logout
-          console.log('Logout')
         }},
       ]
     )

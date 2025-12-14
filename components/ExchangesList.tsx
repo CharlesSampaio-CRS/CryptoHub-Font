@@ -32,7 +32,6 @@ export function ExchangesList() {
     
     // Listener para atualização de balances
     const handleBalancesUpdate = () => {
-      console.log('📡 ExchangesList recebeu evento de atualização')
       fetchBalances(true) // Force refresh quando receber evento
     }
     
@@ -59,11 +58,9 @@ export function ExchangesList() {
       setData(response)
       
       if (forceRefresh) {
-        console.log('✅ ExchangesList atualizado com sucesso!')
       }
     } catch (err) {
       setError("Erro ao carregar exchanges")
-      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -157,8 +154,6 @@ export function ExchangesList() {
           
           // Debug log
           if (!logoSource) {
-            console.log('Logo not found for:', exchange.name, '(lowercase:', exchangeNameLower + ')')
-            console.log('Available logos:', Object.keys(exchangeLogos))
           }
 
           return (

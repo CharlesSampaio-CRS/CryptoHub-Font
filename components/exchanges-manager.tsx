@@ -57,7 +57,6 @@ export function ExchangesManager() {
       setLinkedExchanges(linkedData.exchanges)
     } catch (err) {
       setError("Erro ao carregar exchanges")
-      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -66,13 +65,8 @@ export function ExchangesManager() {
   const handleConnect = async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
-    console.log('handleConnect chamado com:', { exchangeId, exchangeName })
-    console.log('🔴 Iniciando reconexão...')
-    
     try {
       const url = `${config.apiBaseUrl}/exchanges/connect`
-      console.log('🌐 Chamando POST em:', url)
-      console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: exchangeId })
       
       const response = await fetch(url, {
         method: 'POST',
@@ -85,29 +79,21 @@ export function ExchangesManager() {
         }),
       })
 
-      console.log('✅ Response status:', response.status)
       const data = await response.json()
-      console.log('📦 Response data:', data)
 
       if (response.ok && data.success) {
-        console.log('✅ Sucesso! Exchange conectada')
-        
         // Recarregar lista de exchanges
         await fetchExchanges()
         
         // Forçar atualização dos balances
-        console.log('🔄 Atualizando balances...')
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
-        console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao conectar exchange')
       }
     } catch (err) {
-      console.error('❌ Erro ao conectar exchange:', err)
       alert('Não foi possível conectar a exchange')
     }
   }
@@ -121,15 +107,11 @@ export function ExchangesManager() {
   }
 
   const confirmDisconnect = async () => {
-    console.log('confirmDisconnect chamado com:', { confirmExchangeId, confirmExchangeName })
     setConfirmModalVisible(false)
     
-    console.log('🔴 Confirmação aceita! Iniciando chamada...')
     
     try {
       const url = '${config.apiBaseUrl}/exchanges/disconnect'
-      console.log('🌐 Chamando POST em:', url)
-      console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: confirmExchangeId })
       
       const response = await fetch(url, {
         method: 'POST',
@@ -142,29 +124,22 @@ export function ExchangesManager() {
         }),
       })
 
-      console.log('✅ Response status:', response.status)
       const data = await response.json()
-      console.log('📦 Response data:', data)
 
       if (response.ok && data.success) {
-        console.log('✅ Sucesso! Exchange desconectada')
         
         // Recarregar lista de exchanges
         await fetchExchanges()
         
         // Forçar atualização dos balances
-        console.log('🔄 Atualizando balances...')
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
-        console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao desconectar exchange')
       }
     } catch (err) {
-      console.error('❌ Erro ao desconectar exchange:', err)
       alert('Não foi possível desconectar a exchange')
     }
   }
@@ -178,15 +153,11 @@ export function ExchangesManager() {
   }
 
   const confirmDelete = async () => {
-    console.log('confirmDelete chamado com:', { confirmExchangeId, confirmExchangeName })
     setConfirmModalVisible(false)
     
-    console.log('🔴 Confirmação aceita! Iniciando chamada DELETE...')
     
     try {
       const url = '${config.apiBaseUrl}/exchanges/delete'
-      console.log('🌐 Chamando DELETE em:', url)
-      console.log('📦 Payload:', { user_id: 'charles_test_user', exchange_id: confirmExchangeId })
       
       const response = await fetch(url, {
         method: 'DELETE',
@@ -199,29 +170,22 @@ export function ExchangesManager() {
         }),
       })
 
-      console.log('✅ Response status:', response.status)
       const data = await response.json()
-      console.log('📦 Response data:', data)
 
       if (response.ok && data.success) {
-        console.log('✅ Sucesso! Exchange deletada')
         
         // Recarregar lista de exchanges
         await fetchExchanges()
         
         // Forçar atualização dos balances
-        console.log('🔄 Atualizando balances...')
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
-        console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao deletar exchange')
       }
     } catch (err) {
-      console.error('❌ Erro ao deletar exchange:', err)
       alert('Não foi possível deletar a exchange')
     }
   }
@@ -249,8 +213,6 @@ export function ExchangesManager() {
   const handleLinkExchange = async () => {
     if (!selectedExchange) return
     
-    console.log('🔗 handleLinkExchange chamado')
-    console.log('📦 Exchange selecionada:', selectedExchange)
     
     if (!apiKey.trim() || !apiSecret.trim()) {
       alert('Por favor, preencha API Key e API Secret')
@@ -274,8 +236,6 @@ export function ExchangesManager() {
         ...(selectedExchange.requires_passphrase && { passphrase: passphrase.trim() })
       }
       
-      console.log('🌐 Chamando POST em:', url)
-      console.log('📦 Payload:', { ...payload, api_key: '***', api_secret: '***', passphrase: '***' })
       
       const response = await fetch(url, {
         method: 'POST',
@@ -285,30 +245,23 @@ export function ExchangesManager() {
         body: JSON.stringify(payload)
       })
 
-      console.log('✅ Response status:', response.status)
       const data = await response.json()
-      console.log('📦 Response data:', data)
 
       if (response.ok && data.success) {
-        console.log('✅ Sucesso! Exchange conectada')
         closeConnectModal()
         
         // Recarregar lista de exchanges
         await fetchExchanges()
         
         // Forçar atualização dos balances
-        console.log('🔄 Atualizando balances...')
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        console.log('✅ Balances atualizados!')
         
         // Notificar outros componentes
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
-        console.log('❌ Erro na resposta:', data.error)
         alert(data.error || 'Falha ao conectar exchange')
       }
     } catch (err) {
-      console.error('❌ Erro ao conectar exchange:', err)
       alert('Não foi possível conectar a exchange')
     } finally {
       setConnecting(false)
@@ -551,10 +504,8 @@ export function ExchangesManager() {
                         e.stopPropagation()
                         if (exchange) {
                           if (isActive) {
-                            console.log('Desativar - Exchange:', exchange)
                             handleDisconnect(exchange.exchange_id, exchange.name)
                           } else {
-                            console.log('Ativar - Exchange:', exchange)
                             handleConnect(exchange.exchange_id, exchange.name)
                           }
                         }
@@ -573,7 +524,6 @@ export function ExchangesManager() {
                       onPress={(e) => {
                         e.stopPropagation()
                         if (exchange) {
-                          console.log('Deletar - Exchange:', exchange)
                           handleDelete(exchange.exchange_id, exchange.name)
                         }
                       }}

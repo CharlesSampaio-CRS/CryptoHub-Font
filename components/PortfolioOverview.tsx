@@ -17,7 +17,6 @@ export function PortfolioOverview() {
     
     // Listener para atualização de balances
     const handleBalancesUpdate = () => {
-      console.log('📡 PortfolioOverview recebeu evento de atualização')
       fetchBalances(true) // Force refresh quando receber evento
     }
     
@@ -32,7 +31,6 @@ export function PortfolioOverview() {
     try {
       if (forceRefresh) {
         setRefreshing(true)
-        console.log('🔄 Forçando atualização dos balances...')
       } else {
         setLoading(true)
       }
@@ -49,7 +47,6 @@ export function PortfolioOverview() {
       setData(response)
       
       if (forceRefresh) {
-        console.log('✅ Balances atualizados com sucesso!')
         // Disparar evento apenas quando for refresh manual (botão)
         if (emitEvent) {
           window.dispatchEvent(new Event('balancesUpdated'))
@@ -57,7 +54,6 @@ export function PortfolioOverview() {
       }
     } catch (err) {
       setError("Erro ao carregar dados")
-      console.error(err)
     } finally {
       setLoading(false)
       setRefreshing(false)
