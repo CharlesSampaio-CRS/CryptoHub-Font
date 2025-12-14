@@ -43,17 +43,18 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
   },
   iconButton: {
-    width: 34,
-    height: 34,
+    width: 30,
+    height: 30,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   iconText: {
-    fontSize: 16,
+    fontSize: 14,
+    opacity: 0.6,
   },
 })

@@ -147,9 +147,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   refreshButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -158,8 +158,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   refreshIcon: {
-    fontSize: 20,
-    fontWeight: "400",
+    fontSize: 18,
+    fontWeight: "300",
+    opacity: 0.7,
   },
   value: {
     fontSize: 38,

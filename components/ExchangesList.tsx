@@ -321,18 +321,18 @@ const styles = StyleSheet.create({
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   logoContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    padding: 5,
-    borderWidth: 1,
+    padding: 4,
+    borderWidth: 0.5,
     borderColor: "#e5e7eb",
   },
   logoImage: {
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   logoFallback: {
-    fontSize: 16,
+    fontSize: 14,
   },
   exchangeName: {
     fontSize: 14,
@@ -422,10 +422,10 @@ const styles = StyleSheet.create({
   },
   tokenSymbolBadge: {
     backgroundColor: "#e3f2fd",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 0.5,
     borderColor: "#3b82f6",
   },
   tokenSymbol: {
