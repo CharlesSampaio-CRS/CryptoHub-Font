@@ -28,7 +28,7 @@ export default function App() {
             tabBarInactiveTintColor: "#6b7280",
             tabBarLabelStyle: {
               fontSize: 12,
-              fontWeight: "600",
+              fontWeight: "400",
             },
           }}
         >

@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "400",
     letterSpacing: 0.2,
   },
   refreshButton: {
@@ -159,11 +159,11 @@ const styles = StyleSheet.create({
   },
   refreshIcon: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   value: {
     fontSize: 42,
-    fontWeight: "600",
+    fontWeight: "300",
     letterSpacing: -1,
     marginBottom: 16,
   },
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "400",
   },
   textPositive: {
     color: "#10b981",
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   changeValue: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   timeframe: {
     fontSize: 12,

@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#ffffff",
   },
   header: {
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
     marginBottom: 4,
   },
@@ -830,7 +830,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#9ca3af",
   },
   tabTextActive: {
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
   },
   exchangeName: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
     marginBottom: 6,
   },
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   statusTextActive: {
     color: "#10b981",
@@ -979,7 +979,7 @@ const styles = StyleSheet.create({
   },
   connectedBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#10b981",
   },
   connectButton: {
@@ -990,7 +990,7 @@ const styles = StyleSheet.create({
   },
   connectButtonText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#ffffff",
   },
   infoBox: {
@@ -1017,7 +1017,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
     marginBottom: 8,
     textAlign: "center",
@@ -1036,7 +1036,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#ffffff",
   },
 
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
   },
   closeButton: {
@@ -1083,7 +1083,7 @@ const styles = StyleSheet.create({
   },
   modalExchangeName: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
   },
   modalExchangeCountry: {
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
   },
   input: {
@@ -1132,7 +1132,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#9ca3af",
   },
   submitButton: {
@@ -1147,7 +1147,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#ffffff",
   },
   confirmModalContent: {
@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
   },
   confirmModalTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
   },
   confirmModalBody: {
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
   },
   confirmCancelButtonText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#9ca3af",
   },
   confirmSubmitButton: {
@@ -1210,7 +1210,7 @@ const styles = StyleSheet.create({
   },
   confirmSubmitButtonText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#ffffff",
   },
 })

@@ -25,19 +25,19 @@ interface ThemeContextType {
 }
 
 const lightColors: ThemeColors = {
-  background: '#fafafa',
+  background: '#ffffff',
   surface: '#ffffff',
-  surfaceSecondary: '#f5f5f5',
-  border: '#e8e8e8',
-  text: '#1a1a1a',
-  textSecondary: '#737373',
+  surfaceSecondary: '#f8f9fa',
+  border: '#e9ecef',
+  text: '#212529',
+  textSecondary: '#868e96',
   primary: '#10b981',
   primaryDark: '#059669',
   success: '#10b981',
   danger: '#ef4444',
   warning: '#f59e0b',
   card: '#ffffff',
-  cardBorder: '#f0f0f0',
+  cardBorder: '#f1f3f5',
 }
 
 const darkColors: ThemeColors = {
@@ -59,7 +59,7 @@ const darkColors: ThemeColors = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark') // Default to dark
+  const [theme, setTheme] = useState<Theme>('light') // Default to light
 
   const colors = theme === 'light' ? lightColors : darkColors
 

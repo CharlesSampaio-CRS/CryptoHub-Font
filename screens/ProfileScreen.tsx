@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 22,
-    fontWeight: "600",
+    fontWeight: "400",
     letterSpacing: -0.3,
     marginBottom: 4,
   },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#10b981",
     marginBottom: 6,
   },
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "400",
     marginBottom: 14,
     paddingHorizontal: 2,
     letterSpacing: 0.2,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: "600",
+    fontWeight: "400",
     marginBottom: 2,
     letterSpacing: -0.3,
   },

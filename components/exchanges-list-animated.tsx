@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
   },
   addButton: {
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#10b981",
   },
   list: {
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   exchangeName: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
     marginBottom: 2,
   },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   balance: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
     marginBottom: 2,
   },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   tokensTitle: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#9ca3af",
     marginBottom: 12,
     textTransform: "uppercase",
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   tokenSymbol: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#10b981",
     letterSpacing: 0.5,
   },
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
   tokenAmount: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
     marginBottom: 2,
   },
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   },
   tokenValue: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
   },
   tokenValueZero: {

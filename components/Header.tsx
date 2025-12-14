@@ -33,13 +33,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "500",
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
     marginTop: 2,
-    fontWeight: "400",
+    fontWeight: "300",
   },
   actions: {
     flexDirection: "row",

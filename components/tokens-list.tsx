@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
     marginBottom: 16,
     paddingHorizontal: 16,
@@ -115,13 +115,13 @@ const styles = StyleSheet.create({
   },
   symbol: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#10b981",
     letterSpacing: 0.5,
   },
   value: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#f9fafb",
   },
   tokenDetails: {
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
     color: "#f9fafb",
   },
   totalCard: {
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#10b981",
   },
 })
