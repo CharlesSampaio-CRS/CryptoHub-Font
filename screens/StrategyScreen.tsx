@@ -55,7 +55,7 @@ export function StrategyScreen() {
     loadExecutions()
   }, [])
 
-  const loadStrategies = async () => {
+  const loadStrategies = async (skipStats: boolean = false) => {
     try {
       setLoading(true)
       const apiStrategies = await strategiesService.getUserStrategies(USER_ID)
@@ -74,12 +74,16 @@ export function StrategyScreen() {
       })
 
       // Load stats in parallel with Promise.allSettled to not block on failures
-      const statsPromises = validStrategies.map(apiStrategy => {
-        const strategyId = apiStrategy._id || apiStrategy.id || ""
-        return strategiesService.getStrategyStats(strategyId, USER_ID)
-      })
-
-      const statsResults = await Promise.allSettled(statsPromises)
+      // Pula busca de stats se for logo após criar estratégia (não terá dados ainda)
+      let statsResults: PromiseSettledResult<any>[] = []
+      
+      if (!skipStats) {
+        const statsPromises = validStrategies.map(apiStrategy => {
+          const strategyId = apiStrategy._id || apiStrategy.id || ""
+          return strategiesService.getStrategyStats(strategyId, USER_ID)
+        })
+        statsResults = await Promise.allSettled(statsPromises)
+      }
 
       // Transform with preloaded stats
       const transformedStrategies: Strategy[] = validStrategies.map((apiStrategy, index) => {
@@ -88,29 +92,33 @@ export function StrategyScreen() {
         
         // Get stats from parallel load result
         let stats = undefined
-        const statsResult = statsResults[index]
         
-        if (statsResult.status === 'fulfilled') {
-          const statsResponse = statsResult.value
-          stats = {
-            totalExecutions: statsResponse.stats.total_executions,
-            totalBuys: statsResponse.stats.total_buys,
-            totalSells: statsResponse.stats.total_sells,
-            lastExecutionAt: statsResponse.stats.last_execution_at 
-              ? new Date(statsResponse.stats.last_execution_at) 
-              : null,
-            totalPnlUsd: statsResponse.stats.total_pnl_usd,
-            winRate: statsResponse.stats.win_rate,
-          }
-        } else {
-          // Apenas loga warning se não for erro 404 (estratégia nova)
-          const errorMsg = statsResult.reason?.message || ''
-          const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
+        // Se não pulou stats, processa o resultado
+        if (!skipStats && statsResults[index]) {
+          const statsResult = statsResults[index]
           
-          if (!is404) {
-            console.warn(`⚠️ Failed to load stats for strategy ${strategyId} (${apiStrategy.token}):`, statsResult.reason?.message || statsResult.reason)
+          if (statsResult.status === 'fulfilled') {
+            const statsResponse = statsResult.value
+            stats = {
+              totalExecutions: statsResponse.stats.total_executions,
+              totalBuys: statsResponse.stats.total_buys,
+              totalSells: statsResponse.stats.total_sells,
+              lastExecutionAt: statsResponse.stats.last_execution_at 
+                ? new Date(statsResponse.stats.last_execution_at) 
+                : null,
+              totalPnlUsd: statsResponse.stats.total_pnl_usd,
+              winRate: statsResponse.stats.win_rate,
+            }
+          } else {
+            // Apenas loga warning se não for erro 404 (estratégia nova)
+            const errorMsg = statsResult.reason?.message || ''
+            const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
+            
+            if (!is404) {
+              console.warn(`⚠️ Failed to load stats for strategy ${strategyId} (${apiStrategy.token}):`, statsResult.reason?.message || statsResult.reason)
+            }
+            // Stats ficam undefined para estratégias novas
           }
-          // Stats ficam undefined para estratégias novas
         }
         
         return {
@@ -233,9 +241,11 @@ export function StrategyScreen() {
   const handleStrategyCreated = useCallback(async () => {
     setCreateModalVisible(false)
     try {
+      // Recarrega estratégias sem buscar stats (estratégia nova não terá execuções)
+      // Recarrega execuções também (que será vazio para estratégia nova)
       await Promise.all([
-        loadStrategies(), // Reload strategies
-        loadExecutions()  // Reload executions
+        loadStrategies(true), // skipStats = true
+        loadExecutions()
       ])
     } catch (error) {
       console.error("Error reloading data after strategy creation:", error)
