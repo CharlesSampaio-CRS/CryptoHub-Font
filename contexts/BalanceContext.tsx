@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
+import { Platform } from 'react-native'
 import { apiService } from '@/services/api'
 import { BalanceResponse } from '@/types/api'
 import { config } from '@/lib/config'
+
+// Event emitter simples para React Native
+const listeners = new Set<() => void>()
 
 interface BalanceContextType {
   data: BalanceResponse | null
@@ -36,7 +40,8 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       // Emite evento para outros componentes que precisem saber da atualização
       if (emitEvent) {
         setTimeout(() => {
-          window.dispatchEvent(new Event('balancesUpdated'))
+          // Notifica todos os listeners
+          listeners.forEach(listener => listener())
         }, 100)
       }
     } catch (err) {
@@ -63,10 +68,12 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       setTimeout(() => fetchBalances(true, false, true), 100)
     }
     
-    window.addEventListener('balancesUpdated', handleBalancesUpdate)
+    // Adiciona listener ao Set
+    listeners.add(handleBalancesUpdate)
     
     return () => {
-      window.removeEventListener('balancesUpdated', handleBalancesUpdate)
+      // Remove listener na limpeza
+      listeners.delete(handleBalancesUpdate)
     }
   }, [fetchBalances])
 
