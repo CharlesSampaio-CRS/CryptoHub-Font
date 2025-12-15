@@ -331,7 +331,13 @@ class StrategiesService {
 
           return execution
         } catch (error: any) {
-          console.warn(`⚠️ Failed to load executions for strategy ${strategyId} (${strategy.token}):`, error.message || error)
+          // Apenas loga se não for erro 404 (estratégia nova sem execuções)
+          const errorMsg = error.message || ''
+          const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
+          
+          if (!is404) {
+            console.warn(`⚠️ Failed to load executions for strategy ${strategyId} (${strategy.token}):`, error.message || error)
+          }
           return null
         }
       })

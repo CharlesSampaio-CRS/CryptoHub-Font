@@ -103,7 +103,14 @@ export function StrategyScreen() {
             winRate: statsResponse.stats.win_rate,
           }
         } else {
-          console.warn(`⚠️ Failed to load stats for strategy ${strategyId} (${apiStrategy.token}):`, statsResult.reason?.message || statsResult.reason)
+          // Apenas loga warning se não for erro 404 (estratégia nova)
+          const errorMsg = statsResult.reason?.message || ''
+          const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
+          
+          if (!is404) {
+            console.warn(`⚠️ Failed to load stats for strategy ${strategyId} (${apiStrategy.token}):`, statsResult.reason?.message || statsResult.reason)
+          }
+          // Stats ficam undefined para estratégias novas
         }
         
         return {
