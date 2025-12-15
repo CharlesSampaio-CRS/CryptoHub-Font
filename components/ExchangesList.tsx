@@ -60,6 +60,32 @@ export const ExchangesList = memo(function ExchangesList() {
     }
   }, [t, data])
 
+  // Todos os hooks devem estar ANTES de qualquer return condicional
+  const toggleExpandExchange = useCallback((exchangeId: string) => {
+    setExpandedExchangeId(prev => prev === exchangeId ? null : exchangeId)
+  }, [])
+
+  const toggleZeroBalanceExchanges = useCallback(() => {
+    setHideZeroBalanceExchanges(prev => !prev)
+  }, [])
+
+  const toggleZeroBalanceTokens = useCallback(() => {
+    setHideZeroBalanceTokens(prev => !prev)
+  }, [])
+
+  // Filtrar exchanges - só executa se data existir
+  const filteredExchanges = useMemo(() => {
+    if (!data) return []
+    return data.exchanges
+      .filter(ex => ex.success)
+      .filter(ex => {
+        if (hideZeroBalanceExchanges) {
+          return parseFloat(ex.total_usd) > 0
+        }
+        return true
+      })
+  }, [data, hideZeroBalanceExchanges])
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -79,31 +105,6 @@ export const ExchangesList = memo(function ExchangesList() {
       </View>
     )
   }
-
-  // Filtrar exchanges com saldo zero se toggle ativado - memoizado
-  const filteredExchanges = useMemo(() => 
-    data.exchanges
-      .filter(ex => ex.success)
-      .filter(ex => {
-        if (hideZeroBalanceExchanges) {
-          return parseFloat(ex.total_usd) > 0
-        }
-        return true
-      }),
-    [data.exchanges, hideZeroBalanceExchanges]
-  )
-
-  const toggleExpandExchange = useCallback((exchangeId: string) => {
-    setExpandedExchangeId(prev => prev === exchangeId ? null : exchangeId)
-  }, [])
-
-  const toggleZeroBalanceExchanges = useCallback(() => {
-    setHideZeroBalanceExchanges(prev => !prev)
-  }, [])
-
-  const toggleZeroBalanceTokens = useCallback(() => {
-    setHideZeroBalanceTokens(prev => !prev)
-  }, [])
   
   return (
     <View style={styles.container}>
