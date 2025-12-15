@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native"
 import { useEffect, useRef, memo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
+import { useLanguage } from "../contexts/LanguageContext"
 
 interface HeaderProps {
   hideIcons?: boolean
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
+  const { t } = useLanguage()
   const iconOpacity = useRef(new Animated.Value(1)).current
   const iconScale = useRef(new Animated.Value(1)).current
   
@@ -32,7 +34,7 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
     <View style={[styles.header, { backgroundColor: colors.background }]}>
       <View>
         <Text style={[styles.title, { color: colors.text }]}>CryptoHub</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Seus investimentos unificados</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
       </View>
 
       <Animated.View 

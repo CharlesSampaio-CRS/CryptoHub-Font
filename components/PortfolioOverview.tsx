@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
-import { useEffect, useState, memo } from "react"
+import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 
-export const PortfolioOverview = memo(function PortfolioOverview() {
+export function PortfolioOverview() {
   const { colors } = useTheme()
+  const { t } = useLanguage()
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -15,48 +17,43 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   useEffect(() => {
     fetchBalances()
     
-    // Listener para atualização de balances
     const handleBalancesUpdate = () => {
-      fetchBalances(true) // Force refresh quando receber evento
+      setTimeout(() => fetchBalances(true), 100)
     }
+    
+    // Auto-refresh a cada 5 minutos (300000ms) - silencioso
+    const autoRefreshInterval = setInterval(() => {
+      fetchBalances(true, false, true)
+    }, 5 * 60 * 1000)
     
     window.addEventListener('balancesUpdated', handleBalancesUpdate)
     
     return () => {
       window.removeEventListener('balancesUpdated', handleBalancesUpdate)
+      clearInterval(autoRefreshInterval)
     }
   }, [])
 
-  const fetchBalances = async (forceRefresh = false, emitEvent = false) => {
+  const fetchBalances = async (forceRefresh = false, emitEvent = false, silent = false) => {
     try {
-      if (forceRefresh) {
-        setRefreshing(true)
-      } else {
-        setLoading(true)
+      if (!silent) {
+        forceRefresh ? setRefreshing(true) : setLoading(true)
       }
       setError(null)
       
-      const url = forceRefresh 
-        ? `${config.apiBaseUrl}/balances?user_id=${config.userId}&force_refresh=true`
-        : undefined
-      
-      const response = url 
-        ? await fetch(url).then(res => res.json())
-        : await apiService.getBalances(config.userId)
-      
+      const response = await apiService.getBalances(config.userId)
       setData(response)
       
-      if (forceRefresh) {
-        // Disparar evento apenas quando for refresh manual (botão)
-        if (emitEvent) {
-          window.dispatchEvent(new Event('balancesUpdated'))
-        }
+      if (forceRefresh && emitEvent) {
+        window.dispatchEvent(new Event('balancesUpdated'))
       }
     } catch (err) {
-      setError("Erro ao carregar dados")
+      setError(t('common.error'))
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      if (!silent) {
+        setLoading(false)
+        setRefreshing(false)
+      }
     }
   }
 
@@ -75,13 +72,13 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   if (error || !data) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>{error || "Dados não disponíveis"}</Text>
+        <Text style={styles.errorText}>{error || t('home.noData')}</Text>
       </View>
     )
   }
 
   const totalValue = parseFloat(data.summary.total_usd)
-  // Por enquanto não temos dados de mudança 24h da API, então usando 0
+  const formattedValue = apiService.formatUSD(totalValue)
   const change24h = 0
   const changeValue = 0
   const isPositive = change24h > 0
@@ -89,7 +86,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Patrimônio Total</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('home.portfolio')}</Text>
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={handleRefresh}
@@ -107,7 +104,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
       </View>
 
       <Text style={[styles.value, { color: colors.text }]}>
-        {apiService.formatUSD(totalValue)}
+        {formattedValue}
       </Text>
 
       <View style={styles.changeContainer}>
@@ -122,11 +119,11 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
           {isPositive ? "+" : ""}{apiService.formatUSD(changeValue)}
         </Text>
 
-        <Text style={styles.timeframe}>últimas 24h</Text>
+        <Text style={styles.timeframe}>{t('home.last24h')}</Text>
       </View>
     </View>
   )
-})
+}
 
 const styles = StyleSheet.create({
   container: {

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 // Mapeamento dos logos locais das exchanges
 const exchangeLogos: Record<string, any> = {
@@ -18,6 +19,7 @@ const exchangeLogos: Record<string, any> = {
 }
 
 export function ExchangesManager() {
+  const { t } = useLanguage()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,13 +98,12 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        console.log('🔗 Exchange conectada, atualizando dados...')
+        
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
-        // Forçar atualização dos balances
-        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        
-        // Notificar outros componentes
+        await new Promise(resolve => setTimeout(resolve, 500))
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao conectar exchange')
@@ -140,9 +141,10 @@ export function ExchangesManager() {
     )
 
     try {
-      // Aqui você pode adicionar uma chamada à API se necessário
-      // Por enquanto, apenas atualiza localmente
-      console.log(`✅ Exchange ${exchangeId} status updated to ${newStatus}`)
+      console.log(`🔄 Status da exchange atualizado: ${exchangeId} → ${newStatus}`)
+      
+      await new Promise(resolve => setTimeout(resolve, 500))
+      window.dispatchEvent(new Event('balancesUpdated'))
     } catch (error) {
       console.error("Error toggling exchange:", error)
       // Reverte em caso de erro
@@ -184,18 +186,13 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🔌 Exchange disconnected successfully, refreshing list...')
-        
-        // Pequeno delay para garantir que o backend processou
-        await new Promise(resolve => setTimeout(resolve, 500))
+        console.log('🔌 Exchange desconectada, atualizando dados...')
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
-        // Forçar atualização dos balances
-        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        
-        // Notificar outros componentes
+        // Aguardar 500ms para garantir que a API processou
+        await new Promise(resolve => setTimeout(resolve, 500))
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao desconectar exchange')
@@ -234,18 +231,13 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🗑️ Exchange deleted successfully, refreshing list...')
+        console.log('🗑️ Exchange deletada, atualizando dados...')
         
         // Pequeno delay para garantir que o backend processou
         await new Promise(resolve => setTimeout(resolve, 500))
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
-        
-        // Forçar atualização dos balances
-        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        
-        // Notificar outros componentes
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao deletar exchange')
@@ -313,7 +305,7 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🔗 Exchange connected successfully, refreshing list...')
+        console.log('🔗 Exchange linkada, atualizando dados...')
         closeConnectModal()
         
         // Pequeno delay para garantir que o backend processou
@@ -321,11 +313,6 @@ export function ExchangesManager() {
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
-        
-        // Forçar atualização dos balances
-        await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
-        
-        // Notificar outros componentes
         window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao conectar exchange')
@@ -363,9 +350,9 @@ export function ExchangesManager() {
     <Pressable style={styles.container} onPress={() => setOpenMenuId(null)}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Gerenciar Exchanges</Text>
+        <Text style={styles.headerTitle}>{t('exchanges.manage')}</Text>
         <Text style={styles.headerSubtitle}>
-          {linkedExchanges.length} conectada{linkedExchanges.length !== 1 ? 's' : ''}
+          {linkedExchanges.length} {t('exchanges.connected').toLowerCase()}{linkedExchanges.length !== 1 ? 's' : ''}
         </Text>
       </View>
 
@@ -376,7 +363,7 @@ export function ExchangesManager() {
           onPress={() => setActiveTab('linked')}
         >
           <Text style={[styles.tabText, activeTab === 'linked' && styles.tabTextActive]}>
-            Conectadas ({linkedExchanges.length})
+            {t('exchanges.connected')} ({linkedExchanges.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -384,7 +371,7 @@ export function ExchangesManager() {
           onPress={() => setActiveTab('available')}
         >
           <Text style={[styles.tabText, activeTab === 'available' && styles.tabTextActive]}>
-            Disponíveis ({availableExchanges.length})
+            {t('exchanges.available')} ({availableExchanges.length})
           </Text>
         </TouchableOpacity>
       </View>
@@ -394,16 +381,16 @@ export function ExchangesManager() {
         {activeTab === 'linked' ? (
           linkedExchanges.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>�</Text>
-              <Text style={styles.emptyTitle}>Nenhuma exchange conectada</Text>
+              <Text style={styles.emptyIcon}>🔗</Text>
+              <Text style={styles.emptyTitle}>{t('home.noData')}</Text>
               <Text style={styles.emptyText}>
-                Conecte suas exchanges para visualizar seus ativos
+                {t('exchanges.connectModal')}
               </Text>
               <TouchableOpacity
                 style={styles.primaryButton}
                 onPress={() => setActiveTab('available')}
               >
-                <Text style={styles.primaryButtonText}>Ver Exchanges Disponíveis</Text>
+                <Text style={styles.primaryButtonText}>{t('exchanges.viewAvailable')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -455,7 +442,7 @@ export function ExchangesManager() {
                     
                     <View style={styles.cardDetails}>
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Conectada em:</Text>
+                        <Text style={styles.detailLabel}>{t('exchanges.connectedAt')}</Text>
                         <Text style={styles.detailValue}>
                           {new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')}
                         </Text>
@@ -476,7 +463,7 @@ export function ExchangesManager() {
                           styles.statusText,
                           isActive ? styles.statusTextActive : styles.statusTextInactive
                         ]}>
-                          {isActive ? 'Ativa' : 'Inativa'}
+                          {isActive ? t('strategy.active') : t('strategy.inactive')}
                         </Text>
                       </View>
                       
@@ -543,7 +530,7 @@ export function ExchangesManager() {
                         style={styles.connectButton}
                         onPress={() => openConnectModal(exchange)}
                       >
-                        <Text style={styles.connectButtonText}>Conectar</Text>
+                        <Text style={styles.connectButtonText}>{t('exchanges.connect')}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -594,7 +581,7 @@ export function ExchangesManager() {
                       }}
                     >
                       <Text style={styles.menuItemText}>
-                        {isActive ? 'Desativar' : 'Ativar'}
+                        {isActive ? t('exchanges.deactivate') : t('exchanges.activate')}
                       </Text>
                     </TouchableOpacity>
                     
@@ -610,7 +597,7 @@ export function ExchangesManager() {
                         }
                       }}
                     >
-                      <Text style={[styles.menuItemText, styles.menuItemDanger]}>Deletar</Text>
+                      <Text style={[styles.menuItemText, styles.menuItemDanger]}>{t('exchanges.delete')}</Text>
                     </TouchableOpacity>
                   </>
                 )
@@ -631,7 +618,7 @@ export function ExchangesManager() {
           <View style={styles.modalContent}>
             {/* Header do Modal */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Conectar Exchange</Text>
+              <Text style={styles.modalTitle}>{t('exchanges.connectModal')}</Text>
               <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
@@ -726,7 +713,7 @@ export function ExchangesManager() {
                     onPress={closeConnectModal}
                     disabled={connecting}
                   >
-                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                    <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.submitButton, connecting && styles.submitButtonDisabled]}
@@ -736,7 +723,7 @@ export function ExchangesManager() {
                     {connecting ? (
                       <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
-                      <Text style={styles.submitButtonText}>Conectar</Text>
+                      <Text style={styles.submitButtonText}>{t('exchanges.connect')}</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -763,15 +750,15 @@ export function ExchangesManager() {
           >
             <View style={styles.confirmModalHeader}>
               <Text style={styles.confirmModalTitle}>
-                {toggleExchangeNewStatus === 'active' ? '✅ Ativar Exchange' : '⏸️ Desativar Exchange'}
+                {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
               </Text>
             </View>
 
             <View style={styles.confirmModalBody}>
               <Text style={styles.confirmModalMessage}>
                 {toggleExchangeNewStatus === 'active' 
-                  ? `Tem certeza que deseja ativar a exchange ${toggleExchangeName}? Ela ficará disponível para uso nas estratégias.`
-                  : `Tem certeza que deseja desativar a exchange ${toggleExchangeName}? Ela não será mais utilizada pelas estratégias.`
+                  ? `${t('exchanges.activateConfirm')} ${toggleExchangeName}? ${t('exchanges.activateWarning')}`
+                  : `${t('exchanges.deactivateConfirm')} ${toggleExchangeName}? ${t('exchanges.deactivateWarning')}`
                 }
               </Text>
             </View>
@@ -781,14 +768,14 @@ export function ExchangesManager() {
                 style={styles.confirmCancelButton}
                 onPress={() => setConfirmToggleModalVisible(false)}
               >
-                <Text style={styles.confirmCancelButtonText}>Cancelar</Text>
+                <Text style={styles.confirmCancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmSubmitButton}
                 onPress={confirmToggle}
               >
                 <Text style={styles.confirmSubmitButtonText}>
-                  {toggleExchangeNewStatus === 'active' ? 'Ativar' : 'Desativar'}
+                  {toggleExchangeNewStatus === 'active' ? t('exchanges.activate') : t('exchanges.deactivate')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -820,8 +807,8 @@ export function ExchangesManager() {
             <View style={styles.confirmModalBody}>
               <Text style={styles.confirmModalMessage}>
                 {confirmAction === 'delete' 
-                  ? `Tem certeza que deseja deletar permanentemente a exchange ${confirmExchangeName}? Esta ação não pode ser desfeita.`
-                  : `Tem certeza que deseja desconectar a exchange ${confirmExchangeName}?`
+                  ? `${t('exchanges.deleteConfirm')} ${confirmExchangeName}? ${t('exchanges.deleteWarning')}`
+                  : `${t('exchanges.disconnectConfirm')} ${confirmExchangeName}?`
                 }
               </Text>
             </View>
@@ -831,7 +818,7 @@ export function ExchangesManager() {
                 style={styles.confirmCancelButton}
                 onPress={() => setConfirmModalVisible(false)}
               >
-                <Text style={styles.confirmCancelButtonText}>Cancelar</Text>
+                <Text style={styles.confirmCancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.confirmSubmitButton, confirmAction === 'delete' && styles.confirmDeleteButton]}
@@ -844,7 +831,7 @@ export function ExchangesManager() {
                 }}
               >
                 <Text style={styles.confirmSubmitButtonText}>
-                  {confirmAction === 'delete' ? 'Deletar' : 'Desconectar'}
+                  {confirmAction === 'delete' ? t('exchanges.delete') : t('exchanges.disconnect')}
                 </Text>
               </TouchableOpacity>
             </View>

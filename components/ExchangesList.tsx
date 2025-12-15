@@ -1,9 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native"
-import { useEffect, useState, memo } from "react"
+import { useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
@@ -18,58 +19,58 @@ const exchangeLogos: Record<string, any> = {
   "okx": require("@/assets/okx.png"),
 }
 
-export const ExchangesList = memo(function ExchangesList() {
+export function ExchangesList() {
   const { colors } = useTheme()
+  const { t } = useLanguage()
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
-  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(true)
-  const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(true)
+  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
+  const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
 
   useEffect(() => {
     fetchBalances()
     
-    // Listener para atualização de balances
     const handleBalancesUpdate = () => {
-      fetchBalances(true) // Force refresh quando receber evento
+      setTimeout(() => fetchBalances(true, true), 100)
     }
+    
+    // Auto-refresh a cada 5 minutos (300000ms) - silencioso
+    const autoRefreshInterval = setInterval(() => {
+      fetchBalances(true, true)
+    }, 5 * 60 * 1000)
     
     window.addEventListener('balancesUpdated', handleBalancesUpdate)
     
     return () => {
       window.removeEventListener('balancesUpdated', handleBalancesUpdate)
+      clearInterval(autoRefreshInterval)
     }
   }, [])
 
-  const fetchBalances = async (forceRefresh = false) => {
+  const fetchBalances = async (forceRefresh = false, silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) {
+        setLoading(true)
+      }
       setError(null)
       
-      const url = forceRefresh 
-        ? `${config.apiBaseUrl}/balances?user_id=${config.userId}&force_refresh=true`
-        : undefined
-      
-      const response = url 
-        ? await fetch(url).then(res => res.json())
-        : await apiService.getBalances(config.userId)
-      
+      const response = await apiService.getBalances(config.userId)
       setData(response)
-      
-      if (forceRefresh) {
-      }
     } catch (err) {
-      setError("Erro ao carregar exchanges")
+      setError(t('exchanges.error'))
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>Exchanges</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3b82f6" />
         </View>
@@ -80,8 +81,8 @@ export const ExchangesList = memo(function ExchangesList() {
   if (error || !data) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>Exchanges</Text>
-        <Text style={styles.errorText}>{error || "Dados não disponíveis"}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
+        <Text style={styles.errorText}>{error || t('home.noData')}</Text>
       </View>
     )
   }
@@ -95,11 +96,11 @@ export const ExchangesList = memo(function ExchangesList() {
       }
       return true
     })
-
+  
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Exchanges</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         <TouchableOpacity style={styles.addButton}>
           <Text style={styles.addButtonText}>+ Adicionar</Text>
         </TouchableOpacity>
@@ -112,7 +113,7 @@ export const ExchangesList = memo(function ExchangesList() {
           onPress={() => setHideZeroBalanceExchanges(!hideZeroBalanceExchanges)}
           activeOpacity={0.7}
         >
-          <Text style={styles.toggleLabel}>Ocultar exchanges com saldo $0</Text>
+          <Text style={styles.toggleLabel}>{t('exchanges.hideZero')}</Text>
           <View style={[styles.toggle, hideZeroBalanceExchanges && styles.toggleActive]}>
             <View style={[styles.toggleThumb, hideZeroBalanceExchanges && styles.toggleThumbActive]} />
           </View>
@@ -123,7 +124,7 @@ export const ExchangesList = memo(function ExchangesList() {
           onPress={() => setHideZeroBalanceTokens(!hideZeroBalanceTokens)}
           activeOpacity={0.7}
         >
-          <Text style={styles.toggleLabel}>Ocultar tokens com saldo $0</Text>
+          <Text style={styles.toggleLabel}>{t('exchanges.hideZeroTokens')}</Text>
           <View style={[styles.toggle, hideZeroBalanceTokens && styles.toggleActive]}>
             <View style={[styles.toggleThumb, hideZeroBalanceTokens && styles.toggleThumbActive]} />
           </View>
@@ -234,7 +235,7 @@ export const ExchangesList = memo(function ExchangesList() {
       </View>
     </View>
   )
-})
+}
 
 const styles = StyleSheet.create({
   container: {

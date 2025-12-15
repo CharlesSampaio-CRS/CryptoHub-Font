@@ -1,6 +1,7 @@
 import { Text, StyleSheet, ScrollView, SafeAreaView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
+import { useLanguage } from "../contexts/LanguageContext"
 import { strategiesService, type Strategy as APIStrategy, type Execution } from "../services/strategies"
 import { CreateStrategyModal } from "../components/create-strategy-modal"
 
@@ -27,6 +28,7 @@ const USER_ID = "charles_test_user"
 
 export function StrategyScreen() {
   const { colors } = useTheme()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<"strategies" | "executions">("strategies")
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [loading, setLoading] = useState(true)
@@ -254,11 +256,11 @@ export function StrategyScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Estratégias</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('strategy.title')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             {activeTab === "strategies"
-              ? `${strategiesCount} ${strategiesCount === 1 ? "estratégia" : "estratégias"}`
-              : `${executionsCount} ${executionsCount === 1 ? "execução" : "execuções"}`
+              ? `${strategiesCount} ${strategiesCount === 1 ? t('strategy.strategy') : t('strategy.strategies')}`
+              : `${executionsCount} ${executionsCount === 1 ? t('strategy.execution') : t('strategy.executions')}`
             }
           </Text>
         </View>
@@ -269,7 +271,7 @@ export function StrategyScreen() {
             onPress={handleNewStrategy}
             activeOpacity={0.8}
           >
-            <Text style={styles.newButtonText}>+ Nova</Text>
+            <Text style={styles.newButtonText}>{t('strategy.new')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -292,7 +294,7 @@ export function StrategyScreen() {
               activeTab === "strategies" && { color: "#ffffff" },
             ]}
           >
-            Estratégias
+            {t('strategy.title')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -311,7 +313,7 @@ export function StrategyScreen() {
               activeTab === "executions" && { color: "#ffffff" },
             ]}
           >
-            Execuções
+            {t('strategy.executions')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -335,23 +337,23 @@ export function StrategyScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              Carregando estratégias...
+              {t('common.loading')}
             </Text>
           </View>
         ) : activeTab === "strategies" ? (
           strategies.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>📭</Text>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhuma estratégia</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('strategy.empty')}</Text>
               <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
-                Crie sua primeira estratégia de automação
+                {t('strategy.emptyDesc')}
               </Text>
               <TouchableOpacity
                 style={[styles.createButton, { backgroundColor: colors.primary }]}
                 onPress={handleNewStrategy}
                 activeOpacity={0.8}
               >
-                <Text style={styles.createButtonText}>+ Criar Estratégia</Text>
+                <Text style={styles.createButtonText}>{t('strategy.new')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -424,7 +426,7 @@ export function StrategyScreen() {
                     <View style={styles.statsRow}>
                       <View style={styles.statItem}>
                         <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                          Execuções
+                          {t('strategy.executions')}
                         </Text>
                         <Text style={[styles.statValue, { color: colors.text }]}>
                           {strategy.stats.totalExecutions}
@@ -500,7 +502,7 @@ export function StrategyScreen() {
                       ]}
                     />
                     <Text style={[styles.statusText, { color: colors.textSecondary }]}>
-                      {strategy.isActive ? "Ativa" : "Inativa"}
+                      {strategy.isActive ? t('strategy.active') : t('strategy.inactive')}
                     </Text>
                   </View>
 
@@ -641,10 +643,10 @@ export function StrategyScreen() {
             onPress={(e) => e.stopPropagation()}
           >
             <Text style={[styles.confirmTitle, { color: colors.text }]}>
-              {toggleStrategyNewStatus ? "Ativar" : "Desativar"} Estratégia
+              {toggleStrategyNewStatus ? t('strategy.activateConfirm') : t('strategy.deactivateConfirm')}
             </Text>
             <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-              Tem certeza que deseja {toggleStrategyNewStatus ? "ativar" : "desativar"} "{toggleStrategyName}"?
+              {t('strategy.statusWillChange')}
             </Text>
             <View style={styles.confirmButtons}>
               <TouchableOpacity
@@ -653,7 +655,7 @@ export function StrategyScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.confirmButtonText, { color: colors.text }]}>
-                  Cancelar
+                  {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -662,7 +664,7 @@ export function StrategyScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.deleteConfirmButtonText}>
-                  {toggleStrategyNewStatus ? "Ativar" : "Desativar"}
+                  {t('common.confirm')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -686,10 +688,10 @@ export function StrategyScreen() {
             onPress={(e) => e.stopPropagation()}
           >
             <Text style={[styles.confirmTitle, { color: colors.text }]}>
-              Excluir Estratégia
+              {t('strategy.confirmDelete')}
             </Text>
             <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-              Tem certeza que deseja excluir "{confirmStrategyName}"?
+              {t('strategy.deleteWarning')}
             </Text>
             <View style={styles.confirmButtons}>
               <TouchableOpacity
@@ -698,7 +700,7 @@ export function StrategyScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.confirmButtonText, { color: colors.text }]}>
-                  Cancelar
+                  {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -706,7 +708,7 @@ export function StrategyScreen() {
                 onPress={confirmDelete}
                 activeOpacity={0.7}
               >
-                <Text style={styles.deleteConfirmButtonText}>Excluir</Text>
+                <Text style={styles.deleteConfirmButtonText}>{t('strategy.delete')}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>

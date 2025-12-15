@@ -7,7 +7,7 @@ import { NotificationsModal } from "../components/NotificationsModal"
 
 export function ProfileScreen() {
   const { theme, setTheme, colors } = useTheme()
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const scrollY = useRef(new Animated.Value(0)).current
   
   // Estados dos modais
@@ -38,11 +38,11 @@ export function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair da sua conta?',
+      t('profile.logout'),
+      t('profile.logoutConfirm'),
       [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: () => {
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('profile.logout'), style: 'destructive', onPress: () => {
           // Implementar logout
         }},
       ]
@@ -63,8 +63,8 @@ export function ProfileScreen() {
           }
         ]}
       >
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Perfil</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Configurações da conta</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('profile.title')}</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{t('profile.subtitle')}</Text>
       </Animated.View>
 
       <Animated.ScrollView 
@@ -86,12 +86,12 @@ export function ProfileScreen() {
           </View>
           
           <Text style={[styles.userName, { color: colors.text }]}>@{config.userId}</Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>Usuário do CryptoHub</Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{t('profile.user')}</Text>
         </View>
 
         {/* Menu de Configurações */}
         <View style={styles.menuSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Configurações</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.settings')}</Text>
           
           <TouchableOpacity 
             style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
@@ -99,7 +99,7 @@ export function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>🔔</Text>
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Notificações</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.notifications')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -110,7 +110,7 @@ export function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>🔒</Text>
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Segurança</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.security')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -126,16 +126,16 @@ export function ProfileScreen() {
 
         {/* Aparência */}
         <View style={styles.menuSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Aparência</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.appearance')}</Text>
           
           {/* Modo Escuro */}
           <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginBottom: 12 }]}>
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>{theme === 'dark' ? '🌙' : '☀️'}</Text>
               <View>
-                <Text style={[styles.menuItemText, { color: colors.text }]}>Modo Escuro</Text>
+                <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.darkMode')}</Text>
                 <Text style={[styles.themeSubtext, { color: colors.textSecondary }]}>
-                  {theme === 'dark' ? 'Ativado' : 'Desativado'}
+                  {theme === 'dark' ? t('profile.enabled') : t('profile.disabled')}
                 </Text>
               </View>
             </View>
@@ -156,9 +156,9 @@ export function ProfileScreen() {
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>🌍</Text>
               <View>
-                <Text style={[styles.menuItemText, { color: colors.text }]}>Idioma</Text>
+                <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.language')}</Text>
                 <Text style={[styles.themeSubtext, { color: colors.textSecondary }]}>
-                  {language === 'pt-BR' ? 'Português (BR)' : 'English (US)'}
+                  {language === 'pt-BR' ? t('profile.languagePt') : t('profile.languageEn')}
                 </Text>
               </View>
             </View>
@@ -184,7 +184,7 @@ export function ProfileScreen() {
 
         {/* Menu Sobre */}
         <View style={styles.menuSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Sobre</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('profile.about')}</Text>
           
           <TouchableOpacity 
             style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
@@ -192,7 +192,7 @@ export function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>ℹ️</Text>
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Sobre o App</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.aboutApp')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -203,7 +203,7 @@ export function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>📄</Text>
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Termos de Uso</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.terms')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -214,7 +214,7 @@ export function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <Text style={styles.menuIcon}>🔐</Text>
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Privacidade</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.privacy')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -222,10 +222,10 @@ export function ProfileScreen() {
 
         {/* Botão de Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Sair da Conta</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.version, { color: colors.textSecondary }]}>Versão 1.0.0</Text>
+        <Text style={[styles.version, { color: colors.textSecondary }]}>{t('profile.version')} 1.0.0</Text>
       </Animated.ScrollView>
 
       {/* Modal Sobre o App */}

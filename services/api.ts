@@ -11,7 +11,13 @@ export const apiService = {
    */
   async getBalances(userId: string): Promise<BalanceResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/balances?user_id=${userId}`);
+      const timestamp = Date.now();
+      const response = await fetch(
+        `${API_BASE_URL}/balances?user_id=${userId}&force_refresh=true&_t=${timestamp}`,
+        {
+          cache: 'no-store'
+        }
+      );
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
