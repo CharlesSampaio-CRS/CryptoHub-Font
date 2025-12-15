@@ -1,4 +1,5 @@
-import { Text, StyleSheet, ScrollView, SafeAreaView, View, Image, TouchableOpacity, Alert, Animated, Modal, Pressable } from "react-native"
+import { Text, StyleSheet, ScrollView, View, Image, TouchableOpacity, Alert, Animated, Modal, Pressable } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { useRef, useState } from "react"
 import { config } from "../lib/config"
 import { useTheme } from "../contexts/ThemeContext"

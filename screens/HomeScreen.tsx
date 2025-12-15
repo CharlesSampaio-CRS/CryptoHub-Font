@@ -2,11 +2,11 @@ import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
 import { useRef, useState, useMemo, useCallback, memo } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
-import { QuickChart } from "../components/QuickChart"
 import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
 import { mockNotifications } from "../types/notifications"
+import { QuickChart } from "@/components/quick-chart.web"
 
 export const HomeScreen = memo(function HomeScreen() {
   const { colors } = useTheme()

@@ -41,9 +41,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
       const response = await apiService.getBalances(config.userId)
       setData(response)
       
-      if (forceRefresh && emitEvent) {
-        window.dispatchEvent(new Event('balancesUpdated'))
-      }
+      // Em React Native, não precisamos de window.dispatchEvent
     } catch (err) {
       setError(t('common.error'))
     } finally {
@@ -59,7 +57,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size={40} color="#3b82f6" />
       </View>
     )
   }

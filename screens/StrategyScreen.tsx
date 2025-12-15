@@ -1,4 +1,5 @@
-import { Text, StyleSheet, ScrollView, SafeAreaView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
@@ -335,7 +336,7 @@ export function StrategyScreen() {
       >
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size={40} color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
               {t('common.loading')}
             </Text>

@@ -180,7 +180,7 @@ export function ExchangesListAnimated() {
       <View style={styles.container}>
         <Text style={styles.title}>Exchanges</Text>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size={40} color="#3b82f6" />
         </View>
       </View>
     )

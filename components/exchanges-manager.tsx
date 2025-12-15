@@ -102,9 +102,6 @@ export function ExchangesManager() {
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
-        
-        await new Promise(resolve => setTimeout(resolve, 500))
-        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao conectar exchange')
       }
@@ -143,8 +140,7 @@ export function ExchangesManager() {
     try {
       console.log(`🔄 Status da exchange atualizado: ${exchangeId} → ${newStatus}`)
       
-      await new Promise(resolve => setTimeout(resolve, 500))
-      window.dispatchEvent(new Event('balancesUpdated'))
+      // Em React Native, não precisamos de window.dispatchEvent
     } catch (error) {
       console.error("Error toggling exchange:", error)
       // Reverte em caso de erro
@@ -191,9 +187,7 @@ export function ExchangesManager() {
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
-        // Aguardar 500ms para garantir que a API processou
-        await new Promise(resolve => setTimeout(resolve, 500))
-        window.dispatchEvent(new Event('balancesUpdated'))
+        // Em React Native, não precisamos de window.dispatchEvent
       } else {
         alert(data.error || 'Falha ao desconectar exchange')
       }
@@ -238,7 +232,6 @@ export function ExchangesManager() {
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
-        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao deletar exchange')
       }
@@ -313,7 +306,6 @@ export function ExchangesManager() {
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
-        window.dispatchEvent(new Event('balancesUpdated'))
       } else {
         alert(data.error || 'Falha ao conectar exchange')
       }
@@ -328,7 +320,7 @@ export function ExchangesManager() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size={40} color="#3b82f6" />
           <Text style={styles.loadingText}>Carregando exchanges...</Text>
         </View>
       </View>

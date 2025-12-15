@@ -91,7 +91,7 @@ export const ExchangesList = memo(function ExchangesList() {
       <View style={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size={40} color="#3b82f6" />
         </View>
       </View>
     )

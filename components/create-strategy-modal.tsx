@@ -312,7 +312,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
 
                 {loadingExchanges ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size={40} color={colors.primary} />
                   </View>
                 ) : exchanges.length === 0 ? (
                   <View style={styles.emptyState}>
@@ -398,7 +398,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
 
 {loadingTokens ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size={40} color={colors.primary} />
                     <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                       Carregando tokens...
                     </Text>
