@@ -66,6 +66,12 @@ const translations = {
     'strategy.activateConfirm': 'Deseja ativar esta estratégia?',
     'strategy.deactivateConfirm': 'Deseja desativar esta estratégia?',
     'strategy.statusWillChange': 'O status da estratégia será alterado.',
+    'strategy.simple': 'Simples',
+    'strategy.simpleDesc': 'Estratégia básica (1 TP 5%, SL 2%)',
+    'strategy.conservative': 'Conservadora',
+    'strategy.conservativeDesc': 'Proteção máxima (2 TPs, trailing stop)',
+    'strategy.aggressive': 'Agressiva',
+    'strategy.aggressiveDesc': 'Máximo lucro (3 TPs, DCA ativo)',
     
     // Notifications
     'notifications.title': 'Notificações',
@@ -172,6 +178,12 @@ const translations = {
     'strategy.activateConfirm': 'Do you want to activate this strategy?',
     'strategy.deactivateConfirm': 'Do you want to deactivate this strategy?',
     'strategy.statusWillChange': 'The strategy status will be changed.',
+    'strategy.simple': 'Simple',
+    'strategy.simpleDesc': 'Basic strategy (1 TP 5%, SL 2%)',
+    'strategy.conservative': 'Conservative',
+    'strategy.conservativeDesc': 'Maximum protection (2 TPs, trailing stop)',
+    'strategy.aggressive': 'Aggressive',
+    'strategy.aggressiveDesc': 'Maximum profit (3 TPs, active DCA)',
     
     // Notifications
     'notifications.title': 'Notifications',

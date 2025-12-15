@@ -13,7 +13,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native"
+import { Picker } from "@react-native-picker/picker"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { strategiesService } from "@/services/strategies"
 import { apiService } from "@/services/api"
 import { LinkedExchange } from "@/types/api"
@@ -28,26 +30,27 @@ interface CreateStrategyModalProps {
 const TEMPLATES = [
   {
     id: "simple",
-    name: "Simples",
-    description: "Estratégia básica (1 TP 5%, SL 2%)",
+    nameKey: "strategy.simple",
+    descriptionKey: "strategy.simpleDesc",
     icon: "📊",
   },
   {
     id: "conservative",
-    name: "Conservadora",
-    description: "Proteção máxima (2 TPs, trailing stop)",
+    nameKey: "strategy.conservative",
+    descriptionKey: "strategy.conservativeDesc",
     icon: "🛡️",
   },
   {
     id: "aggressive",
-    name: "Agressiva",
-    description: "Máximo lucro (3 TPs, DCA ativo)",
+    nameKey: "strategy.aggressive",
+    descriptionKey: "strategy.aggressiveDesc",
     icon: "🚀",
   },
 ]
 
 export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: CreateStrategyModalProps) {
   const { colors } = useTheme()
+  const { t } = useLanguage()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(false)
   const [exchanges, setExchanges] = useState<LinkedExchange[]>([])
@@ -300,10 +303,10 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                     >
                       <Text style={styles.templateIcon}>{template.icon}</Text>
                       <Text style={[styles.templateName, { color: colors.text }]}>
-                        {template.name}
+                        {t(template.nameKey)}
                       </Text>
                       <Text style={[styles.templateDescription, { color: colors.textSecondary }]}>
-                        {template.description}
+                        {t(template.descriptionKey)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -394,7 +397,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                       Template:
                     </Text>
                     <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {TEMPLATES.find(t => t.id === selectedTemplate)?.name}
+                      {t(TEMPLATES.find(t => t.id === selectedTemplate)?.nameKey || '')}
                     </Text>
                   </View>
                   <View style={styles.summaryRow}>
@@ -416,53 +419,44 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                   </View>
                 ) : (
                   <>
-                    {/* Lista de tokens em cards */}
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      Token
-                    </Text>
-                    <View style={styles.tokensList}>
-                      {tokens.map((tokenSymbol) => (
-                        <TouchableOpacity
-                          key={tokenSymbol}
-                          style={[
-                            styles.tokenCard,
-                            { backgroundColor: colors.background, borderColor: colors.border },
-                            token === tokenSymbol && {
-                              borderColor: colors.primary,
-                              borderWidth: 2,
-                            },
-                          ]}
-                          onPress={() => {
-                            setShowCustomTokenInput(false)
-                            setToken(tokenSymbol)
-                            console.log("🪙 Token selected:", tokenSymbol)
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.tokenSymbol, { color: colors.text }]}>
-                            {tokenSymbol}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-
-                    {/* Botão "Outro Token" */}
-                    <TouchableOpacity
-                      style={[
-                        styles.customTokenButton,
-                        { borderColor: colors.border },
-                        showCustomTokenInput && { borderColor: colors.primary, borderWidth: 2 },
-                      ]}
-                      onPress={() => {
-                        setShowCustomTokenInput(true)
-                        setToken("")
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.customTokenButtonText, { color: colors.text }]}>
-                        ✏️ Outro (digitar manualmente)
+                    {/* Select de tokens */}
+                    <View style={styles.selectContainer}>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                        Token
                       </Text>
-                    </TouchableOpacity>
+                      <View
+                        style={[
+                          styles.pickerWrapper,
+                          { backgroundColor: colors.background, borderColor: colors.border },
+                        ]}
+                      >
+                        <Picker
+                          selectedValue={showCustomTokenInput ? "custom" : token}
+                          onValueChange={(value) => {
+                            if (value === "custom") {
+                              setShowCustomTokenInput(true)
+                              setToken("")
+                            } else {
+                              setShowCustomTokenInput(false)
+                              setToken(value)
+                              console.log("🪙 Token selected:", value)
+                            }
+                          }}
+                          style={[styles.picker, { color: colors.text }]}
+                          dropdownIconColor={colors.text}
+                        >
+                          <Picker.Item label="Selecione um token" value="" />
+                          {tokens.map((tokenSymbol) => (
+                            <Picker.Item 
+                              key={tokenSymbol} 
+                              label={tokenSymbol} 
+                              value={tokenSymbol} 
+                            />
+                          ))}
+                          <Picker.Item label="✏️ Outro (digitar manualmente)" value="custom" />
+                        </Picker>
+                      </View>
+                    </View>
 
                     {/* Custom token input (aparece quando seleciona "Outro") */}
                     {showCustomTokenInput && (
@@ -734,37 +728,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: "center",
   },
-  tokensList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
-  },
-  tokenCard: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: 80,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tokenSymbol: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  customTokenButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  customTokenButtonText: {
-    fontSize: 14,
-    fontWeight: "400",
-  },
   selectContainer: {
     gap: 8,
     marginBottom: 16,
@@ -773,6 +736,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     overflow: "hidden",
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  picker: {
+    height: Platform.OS === "ios" ? 180 : 50,
+    width: "100%",
   },
   customInputContainer: {
     gap: 8,
