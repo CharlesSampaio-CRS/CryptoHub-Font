@@ -424,8 +424,8 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                   </View>
                 ) : (
                   <>
-                    {/* Select com autocomplete de tokens */}
-                    <View style={styles.selectContainer}>
+                    {/* Input para digitar token */}
+                    <View style={styles.tokenInputContainer}>
                       <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
                         Token
                       </Text>
@@ -434,86 +434,67 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                           styles.input,
                           { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
                         ]}
-                        placeholder="Digite ou selecione um token (Ex: BTC, ETH, SOL)"
+                        placeholder="Digite o símbolo do token (Ex: BTC, ETH, SOL)"
                         placeholderTextColor={colors.textSecondary}
                         value={tokenSearchQuery}
                         onChangeText={(text) => {
-                          setTokenSearchQuery(text.toUpperCase())
-                          setShowTokenDropdown(true)
+                          const upperText = text.toUpperCase()
+                          setTokenSearchQuery(upperText)
+                          setToken(upperText)
                         }}
-                        onFocus={() => setShowTokenDropdown(true)}
                         autoCapitalize="characters"
                         autoCorrect={false}
                       />
+                    </View>
 
-                      {/* Dropdown com sugestões filtradas */}
-                      {showTokenDropdown && tokenSearchQuery && (
-                        <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                          <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
-                            {tokens
-                              .filter(t => t.includes(tokenSearchQuery))
-                              .map((tokenSymbol) => (
-                                <TouchableOpacity
-                                  key={tokenSymbol}
-                                  style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
-                                  onPress={() => {
-                                    setToken(tokenSymbol)
-                                    setTokenSearchQuery(tokenSymbol)
-                                    setShowTokenDropdown(false)
-                                    console.log("🪙 Token selected:", tokenSymbol)
-                                  }}
-                                  activeOpacity={0.7}
-                                >
-                                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>
-                                    {tokenSymbol}
-                                  </Text>
-                                </TouchableOpacity>
-                              ))}
-                            
-                            {/* Se não encontrou correspondência, mostrar opção de usar o digitado */}
-                            {tokens.filter(t => t.includes(tokenSearchQuery)).length === 0 && (
-                              <TouchableOpacity
-                                style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
-                                onPress={() => {
-                                  setToken(tokenSearchQuery)
-                                  setShowTokenDropdown(false)
-                                  console.log("🪙 Custom token:", tokenSearchQuery)
-                                }}
-                                activeOpacity={0.7}
-                              >
-                                <Text style={[styles.dropdownItemText, { color: colors.primary }]}>
-                                  ✏️ Usar "{tokenSearchQuery}"
-                                </Text>
-                              </TouchableOpacity>
-                            )}
-                          </ScrollView>
-                        </View>
-                      )}
-
-                      {/* Lista completa quando campo está vazio mas com foco */}
-                      {showTokenDropdown && !tokenSearchQuery && tokens.length > 0 && (
-                        <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                          <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
-                            {tokens.map((tokenSymbol) => (
-                              <TouchableOpacity
-                                key={tokenSymbol}
-                                style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
-                                onPress={() => {
-                                  setToken(tokenSymbol)
-                                  setTokenSearchQuery(tokenSymbol)
-                                  setShowTokenDropdown(false)
-                                  console.log("🪙 Token selected:", tokenSymbol)
-                                }}
-                                activeOpacity={0.7}
-                              >
-                                <Text style={[styles.dropdownItemText, { color: colors.text }]}>
-                                  {tokenSymbol}
-                                </Text>
-                              </TouchableOpacity>
-                            ))}
-                          </ScrollView>
-                        </View>
-                      )}
+                    {/* Lista scrollable de tokens disponíveis */}
+                    <View style={styles.tokensListContainer}>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 8 }]}>
+                        Ou selecione da lista:
+                      </Text>
+                      <ScrollView 
+                        style={[styles.tokensScrollView, { backgroundColor: colors.background, borderColor: colors.border }]}
+                        showsVerticalScrollIndicator={true}
+                      >
+                        {tokens
+                          .filter(t => !tokenSearchQuery || t.includes(tokenSearchQuery))
+                          .map((tokenSymbol) => (
+                            <TouchableOpacity
+                              key={tokenSymbol}
+                              style={[
+                                styles.tokenListItem,
+                                { borderBottomColor: colors.border },
+                                tokenSearchQuery === tokenSymbol && { backgroundColor: 'rgba(59, 130, 246, 0.1)' }
+                              ]}
+                              onPress={() => {
+                                setToken(tokenSymbol)
+                                setTokenSearchQuery(tokenSymbol)
+                                console.log("🪙 Token selected:", tokenSymbol)
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <Text style={[
+                                styles.tokenListItemText,
+                                { color: colors.text },
+                                tokenSearchQuery === tokenSymbol && { fontWeight: '600', color: colors.primary }
+                              ]}>
+                                {tokenSymbol}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        
+                        {/* Mensagem se a busca não encontrou resultados */}
+                        {tokenSearchQuery && tokens.filter(t => t.includes(tokenSearchQuery)).length === 0 && (
+                          <View style={styles.noResultsContainer}>
+                            <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
+                              Nenhum token encontrado
+                            </Text>
+                            <Text style={[styles.noResultsHint, { color: colors.primary }]}>
+                              Usando token personalizado: {tokenSearchQuery}
+                            </Text>
+                          </View>
+                        )}
+                      </ScrollView>
                     </View>
                   </>
                 )}
@@ -764,38 +745,38 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: "center",
   },
-  selectContainer: {
-    gap: 8,
+  tokenInputContainer: {
     marginBottom: 16,
-    position: "relative",
-    zIndex: 1000,
   },
-  dropdown: {
-    position: "absolute",
-    top: 80,
-    left: 0,
-    right: 0,
-    maxHeight: 200,
+  tokensListContainer: {
+    flex: 1,
+  },
+  tokensScrollView: {
+    maxHeight: 250,
     borderWidth: 1,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    zIndex: 1001,
   },
-  dropdownScroll: {
-    maxHeight: 200,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
+  tokenListItem: {
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
-  dropdownItemText: {
+  tokenListItemText: {
     fontSize: 15,
     fontWeight: "400",
+  },
+  noResultsContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  noResultsText: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  noResultsHint: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   selectWrapper: {
     borderWidth: 1,
