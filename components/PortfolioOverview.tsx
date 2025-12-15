@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, memo } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 
-export function PortfolioOverview() {
+export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const [data, setData] = useState<BalanceResponse | null>(null)
@@ -34,7 +34,7 @@ export function PortfolioOverview() {
     }
   }, [])
 
-  const fetchBalances = async (forceRefresh = false, emitEvent = false, silent = false) => {
+  const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false) => {
     try {
       if (!silent) {
         forceRefresh ? setRefreshing(true) : setLoading(true)
@@ -55,11 +55,11 @@ export function PortfolioOverview() {
         setRefreshing(false)
       }
     }
-  }
+  }, [t])
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchBalances(true, true) // Force refresh e emite evento
-  }
+  }, [fetchBalances])
 
   if (loading) {
     return (
@@ -80,7 +80,6 @@ export function PortfolioOverview() {
   const totalValue = parseFloat(data.summary.total_usd)
   const formattedValue = apiService.formatUSD(totalValue)
   const change24h = 0
-  const changeValue = 0
   const isPositive = change24h > 0
 
   return (
@@ -116,14 +115,14 @@ export function PortfolioOverview() {
         </View>
 
         <Text style={[styles.changeValue, isPositive ? styles.textPositive : styles.textNegative]}>
-          {isPositive ? "+" : ""}{apiService.formatUSD(changeValue)}
+          {isPositive ? "+" : ""}${0}
         </Text>
 
         <Text style={styles.timeframe}>{t('home.last24h')}</Text>
       </View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

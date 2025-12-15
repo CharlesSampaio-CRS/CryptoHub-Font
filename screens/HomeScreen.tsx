@@ -1,5 +1,5 @@
 import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
-import { useRef, useState, useMemo } from "react"
+import { useRef, useState, useMemo, useCallback, memo } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { QuickChart } from "../components/QuickChart"
@@ -8,7 +8,7 @@ import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
 import { mockNotifications } from "../types/notifications"
 
-export function HomeScreen() {
+export const HomeScreen = memo(function HomeScreen() {
   const { colors } = useTheme()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
@@ -20,7 +20,15 @@ export function HomeScreen() {
     []
   )
 
-  const handleScroll = Animated.event(
+  const onNotificationsPress = useCallback(() => {
+    setNotificationsModalVisible(true)
+  }, [])
+
+  const onModalClose = useCallback(() => {
+    setNotificationsModalVisible(false)
+  }, [])
+
+  const handleScroll = useMemo(() => Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
       useNativeDriver: true,
@@ -37,13 +45,13 @@ export function HomeScreen() {
         lastScrollY.current = currentScrollY
       },
     }
-  )
+  ), [])
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Header 
         hideIcons={isScrollingDown} 
-        onNotificationsPress={() => setNotificationsModalVisible(true)}
+        onNotificationsPress={onNotificationsPress}
         unreadCount={unreadCount}
       />
       <Animated.ScrollView
@@ -52,6 +60,7 @@ export function HomeScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        removeClippedSubviews={true}
       >
         <PortfolioOverview />
         <QuickChart />
@@ -60,11 +69,11 @@ export function HomeScreen() {
 
       <NotificationsModal 
         visible={notificationsModalVisible}
-        onClose={() => setNotificationsModalVisible(false)}
+        onClose={onModalClose}
       />
     </SafeAreaView>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

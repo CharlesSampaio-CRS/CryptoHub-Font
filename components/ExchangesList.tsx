@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
@@ -19,7 +19,7 @@ const exchangeLogos: Record<string, any> = {
   "okx": require("@/assets/okx.png"),
 }
 
-export function ExchangesList() {
+export const ExchangesList = memo(function ExchangesList() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const [data, setData] = useState<BalanceResponse | null>(null)
@@ -49,7 +49,7 @@ export function ExchangesList() {
     }
   }, [])
 
-  const fetchBalances = async (forceRefresh = false, silent = false) => {
+  const fetchBalances = useCallback(async (forceRefresh = false, silent = false) => {
     try {
       if (!silent) {
         setLoading(true)
@@ -65,7 +65,7 @@ export function ExchangesList() {
         setLoading(false)
       }
     }
-  }
+  }, [t])
 
   if (loading) {
     return (
@@ -87,15 +87,30 @@ export function ExchangesList() {
     )
   }
 
-  // Filtrar exchanges com saldo zero se toggle ativado
-  const filteredExchanges = data.exchanges
-    .filter(ex => ex.success)
-    .filter(ex => {
-      if (hideZeroBalanceExchanges) {
-        return parseFloat(ex.total_usd) > 0
-      }
-      return true
-    })
+  // Filtrar exchanges com saldo zero se toggle ativado - memoizado
+  const filteredExchanges = useMemo(() => 
+    data.exchanges
+      .filter(ex => ex.success)
+      .filter(ex => {
+        if (hideZeroBalanceExchanges) {
+          return parseFloat(ex.total_usd) > 0
+        }
+        return true
+      }),
+    [data.exchanges, hideZeroBalanceExchanges]
+  )
+
+  const toggleExpandExchange = useCallback((exchangeId: string) => {
+    setExpandedExchangeId(prev => prev === exchangeId ? null : exchangeId)
+  }, [])
+
+  const toggleZeroBalanceExchanges = useCallback(() => {
+    setHideZeroBalanceExchanges(prev => !prev)
+  }, [])
+
+  const toggleZeroBalanceTokens = useCallback(() => {
+    setHideZeroBalanceTokens(prev => !prev)
+  }, [])
   
   return (
     <View style={styles.container}>
@@ -110,7 +125,7 @@ export function ExchangesList() {
       <View style={styles.filtersContainer}>
         <TouchableOpacity 
           style={styles.toggleRow}
-          onPress={() => setHideZeroBalanceExchanges(!hideZeroBalanceExchanges)}
+          onPress={toggleZeroBalanceExchanges}
           activeOpacity={0.7}
         >
           <Text style={styles.toggleLabel}>{t('exchanges.hideZero')}</Text>
@@ -121,7 +136,7 @@ export function ExchangesList() {
 
         <TouchableOpacity 
           style={styles.toggleRow}
-          onPress={() => setHideZeroBalanceTokens(!hideZeroBalanceTokens)}
+          onPress={toggleZeroBalanceTokens}
           activeOpacity={0.7}
         >
           <Text style={styles.toggleLabel}>{t('exchanges.hideZeroTokens')}</Text>
@@ -162,7 +177,7 @@ export function ExchangesList() {
               <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}
-                onPress={() => setExpandedExchangeId(isExpanded ? null : exchange.exchange_id)}
+                onPress={() => toggleExpandExchange(exchange.exchange_id)}
               >
                 <View style={styles.cardContent}>
                   <View style={styles.leftSection}>
@@ -235,7 +250,7 @@ export function ExchangesList() {
       </View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {
