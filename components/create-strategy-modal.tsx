@@ -268,7 +268,11 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
           </View>
 
           {/* Content */}
-          <ScrollView style={styles.content}>
+          <ScrollView 
+            style={styles.content}
+            contentContainerStyle={styles.contentContainer}
+            showsVerticalScrollIndicator={true}
+          >
             {/* Step 1: Template Selection */}
             {step === 1 && (
               <View style={styles.stepContent}>
@@ -558,7 +562,8 @@ const styles = StyleSheet.create({
   modalContainer: {
     borderRadius: 20,
     width: "90%",
-    maxHeight: "80%",
+    maxHeight: "85%",
+    height: "85%",
   },
   header: {
     flexDirection: "row",
@@ -613,10 +618,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   stepContent: {
-    flex: 1,
+    paddingBottom: 20,
   },
   stepTitle: {
     fontSize: 18,
@@ -630,12 +640,14 @@ const styles = StyleSheet.create({
   },
   templatesList: {
     gap: 12,
+    paddingBottom: 12,
   },
   templateCard: {
-    padding: 16,
+    padding: 20,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: "center",
+    marginBottom: 4,
   },
   templateIcon: {
     fontSize: 32,
