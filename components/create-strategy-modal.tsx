@@ -28,19 +28,19 @@ interface CreateStrategyModalProps {
 const TEMPLATES = [
   {
     id: "simple",
-    name: "Simple",
+    name: "Simples",
     description: "Estratégia básica (1 TP 5%, SL 2%)",
-    icon: "�",
+    icon: "📊",
   },
   {
     id: "conservative",
-    name: "Conservative",
+    name: "Conservadora",
     description: "Proteção máxima (2 TPs, trailing stop)",
     icon: "🛡️",
   },
   {
     id: "aggressive",
-    name: "Aggressive",
+    name: "Agressiva",
     description: "Máximo lucro (3 TPs, DCA ativo)",
     icon: "🚀",
   },
