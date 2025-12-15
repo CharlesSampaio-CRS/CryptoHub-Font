@@ -279,7 +279,13 @@ class StrategiesService {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`
       }
       
-      console.error(`❌ Error fetching stats for strategy ${strategyId}:`, errorMessage)
+      // Apenas loga erro se não for 404 (estratégia nova sem stats ainda)
+      if (response.status !== 404) {
+        console.error(`❌ Error fetching stats for strategy ${strategyId}:`, errorMessage)
+      } else {
+        console.log(`ℹ️ No stats available yet for strategy ${strategyId} (newly created)`)
+      }
+      
       throw new Error(errorMessage)
     }
 
