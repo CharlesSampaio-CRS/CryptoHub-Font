@@ -63,11 +63,45 @@ export const QuickChart = memo(function QuickChart() {
     }
   }
 
+  // Calcula PNL (Profit and Loss)
+  const getPNL = () => {
+    if (!evolutionData?.evolution?.summary) {
+      return {
+        changeUsd: 0,
+        changePercent: 0,
+        isPositive: false,
+      }
+    }
+
+    const { change_usd, change_percent } = evolutionData.evolution.summary
+    const changeUsdValue = parseFloat(change_usd)
+    const changePercentValue = parseFloat(change_percent)
+
+    return {
+      changeUsd: changeUsdValue,
+      changePercent: changePercentValue,
+      isPositive: changeUsdValue >= 0,
+    }
+  }
+
+  const pnl = getPNL()
   const chartData = getChartData()
   
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-      <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+        {!loading && !error && evolutionData && (
+          <View style={styles.pnlContainer}>
+            <Text style={[styles.pnlValue, { color: pnl.isPositive ? '#10b981' : '#ef4444' }]}>
+              {pnl.isPositive ? '+' : ''}{apiService.formatUSD(pnl.changeUsd)}
+            </Text>
+            <Text style={[styles.pnlPercent, { color: pnl.isPositive ? '#10b981' : '#ef4444' }]}>
+              {pnl.isPositive ? '▲' : '▼'} {pnl.isPositive ? '+' : ''}{pnl.changePercent.toFixed(2)}%
+            </Text>
+          </View>
+        )}
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -126,10 +160,27 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   title: {
     fontSize: 15,
     fontWeight: "400",
-    marginBottom: 16,
+  },
+  pnlContainer: {
+    alignItems: "flex-end",
+  },
+  pnlValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  pnlPercent: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   chart: {
     marginLeft: -16,
