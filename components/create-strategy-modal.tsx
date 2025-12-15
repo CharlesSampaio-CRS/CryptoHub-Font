@@ -9,6 +9,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native"
 import { useTheme } from "@/contexts/ThemeContext"
 import { strategiesService } from "@/services/strategies"
@@ -179,17 +182,21 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Nova Estratégia
-            </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={[styles.closeIcon, { color: colors.text }]}>✕</Text>
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView 
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.title, { color: colors.text }]}>
+                Nova Estratégia
+              </Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={[styles.closeIcon, { color: colors.text }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
           {/* Steps Indicator */}
           <View style={styles.stepsContainer}>
@@ -405,52 +412,53 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                   </View>
                 ) : (
                   <>
-                    {/* Select/Dropdown de tokens */}
-                    <View style={styles.selectContainer}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Token
-                      </Text>
-                      <View
-                        style={[
-                          styles.selectWrapper,
-                          { backgroundColor: colors.background, borderColor: colors.border },
-                        ]}
-                      >
-                        <select
-                          style={{
-                            width: "100%",
-                            padding: 12,
-                            fontSize: 16,
-                            fontWeight: "400",
-                            color: colors.text,
-                            backgroundColor: colors.background,
-                            border: "none",
-                            outline: "none",
-                            cursor: "pointer",
+                    {/* Lista de tokens em cards */}
+                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                      Token
+                    </Text>
+                    <View style={styles.tokensList}>
+                      {tokens.map((tokenSymbol) => (
+                        <TouchableOpacity
+                          key={tokenSymbol}
+                          style={[
+                            styles.tokenCard,
+                            { backgroundColor: colors.background, borderColor: colors.border },
+                            token === tokenSymbol && {
+                              borderColor: colors.primary,
+                              borderWidth: 2,
+                            },
+                          ]}
+                          onPress={() => {
+                            setShowCustomTokenInput(false)
+                            setToken(tokenSymbol)
+                            console.log("🪙 Token selected:", tokenSymbol)
                           }}
-                          value={showCustomTokenInput ? "custom" : token}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value === "custom") {
-                              setShowCustomTokenInput(true)
-                              setToken("")
-                            } else {
-                              setShowCustomTokenInput(false)
-                              setToken(value)
-                              console.log("🪙 Token selected:", value)
-                            }
-                          }}
+                          activeOpacity={0.7}
                         >
-                          <option value="">Selecione um token</option>
-                          {tokens.map((tokenSymbol) => (
-                            <option key={tokenSymbol} value={tokenSymbol}>
-                              {tokenSymbol}
-                            </option>
-                          ))}
-                          <option value="custom">✏️ Outro (digitar manualmente)</option>
-                        </select>
-                      </View>
+                          <Text style={[styles.tokenSymbol, { color: colors.text }]}>
+                            {tokenSymbol}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
+
+                    {/* Botão "Outro Token" */}
+                    <TouchableOpacity
+                      style={[
+                        styles.customTokenButton,
+                        { borderColor: colors.border },
+                        showCustomTokenInput && { borderColor: colors.primary, borderWidth: 2 },
+                      ]}
+                      onPress={() => {
+                        setShowCustomTokenInput(true)
+                        setToken("")
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.customTokenButtonText, { color: colors.text }]}>
+                        ✏️ Outro (digitar manualmente)
+                      </Text>
+                    </TouchableOpacity>
 
                     {/* Custom token input (aparece quando seleciona "Outro") */}
                     {showCustomTokenInput && (
@@ -528,7 +536,8 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
             )}
           </View>
         </View>
-      </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -537,12 +546,19 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  safeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   modalContainer: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "90%",
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "80%",
   },
   header: {
     flexDirection: "row",
@@ -707,29 +723,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   tokensList: {
-    gap: 12,
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 16,
   },
   tokenCard: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     borderWidth: 1,
-    minWidth: 100,
+    minWidth: 80,
     alignItems: "center",
+    justifyContent: "center",
   },
   tokenSymbol: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
   },
   customTokenButton: {
-    marginTop: 16,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
   customTokenButtonText: {
     fontSize: 14,
