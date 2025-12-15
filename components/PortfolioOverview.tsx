@@ -13,6 +13,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   useEffect(() => {
     fetchBalances()
@@ -36,7 +37,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
   const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false) => {
     try {
-      if (!silent) {
+      if (!silent && !isInitialLoad) {
         forceRefresh ? setRefreshing(true) : setLoading(true)
       }
       setError(null)
@@ -44,18 +45,25 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
       const response = await apiService.getBalances(config.userId)
       setData(response)
       
+      if (isInitialLoad) {
+        setIsInitialLoad(false)
+      }
+      
       if (forceRefresh && emitEvent) {
         window.dispatchEvent(new Event('balancesUpdated'))
       }
     } catch (err) {
       setError(t('common.error'))
     } finally {
-      if (!silent) {
+      if (!silent && !isInitialLoad) {
         setLoading(false)
         setRefreshing(false)
       }
+      if (isInitialLoad) {
+        setLoading(false)
+      }
     }
-  }, [t])
+  }, [t, isInitialLoad])
 
   const handleRefresh = useCallback(() => {
     fetchBalances(true, true) // Force refresh e emite evento
