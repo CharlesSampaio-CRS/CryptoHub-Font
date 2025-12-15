@@ -19,19 +19,13 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     fetchBalances()
     
     const handleBalancesUpdate = () => {
-      setTimeout(() => fetchBalances(true), 100)
+      setTimeout(() => fetchBalances(true, false, true), 100)
     }
-    
-    // Auto-refresh a cada 5 minutos (300000ms) - silencioso
-    const autoRefreshInterval = setInterval(() => {
-      fetchBalances(true, false, true)
-    }, 5 * 60 * 1000)
     
     window.addEventListener('balancesUpdated', handleBalancesUpdate)
     
     return () => {
       window.removeEventListener('balancesUpdated', handleBalancesUpdate)
-      clearInterval(autoRefreshInterval)
     }
   }, [])
 

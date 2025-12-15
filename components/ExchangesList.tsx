@@ -37,16 +37,10 @@ export const ExchangesList = memo(function ExchangesList() {
       setTimeout(() => fetchBalances(true, true), 100)
     }
     
-    // Auto-refresh a cada 5 minutos (300000ms) - silencioso
-    const autoRefreshInterval = setInterval(() => {
-      fetchBalances(true, true)
-    }, 5 * 60 * 1000)
-    
     window.addEventListener('balancesUpdated', handleBalancesUpdate)
     
     return () => {
       window.removeEventListener('balancesUpdated', handleBalancesUpdate)
-      clearInterval(autoRefreshInterval)
     }
   }, [])
 
