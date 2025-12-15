@@ -59,7 +59,10 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
             </View>
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={onSettingsPress}
+        >
           <Text style={styles.iconText}>⚙️</Text>
         </TouchableOpacity>
       </Animated.View>

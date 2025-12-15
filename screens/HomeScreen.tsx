@@ -8,7 +8,7 @@ import { useTheme } from "../contexts/ThemeContext"
 import { mockNotifications } from "../types/notifications"
 import { QuickChart } from "../components/QuickChart"
 
-export const HomeScreen = memo(function HomeScreen() {
+export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
@@ -23,6 +23,10 @@ export const HomeScreen = memo(function HomeScreen() {
   const onNotificationsPress = useCallback(() => {
     setNotificationsModalVisible(true)
   }, [])
+
+  const onSettingsPress = useCallback(() => {
+    navigation.navigate('Profile')
+  }, [navigation])
 
   const onModalClose = useCallback(() => {
     setNotificationsModalVisible(false)
@@ -52,6 +56,7 @@ export const HomeScreen = memo(function HomeScreen() {
       <Header 
         hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}
+        onSettingsPress={onSettingsPress}
         unreadCount={unreadCount}
       />
       <Animated.ScrollView
