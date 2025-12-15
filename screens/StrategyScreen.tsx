@@ -223,10 +223,17 @@ export function StrategyScreen() {
     setCreateModalVisible(true)
   }, [])
 
-  const handleStrategyCreated = useCallback(() => {
+  const handleStrategyCreated = useCallback(async () => {
     setCreateModalVisible(false)
-    loadStrategies() // Reload strategies
-    loadExecutions() // Reload executions
+    try {
+      await Promise.all([
+        loadStrategies(), // Reload strategies
+        loadExecutions()  // Reload executions
+      ])
+    } catch (error) {
+      console.error("Error reloading data after strategy creation:", error)
+      // Não mostra erro para o usuário pois a estratégia já foi criada com sucesso
+    }
   }, [loadStrategies, loadExecutions])
 
   const formatCurrency = useCallback((value: number) => {

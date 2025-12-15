@@ -16,6 +16,7 @@ import {
 import { Picker } from "@react-native-picker/picker"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useBalance } from "@/contexts/BalanceContext"
 import { strategiesService } from "@/services/strategies"
 import { apiService } from "@/services/api"
 import { LinkedExchange } from "@/types/api"
@@ -51,6 +52,7 @@ const TEMPLATES = [
 export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: CreateStrategyModalProps) {
   const { colors } = useTheme()
   const { t } = useLanguage()
+  const { data: balanceData, loading: balanceLoading } = useBalance()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(false)
   const [exchanges, setExchanges] = useState<LinkedExchange[]>([])
@@ -115,8 +117,16 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       
       console.log("🪙 Loading tokens for exchange:", selectedExchange)
       
-      // Busca os balances do usuário
-      const balanceResponse = await apiService.getBalances(userId)
+      // ✅ OTIMIZAÇÃO: Usa dados do BalanceContext (cache) ao invés de fazer novo fetch
+      let balanceResponse = balanceData
+      
+      // Se não tiver dados no contexto (raro), faz fetch direto
+      if (!balanceResponse) {
+        console.log("⚠️ Balance data not in context, fetching...")
+        balanceResponse = await apiService.getBalances(userId)
+      } else {
+        console.log("✅ Using cached balance data from context")
+      }
       
       // Encontra a exchange selecionada nos balances
       const selectedExchangeData = balanceResponse.exchanges.find(ex => {
@@ -159,14 +169,19 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
         is_active: true,
       })
 
-      Alert.alert("Sucesso", "Estratégia criada com sucesso!")
-      onSuccess()
+      // Fecha o modal e limpa o loading antes de chamar onSuccess
+      setLoading(false)
       onClose()
+      
+      // Aguarda um pouco para o modal fechar antes de recarregar
+      setTimeout(() => {
+        Alert.alert("Sucesso", "Estratégia criada com sucesso!")
+        onSuccess()
+      }, 300)
     } catch (error: any) {
       console.error("Error creating strategy:", error)
-      Alert.alert("Erro", error.message || "Não foi possível criar a estratégia")
-    } finally {
       setLoading(false)
+      Alert.alert("Erro", error.message || "Não foi possível criar a estratégia")
     }
   }
 
