@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Dimensions } from "react-native"
+import { memo } from "react"
 import { LineChart } from "react-native-chart-kit"
 
 const screenWidth = Dimensions.get("window").width
@@ -14,7 +15,7 @@ const chartData = {
   ],
 }
 
-export function QuickChart() {
+export const QuickChart = memo(function QuickChart() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Desempenho - 7 dias</Text>
@@ -55,7 +56,7 @@ export function QuickChart() {
       />
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

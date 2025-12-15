@@ -38,24 +38,38 @@ export function ExchangesManager() {
   const [confirmAction, setConfirmAction] = useState<'delete' | 'disconnect' | null>(null)
   const [confirmExchangeId, setConfirmExchangeId] = useState<string>('')
   const [confirmExchangeName, setConfirmExchangeName] = useState<string>('')
+  
+  // Modal de confirmação de toggle
+  const [confirmToggleModalVisible, setConfirmToggleModalVisible] = useState(false)
+  const [toggleExchangeId, setToggleExchangeId] = useState<string>('')
+  const [toggleExchangeName, setToggleExchangeName] = useState<string>('')
+  const [toggleExchangeNewStatus, setToggleExchangeNewStatus] = useState<string>('')
 
   useEffect(() => {
     fetchExchanges()
   }, [])
 
-  const fetchExchanges = async () => {
+  const fetchExchanges = async (forceRefresh: boolean = false) => {
     try {
       setLoading(true)
       setError(null)
       
+      console.log('🔄 Fetching exchanges... forceRefresh:', forceRefresh)
+      
       const [availableData, linkedData] = await Promise.all([
-        apiService.getAvailableExchanges(config.userId),
-        apiService.getLinkedExchanges(config.userId)
+        apiService.getAvailableExchanges(config.userId, forceRefresh),
+        apiService.getLinkedExchanges(config.userId, forceRefresh)
       ])
       
-      setAvailableExchanges(availableData.exchanges)
-      setLinkedExchanges(linkedData.exchanges)
+      console.log('✅ Exchanges fetched:', {
+        available: availableData.exchanges?.length || 0,
+        linked: linkedData.exchanges?.length || 0
+      })
+      
+      setAvailableExchanges(availableData.exchanges || [])
+      setLinkedExchanges(linkedData.exchanges || [])
     } catch (err) {
+      console.error('❌ Error fetching exchanges:', err)
       setError("Erro ao carregar exchanges")
     } finally {
       setLoading(false)
@@ -82,8 +96,8 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Recarregar lista de exchanges
-        await fetchExchanges()
+        // Recarregar lista de exchanges sem cache
+        await fetchExchanges(true)
         
         // Forçar atualização dos balances
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
@@ -95,6 +109,49 @@ export function ExchangesManager() {
       }
     } catch (err) {
       alert('Não foi possível conectar a exchange')
+    }
+  }
+
+  // Mostra modal de confirmação para toggle
+  const toggleExchange = (exchangeId: string, currentStatus: string, exchangeName: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
+    
+    setToggleExchangeId(exchangeId)
+    setToggleExchangeName(exchangeName)
+    setToggleExchangeNewStatus(newStatus)
+    setConfirmToggleModalVisible(true)
+  }
+
+  // Executa o toggle após confirmação
+  const confirmToggle = async () => {
+    const exchangeId = toggleExchangeId
+    const newStatus = toggleExchangeNewStatus
+    const currentStatus = toggleExchangeNewStatus === 'active' ? 'inactive' : 'active'
+    
+    setConfirmToggleModalVisible(false)
+    
+    console.log(`🔄 Toggling exchange ${exchangeId}: ${currentStatus} → ${newStatus}`)
+    
+    // Atualização otimista
+    setLinkedExchanges(prev =>
+      prev.map(ex =>
+        ex.exchange_id === exchangeId ? { ...ex, status: newStatus as 'active' | 'inactive' } : ex
+      )
+    )
+
+    try {
+      // Aqui você pode adicionar uma chamada à API se necessário
+      // Por enquanto, apenas atualiza localmente
+      console.log(`✅ Exchange ${exchangeId} status updated to ${newStatus}`)
+    } catch (error) {
+      console.error("Error toggling exchange:", error)
+      // Reverte em caso de erro
+      setLinkedExchanges(prev =>
+        prev.map(ex =>
+          ex.exchange_id === exchangeId ? { ...ex, status: currentStatus as 'active' | 'inactive' } : ex
+        )
+      )
+      alert("Não foi possível atualizar o status da exchange")
     }
   }
 
@@ -111,7 +168,7 @@ export function ExchangesManager() {
     
     
     try {
-      const url = '${config.apiBaseUrl}/exchanges/disconnect'
+      const url = `${config.apiBaseUrl}/exchanges/disconnect`
       
       const response = await fetch(url, {
         method: 'POST',
@@ -127,9 +184,13 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        console.log('🔌 Exchange disconnected successfully, refreshing list...')
         
-        // Recarregar lista de exchanges
-        await fetchExchanges()
+        // Pequeno delay para garantir que o backend processou
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Recarregar lista de exchanges sem cache
+        await fetchExchanges(true)
         
         // Forçar atualização dos balances
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
@@ -157,7 +218,7 @@ export function ExchangesManager() {
     
     
     try {
-      const url = '${config.apiBaseUrl}/exchanges/delete'
+      const url = `${config.apiBaseUrl}/exchanges/delete`
       
       const response = await fetch(url, {
         method: 'DELETE',
@@ -173,9 +234,13 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        console.log('🗑️ Exchange deleted successfully, refreshing list...')
         
-        // Recarregar lista de exchanges
-        await fetchExchanges()
+        // Pequeno delay para garantir que o backend processou
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Recarregar lista de exchanges sem cache
+        await fetchExchanges(true)
         
         // Forçar atualização dos balances
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
@@ -227,7 +292,7 @@ export function ExchangesManager() {
     try {
       setConnecting(true)
       
-      const url = '${config.apiBaseUrl}/exchanges/link'
+      const url = `${config.apiBaseUrl}/exchanges/link`
       const payload = {
         user_id: config.userId,
         exchange_id: selectedExchange._id, // Usando o _id da exchange
@@ -248,10 +313,14 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        console.log('🔗 Exchange connected successfully, refreshing list...')
         closeConnectModal()
         
-        // Recarregar lista de exchanges
-        await fetchExchanges()
+        // Pequeno delay para garantir que o backend processou
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Recarregar lista de exchanges sem cache
+        await fetchExchanges(true)
         
         // Forçar atualização dos balances
         await fetch(`${config.apiBaseUrl}/balances?user_id=charles_test_user&force_refresh=true`)
@@ -283,7 +352,7 @@ export function ExchangesManager() {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchExchanges}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => fetchExchanges(true)}>
           <Text style={styles.retryButtonText}>Tentar Novamente</Text>
         </TouchableOpacity>
       </View>
@@ -325,7 +394,7 @@ export function ExchangesManager() {
         {activeTab === 'linked' ? (
           linkedExchanges.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🔗</Text>
+              <Text style={styles.emptyIcon}>�</Text>
               <Text style={styles.emptyTitle}>Nenhuma exchange conectada</Text>
               <Text style={styles.emptyText}>
                 Conecte suas exchanges para visualizar seus ativos
@@ -338,15 +407,15 @@ export function ExchangesManager() {
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.list}>
+<View style={styles.list}>
               {linkedExchanges.map((linkedExchange, index) => {
                 const exchangeNameLower = linkedExchange.name.toLowerCase()
                 const localIcon = exchangeLogos[exchangeNameLower]
-                const menuId = linkedExchange.exchange_id + '_' + index
-                const isMenuOpen = openMenuId === menuId
+                const exchangeId = linkedExchange.exchange_id
+                const isActive = linkedExchange.status === 'active'
                 
                 return (
-                  <View key={menuId} style={styles.card}>
+                  <View key={exchangeId + '_' + index} style={styles.card}>
                     <View style={styles.cardHeader}>
                       <View style={styles.cardLeft}>
                         <View style={styles.iconContainer}>
@@ -370,30 +439,20 @@ export function ExchangesManager() {
                           <Text style={styles.exchangeName}>
                             {linkedExchange.name}
                           </Text>
-                          <View style={[
-                            styles.statusBadge,
-                            linkedExchange.status === 'active' ? styles.statusBadgeActive : styles.statusBadgeInactive
-                          ]}>
-                            <View style={[
-                              styles.statusDot,
-                              linkedExchange.status === 'active' ? styles.statusDotActive : styles.statusDotInactive
-                            ]} />
-                            <Text style={[
-                              styles.statusText,
-                              linkedExchange.status === 'active' ? styles.statusTextActive : styles.statusTextInactive
-                            ]}>
-                              {linkedExchange.status === 'active' ? 'Ativa' : 'Inativa'}
-                            </Text>
-                          </View>
+                          <Text style={styles.exchangeCountry}>
+                            {linkedExchange.country}
+                          </Text>
                         </View>
                       </View>
                       <TouchableOpacity 
-                        style={styles.optionsButton}
-                        onPress={() => toggleMenu(menuId)}
+                        style={[styles.toggleButton, isActive && styles.toggleButtonActive]}
+                        onPress={() => toggleExchange(exchangeId, linkedExchange.status, linkedExchange.name)}
+                        activeOpacity={0.7}
                       >
-                        <Text style={styles.optionsIcon}>⋮</Text>
+                        <View style={[styles.toggleThumb, isActive && styles.toggleThumbActive]} />
                       </TouchableOpacity>
                     </View>
+                    
                     <View style={styles.cardDetails}>
                       <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Conectada em:</Text>
@@ -401,10 +460,33 @@ export function ExchangesManager() {
                           {new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')}
                         </Text>
                       </View>
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>País:</Text>
-                        <Text style={styles.detailValue}>{linkedExchange.country}</Text>
+                    </View>
+
+                    {/* Footer com status e delete */}
+                    <View style={styles.exchangeFooter}>
+                      <View style={[
+                        styles.statusBadge,
+                        isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
+                      ]}>
+                        <View style={[
+                          styles.statusDot,
+                          isActive ? styles.statusDotActive : styles.statusDotInactive
+                        ]} />
+                        <Text style={[
+                          styles.statusText,
+                          isActive ? styles.statusTextActive : styles.statusTextInactive
+                        ]}>
+                          {isActive ? 'Ativa' : 'Inativa'}
+                        </Text>
                       </View>
+                      
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDelete(exchangeId, linkedExchange.name)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.deleteIcon}>🗑️</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 )
@@ -664,6 +746,56 @@ export function ExchangesManager() {
         </View>
       </Modal>
 
+      {/* Modal de Confirmação de Toggle */}
+      <Modal
+        visible={confirmToggleModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmToggleModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.confirmModalOverlay}
+          onPress={() => setConfirmToggleModalVisible(false)}
+        >
+          <Pressable 
+            style={styles.confirmModalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.confirmModalHeader}>
+              <Text style={styles.confirmModalTitle}>
+                {toggleExchangeNewStatus === 'active' ? '✅ Ativar Exchange' : '⏸️ Desativar Exchange'}
+              </Text>
+            </View>
+
+            <View style={styles.confirmModalBody}>
+              <Text style={styles.confirmModalMessage}>
+                {toggleExchangeNewStatus === 'active' 
+                  ? `Tem certeza que deseja ativar a exchange ${toggleExchangeName}? Ela ficará disponível para uso nas estratégias.`
+                  : `Tem certeza que deseja desativar a exchange ${toggleExchangeName}? Ela não será mais utilizada pelas estratégias.`
+                }
+              </Text>
+            </View>
+
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity
+                style={styles.confirmCancelButton}
+                onPress={() => setConfirmToggleModalVisible(false)}
+              >
+                <Text style={styles.confirmCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmSubmitButton}
+                onPress={confirmToggle}
+              >
+                <Text style={styles.confirmSubmitButtonText}>
+                  {toggleExchangeNewStatus === 'active' ? 'Ativar' : 'Desativar'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* Modal de Confirmação (Delete/Disconnect) */}
       <Modal
         visible={confirmModalVisible}
@@ -672,7 +804,7 @@ export function ExchangesManager() {
         onRequestClose={() => setConfirmModalVisible(false)}
       >
         <Pressable 
-          style={styles.modalOverlay}
+          style={styles.confirmModalOverlay}
           onPress={() => setConfirmModalVisible(false)}
         >
           <Pressable 
@@ -938,12 +1070,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
   },
-  optionsButton: {
-    padding: 8,
+  // Toggle Button
+  toggleButton: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#d4d4d4",
+    padding: 2,
+    justifyContent: "center",
   },
-  optionsIcon: {
-    fontSize: 20,
-    color: "#9ca3af",
+  toggleButtonActive: {
+    backgroundColor: "#3b82f6",
+  },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#ffffff",
+  },
+  toggleThumbActive: {
+    alignSelf: "flex-end",
+  },
+  // Exchange Footer
+  exchangeFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  deleteButton: {
+    padding: 6,
+  },
+  deleteIcon: {
+    fontSize: 18,
   },
   cardDetails: {
     marginTop: 12,
@@ -1141,66 +1303,77 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#ffffff",
   },
+  // Confirm Modal (centralizado)
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   confirmModalContent: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
     width: "90%",
     maxWidth: 400,
-    borderWidth: 1,
-    borderColor: "#bbdefb",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   confirmModalHeader: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#bbdefb",
+    borderBottomColor: "#e5e7eb",
   },
   confirmModalTitle: {
     fontSize: 18,
-    fontWeight: "500",
+    fontWeight: "400",
+    textAlign: "center",
+    color: "#111827",
   },
   confirmModalBody: {
-    padding: 20,
+    padding: 24,
   },
   confirmModalMessage: {
     fontSize: 15,
-    color: "#d1d5db",
+    fontWeight: "300",
     lineHeight: 22,
+    textAlign: "center",
+    color: "#374151",
   },
   confirmModalActions: {
     flexDirection: "row",
-    padding: 16,
-    gap: 12,
     borderTopWidth: 1,
-    borderTopColor: "#bbdefb",
+    borderTopColor: "#e5e7eb",
   },
   confirmCancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: "#e3f2fd",
+    padding: 16,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#bbdefb",
+    justifyContent: "center",
+    borderRightWidth: 1,
+    borderRightColor: "#e5e7eb",
   },
   confirmCancelButtonText: {
     fontSize: 15,
     fontWeight: "400",
-    color: "#9ca3af",
+    color: "#6b7280",
   },
   confirmSubmitButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: "#f59e0b",
+    padding: 16,
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f59e0b",
   },
   confirmDeleteButton: {
     backgroundColor: "#ef4444",
   },
   confirmSubmitButtonText: {
     fontSize: 15,
-    fontWeight: "400",
+    fontWeight: "500",
     color: "#ffffff",
   },
 })

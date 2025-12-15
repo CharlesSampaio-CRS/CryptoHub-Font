@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -61,10 +61,26 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light') // Default to light
 
-  const colors = theme === 'light' ? lightColors : darkColors
+  // Memoize colors to prevent recreation on every render
+  const colors = useMemo(() => 
+    theme === 'light' ? lightColors : darkColors, 
+    [theme]
+  )
+
+  // Memoize setTheme to maintain stable reference
+  const handleSetTheme = useCallback((newTheme: Theme) => {
+    setTheme(newTheme)
+  }, [])
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    theme,
+    colors,
+    setTheme: handleSetTheme
+  }), [theme, colors, handleSetTheme])
 
   return (
-    <ThemeContext.Provider value={{ theme, colors, setTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   )

@@ -28,11 +28,19 @@ export const apiService = {
   /**
    * Busca todas as exchanges disponíveis para conexão
    * @param userId ID do usuário
+   * @param forceRefresh Força atualização sem cache
    * @returns Promise com a lista de exchanges disponíveis
    */
-  async getAvailableExchanges(userId: string): Promise<AvailableExchangesResponse> {
+  async getAvailableExchanges(userId: string, forceRefresh: boolean = false): Promise<AvailableExchangesResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/exchanges/available?user_id=${userId}`);
+      const url = `${API_BASE_URL}/exchanges/available?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
+      console.log('Fetching available exchanges from:', url, 'forceRefresh:', forceRefresh);
+      
+      // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
+      const response = await fetch(url, { 
+        method: 'GET',
+        cache: forceRefresh ? 'no-store' : 'default'
+      });
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -42,6 +50,7 @@ export const apiService = {
       return data;
     } catch (error) {
       console.error('Error fetching available exchanges:', error);
+      console.error('URL was:', `${API_BASE_URL}/exchanges/available?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`);
       throw error;
     }
   },
@@ -51,9 +60,16 @@ export const apiService = {
    * @param userId ID do usuário
    * @returns Promise com a lista de exchanges conectadas
    */
-  async getLinkedExchanges(userId: string): Promise<LinkedExchangesResponse> {
+  async getLinkedExchanges(userId: string, forceRefresh: boolean = false): Promise<LinkedExchangesResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/exchanges/linked?user_id=${userId}`);
+      const url = `${API_BASE_URL}/exchanges/linked?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
+      console.log('Fetching linked exchanges from:', url, 'forceRefresh:', forceRefresh);
+      
+      // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
+      const response = await fetch(url, { 
+        method: 'GET',
+        cache: forceRefresh ? 'no-store' : 'default'
+      });
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -63,6 +79,7 @@ export const apiService = {
       return data;
     } catch (error) {
       console.error('Error fetching linked exchanges:', error);
+      console.error('URL was:', `${API_BASE_URL}/exchanges/linked?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`);
       throw error;
     }
   },

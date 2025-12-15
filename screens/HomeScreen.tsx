@@ -1,16 +1,24 @@
 import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
-import { useRef, useState } from "react"
+import { useRef, useState, useMemo } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { QuickChart } from "../components/QuickChart"
 import { ExchangesList } from "../components/ExchangesList"
+import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
+import { mockNotifications } from "../types/notifications"
 
 export function HomeScreen() {
   const { colors } = useTheme()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
+  const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
   const lastScrollY = useRef(0)
+
+  const unreadCount = useMemo(() => 
+    mockNotifications.filter(n => !n.read).length, 
+    []
+  )
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -33,7 +41,11 @@ export function HomeScreen() {
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header hideIcons={isScrollingDown} />
+      <Header 
+        hideIcons={isScrollingDown} 
+        onNotificationsPress={() => setNotificationsModalVisible(true)}
+        unreadCount={unreadCount}
+      />
       <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -45,6 +57,11 @@ export function HomeScreen() {
         <QuickChart />
         <ExchangesList />
       </Animated.ScrollView>
+
+      <NotificationsModal 
+        visible={notificationsModalVisible}
+        onClose={() => setNotificationsModalVisible(false)}
+      />
     </SafeAreaView>
   )
 }

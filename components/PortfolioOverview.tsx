@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
-import { useEffect, useState } from "react"
+import { useEffect, useState, memo } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
 
-export function PortfolioOverview() {
+export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -126,7 +126,7 @@ export function PortfolioOverview() {
       </View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native"
-import { useEffect, useState } from "react"
+import { useEffect, useState, memo } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
@@ -18,7 +18,7 @@ const exchangeLogos: Record<string, any> = {
   "okx": require("@/assets/okx.png"),
 }
 
-export function ExchangesList() {
+export const ExchangesList = memo(function ExchangesList() {
   const { colors } = useTheme()
   const [data, setData] = useState<BalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -234,7 +234,7 @@ export function ExchangesList() {
       </View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

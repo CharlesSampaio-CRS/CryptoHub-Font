@@ -3,70 +3,81 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { StatusBar } from "expo-status-bar"
 import { HomeScreen } from "./screens/HomeScreen"
 import { ExchangesScreen } from "./screens/ExchangesScreen"
-import { WalletScreen } from "./screens/WalletScreen"
+import { StrategyScreen } from "./screens/StrategyScreen"
 import { ProfileScreen } from "./screens/ProfileScreen"
 import { ThemeProvider } from "./contexts/ThemeContext"
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
 
 const Tab = createBottomTabNavigator()
 
+function AppNavigator() {
+  const { t } = useLanguage()
+  
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: "#ffffff",
+            borderTopColor: "#e0f2fe",
+            height: 70,
+            paddingBottom: 10,
+            paddingTop: 10,
+          },
+          tabBarActiveTintColor: "#3b82f6",
+          tabBarInactiveTintColor: "#94a3b8",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "400",
+          },
+        }}
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            tabBarLabel: t('nav.home'),
+            tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+          }}
+        />
+        <Tab.Screen
+          name="Exchanges"
+          component={ExchangesScreen}
+          options={{
+            tabBarLabel: t('nav.exchanges'),
+            tabBarIcon: ({ color }) => <ExchangeIcon color={color} />,
+          }}
+        />
+        <Tab.Screen
+          name="Strategy"
+          component={StrategyScreen}
+          options={{
+            tabBarLabel: t('nav.strategies'),
+            tabBarIcon: ({ color }) => <RobotIcon color={color} />,
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: t('nav.profile'),
+            tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
+          }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  )
+}
+
 export default function App() {
   return (
-    <ThemeProvider>
-      <StatusBar style="light" />
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={{
-            headerShown: false,
-            tabBarStyle: {
-              backgroundColor: "#ffffff",
-              borderTopColor: "#e0f2fe",
-              height: 70,
-              paddingBottom: 10,
-              paddingTop: 10,
-            },
-            tabBarActiveTintColor: "#3b82f6",
-            tabBarInactiveTintColor: "#94a3b8",
-            tabBarLabelStyle: {
-              fontSize: 12,
-              fontWeight: "400",
-            },
-          }}
-        >
-          <Tab.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{
-              tabBarLabel: "Início",
-              tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Exchanges"
-            component={ExchangesScreen}
-            options={{
-              tabBarLabel: "Exchanges",
-              tabBarIcon: ({ color }) => <ExchangeIcon color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Wallet"
-            component={WalletScreen}
-            options={{
-              tabBarLabel: "Estratégias",
-              tabBarIcon: ({ color }) => <RobotIcon color={color} />,
-            }}
-          />
-          <Tab.Screen
-            name="Profile"
-            component={ProfileScreen}
-            options={{
-              tabBarLabel: "Perfil",
-              tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
-            }}
-          />
-        </Tab.Navigator>
-      </NavigationContainer>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <StatusBar style="light" />
+        <AppNavigator />
+      </ThemeProvider>
+    </LanguageProvider>
   )
 }
 

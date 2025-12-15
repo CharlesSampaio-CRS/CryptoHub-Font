@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, memo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 
 interface HeaderProps {
   hideIcons?: boolean
+  onNotificationsPress?: () => void
+  unreadCount?: number
 }
 
-export function Header({ hideIcons = false }: HeaderProps) {
+export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
   const iconOpacity = useRef(new Animated.Value(1)).current
   const iconScale = useRef(new Animated.Value(1)).current
@@ -43,8 +45,16 @@ export function Header({ hideIcons = false }: HeaderProps) {
         ]}
         pointerEvents={hideIcons ? "none" : "auto"}
       >
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={onNotificationsPress}
+        >
           <Text style={styles.iconText}>🔔</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={styles.iconText}>⚙️</Text>
@@ -52,7 +62,7 @@ export function Header({ hideIcons = false }: HeaderProps) {
       </Animated.View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   header: {
@@ -83,9 +93,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 7,
     borderWidth: 0.5,
+    position: "relative",
   },
   iconText: {
     fontSize: 13,
     opacity: 0.5,
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 9,
+    fontWeight: "600",
+    lineHeight: 16,
   },
 })
