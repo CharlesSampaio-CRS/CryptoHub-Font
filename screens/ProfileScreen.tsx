@@ -122,7 +122,9 @@ export function ProfileScreen() {
 
           <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>💰</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>💰</Text>
+              </View>
               <Text style={[styles.menuItemText, { color: colors.text }]}>Moeda Preferida</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
@@ -136,7 +138,9 @@ export function ProfileScreen() {
           {/* Modo Escuro */}
           <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginBottom: 12 }]}>
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>{theme === 'dark' ? '🌙' : '☀️'}</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>{theme === 'dark' ? '🌙' : '☀️'}</Text>
+              </View>
               <View>
                 <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.darkMode')}</Text>
                 <Text style={[styles.themeSubtext, { color: colors.textSecondary }]}>
@@ -159,7 +163,9 @@ export function ProfileScreen() {
           {/* Idioma */}
           <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>🌍</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>🌍</Text>
+              </View>
               <View>
                 <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.language')}</Text>
                 <Text style={[styles.themeSubtext, { color: colors.textSecondary }]}>
@@ -196,7 +202,9 @@ export function ProfileScreen() {
             onPress={() => setAboutModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>ℹ️</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>ℹ️</Text>
+              </View>
               <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.aboutApp')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
@@ -207,7 +215,9 @@ export function ProfileScreen() {
             onPress={() => setTermsModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>📄</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>📄</Text>
+              </View>
               <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.terms')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
@@ -218,7 +228,9 @@ export function ProfileScreen() {
             onPress={() => setPrivacyModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>🔐</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>🔐</Text>
+              </View>
               <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.privacy')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
