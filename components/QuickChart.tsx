@@ -11,7 +11,7 @@ const screenWidth = Dimensions.get("window").width
 
 export const QuickChart = memo(function QuickChart() {
   const { t } = useLanguage()
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
@@ -85,23 +85,27 @@ export const QuickChart = memo(function QuickChart() {
         width={screenWidth - 64}
         height={200}
         chartConfig={{
-          backgroundColor: "#ffffff",
-          backgroundGradientFrom: "#ffffff",
-          backgroundGradientTo: "#ffffff",
+          backgroundColor: isDark ? "#1e293b" : "#ffffff",
+          backgroundGradientFrom: isDark ? "#1e293b" : "#ffffff",
+          backgroundGradientTo: isDark ? "#1e293b" : "#ffffff",
           decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
+          color: (opacity = 1) => isDark 
+            ? `rgba(226, 232, 240, ${opacity})` // Slate 200 - cinza bem clarinho
+            : `rgba(59, 130, 246, ${opacity})`, // Blue 500
+          labelColor: (opacity = 1) => isDark
+            ? `rgba(203, 213, 225, ${opacity})` // Slate 300
+            : `rgba(156, 163, 175, ${opacity})`, // Gray 400
           style: {
             borderRadius: 16,
           },
           propsForDots: {
             r: "4",
             strokeWidth: "2",
-            stroke: "#3b82f6",
+            stroke: isDark ? "#e2e8f0" : "#3b82f6", // Slate 200 : Blue 500
           },
           propsForBackgroundLines: {
             strokeDasharray: "",
-            stroke: "#e3f2fd",
+            stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "#e3f2fd", // Slate 600 low opacity : Light blue
             strokeWidth: 1,
           },
         }}
