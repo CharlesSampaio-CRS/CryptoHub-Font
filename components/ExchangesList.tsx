@@ -28,7 +28,6 @@ export const ExchangesList = memo(function ExchangesList() {
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
   const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   useEffect(() => {
     fetchBalances()
@@ -46,29 +45,20 @@ export const ExchangesList = memo(function ExchangesList() {
 
   const fetchBalances = useCallback(async (forceRefresh = false, silent = false) => {
     try {
-      // Não mostra loading depois da primeira carga
-      if (!silent && !isInitialLoad) {
+      // Só mostra loading na primeira vez (quando não tem dados)
+      if (!silent && !data) {
         setLoading(true)
       }
       setError(null)
       
       const response = await apiService.getBalances(config.userId)
       setData(response)
-      
-      if (isInitialLoad) {
-        setIsInitialLoad(false)
-      }
     } catch (err) {
       setError(t('exchanges.error'))
     } finally {
-      if (!silent && !isInitialLoad) {
-        setLoading(false)
-      }
-      if (isInitialLoad) {
-        setLoading(false)
-      }
+      setLoading(false)
     }
-  }, [t, isInitialLoad])
+  }, [t, data])
 
   if (loading) {
     return (
