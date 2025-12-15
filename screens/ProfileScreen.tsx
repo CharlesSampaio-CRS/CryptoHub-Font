@@ -99,7 +99,9 @@ export function ProfileScreen() {
             onPress={() => setNotificationsModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>🔔</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>🔔</Text>
+              </View>
               <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.notifications')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
@@ -110,7 +112,9 @@ export function ProfileScreen() {
             onPress={() => setSecurityModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>🔒</Text>
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={styles.menuIcon}>🔒</Text>
+              </View>
               <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.security')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
@@ -236,14 +240,12 @@ export function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setAboutModalVisible(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setAboutModalVisible(false)}
-        >
+        <View style={styles.modalOverlay}>
           <Pressable 
-            style={[styles.modalContent, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+            style={styles.modalOverlayDismiss}
+            onPress={() => setAboutModalVisible(false)}
+          />
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <ScrollView 
               showsVerticalScrollIndicator={true}
               contentContainerStyle={{ padding: 24 }}
@@ -302,8 +304,8 @@ export function ProfileScreen() {
                 <Text style={styles.modalButtonText}>Fechar</Text>
               </TouchableOpacity>
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* Modal Termos de Uso */}
@@ -313,14 +315,12 @@ export function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setTermsModalVisible(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setTermsModalVisible(false)}
-        >
+        <View style={styles.modalOverlay}>
           <Pressable 
-            style={[styles.modalContent, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+            style={styles.modalOverlayDismiss}
+            onPress={() => setTermsModalVisible(false)}
+          />
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <ScrollView 
               showsVerticalScrollIndicator={true}
               contentContainerStyle={{ padding: 24 }}
@@ -433,8 +433,8 @@ export function ProfileScreen() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* Modal Política de Privacidade */}
@@ -444,14 +444,12 @@ export function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setPrivacyModalVisible(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setPrivacyModalVisible(false)}
-        >
+        <View style={styles.modalOverlay}>
           <Pressable 
-            style={[styles.modalContent, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+            style={styles.modalOverlayDismiss}
+            onPress={() => setPrivacyModalVisible(false)}
+          />
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <ScrollView 
               showsVerticalScrollIndicator={true}
               contentContainerStyle={{ padding: 24 }}
@@ -613,8 +611,8 @@ export function ProfileScreen() {
                 <Text style={styles.modalButtonText}>Entendi</Text>
               </TouchableOpacity>
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* Modal de Segurança */}
@@ -624,14 +622,12 @@ export function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setSecurityModalVisible(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setSecurityModalVisible(false)}
-        >
+        <View style={styles.modalOverlay}>
           <Pressable 
-            style={[styles.modalContent, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+            style={styles.modalOverlayDismiss}
+            onPress={() => setSecurityModalVisible(false)}
+          />
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <ScrollView 
               showsVerticalScrollIndicator={true}
               contentContainerStyle={{ padding: 24 }}
@@ -954,8 +950,8 @@ export function ProfileScreen() {
                 <Text style={styles.modalButtonText}>Salvar Configurações</Text>
               </TouchableOpacity>
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* Modal de Notificações */}
@@ -1031,9 +1027,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  menuIcon: {
-    fontSize: 18,
+  menuIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
+  },
+  menuIcon: {
+    fontSize: 20,
   },
   menuItemText: {
     fontSize: 14,
@@ -1147,6 +1150,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+  },
+  modalOverlayDismiss: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalContent: {
     width: "100%",
