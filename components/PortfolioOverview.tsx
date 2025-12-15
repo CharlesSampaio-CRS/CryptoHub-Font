@@ -44,7 +44,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
           {refreshing ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <View style={[styles.refreshIconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+            <View style={styles.refreshIconContainer}>
               <Text style={[styles.refreshIcon, { color: colors.primary }]}>↻</Text>
             </View>
           )}

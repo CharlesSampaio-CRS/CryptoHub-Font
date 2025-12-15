@@ -19,7 +19,7 @@ const exchangeLogos: Record<string, any> = {
 }
 
 export const ExchangesList = memo(function ExchangesList() {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error } = useBalance()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
@@ -60,9 +60,9 @@ export const ExchangesList = memo(function ExchangesList() {
     toggleThumb: { backgroundColor: colors.background },
     tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
     tokenSymbolBadge: { backgroundColor: colors.surfaceSecondary, borderColor: colors.primary },
-    tokenItem: { borderBottomColor: colors.border },
+    tokenItem: { borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : colors.border }, // Borda mais suave no dark mode
     logoContainer: { backgroundColor: colors.surface, borderColor: colors.border },
-  }), [colors])
+  }), [colors, isDark])
 
   if (loading) {
     return (

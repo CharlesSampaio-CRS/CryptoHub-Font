@@ -42,19 +42,19 @@ const lightColors: ThemeColors = {
 }
 
 const darkColors: ThemeColors = {
-  background: '#1e293b',      // Slate 800 - mais claro e suave
-  surface: '#334155',         // Slate 700 - superfícies mais claras
-  surfaceSecondary: '#475569', // Slate 600 - elementos secundários
-  border: '#64748b',          // Slate 500 - bordas mais visíveis
-  text: '#f8fafc',            // Slate 50 - texto bem claro
-  textSecondary: '#e2e8f0',   // Slate 200 - secundário mais visível
-  primary: '#60a5fa',         // Blue 400 - primário mais claro
+  background: '#0f172a',      // Slate 900 - fundo escuro mas sofisticado
+  surface: '#1e293b',         // Slate 800 - superfícies mais escuras
+  surfaceSecondary: '#334155', // Slate 700 - elementos secundários
+  border: '#475569',          // Slate 600 - bordas sutis e elegantes
+  text: '#f1f5f9',            // Slate 100 - texto super claro
+  textSecondary: '#cbd5e1',   // Slate 300 - secundário bem visível
+  primary: '#60a5fa',         // Blue 400 - primário vibrante
   primaryDark: '#3b82f6',     // Blue 500
-  success: '#34d399',         // Green 400 - verde mais claro
-  danger: '#f87171',          // Red 400 - vermelho mais suave
-  warning: '#fbbf24',         // Amber 400 - amarelo mais claro
-  card: '#334155',            // Slate 700 - cards mais claros
-  cardBorder: '#475569',      // Slate 600 - bordas suaves
+  success: '#34d399',         // Green 400 - verde claro
+  danger: '#f87171',          // Red 400 - vermelho suave
+  warning: '#fbbf24',         // Amber 400 - amarelo claro
+  card: '#1e293b',            // Slate 800 - cards escuros elegantes
+  cardBorder: '#334155',      // Slate 700 - bordas dos cards sutis
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
