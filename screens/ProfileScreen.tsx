@@ -1,14 +1,24 @@
-import { Text, StyleSheet, ScrollView, View, Image, TouchableOpacity, Alert, Animated, Modal, Pressable } from "react-native"
+import { Text, StyleSheet, ScrollView, View, Image, TouchableOpacity, Alert, Animated, Modal, Pressable, Switch } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { config } from "../lib/config"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
+import { useAuth } from "../contexts/AuthContext"
 import { NotificationsModal } from "../components/NotificationsModal"
 
 export function ProfileScreen() {
   const { theme, setTheme, colors } = useTheme()
   const { language, setLanguage, t } = useLanguage()
+  const { 
+    logout, 
+    user,
+    biometricAvailable, 
+    biometricType, 
+    isBiometricEnabled,
+    enableBiometric,
+    disableBiometric 
+  } = useAuth()
   const scrollY = useRef(new Animated.Value(0)).current
   
   // Estados dos modais
@@ -19,8 +29,7 @@ export function ProfileScreen() {
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
   
-  // Estados de segurança
-  const [biometricEnabled, setBiometricEnabled] = useState(false)
+  // Estados de segurança  
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false)
   const [autoLockEnabled, setAutoLockEnabled] = useState(true)
@@ -43,8 +52,13 @@ export function ProfileScreen() {
       t('profile.logoutConfirm'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('profile.logout'), style: 'destructive', onPress: () => {
-          // Implementar logout
+        { text: t('profile.logout'), style: 'destructive', onPress: async () => {
+          try {
+            await logout()
+            Alert.alert('✓ Logout', 'Você saiu com sucesso!')
+          } catch (error) {
+            Alert.alert('Erro', 'Falha ao fazer logout')
+          }
         }},
       ]
     )
@@ -86,8 +100,19 @@ export function ProfileScreen() {
             />
           </View>
           
-          <Text style={[styles.userName, { color: colors.text }]}>@{config.userId}</Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{t('profile.user')}</Text>
+          <Text style={[styles.userName, { color: colors.text }]}>
+            {user?.name || `@${config.userId}`}
+          </Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+            {user?.email || t('profile.user')}
+          </Text>
+          {user?.authProvider && (
+            <Text style={[styles.authProvider, { color: colors.textSecondary }]}>
+              {user.authProvider === 'google' && '🔵 Conectado via Google'}
+              {user.authProvider === 'apple' && '🍎 Conectado via Apple'}
+              {user.authProvider === 'email' && '📧 Conta local'}
+            </Text>
+          )}
         </View>
 
         {/* Menu de Configurações */}
@@ -659,32 +684,40 @@ export function ProfileScreen() {
                   
                   <View style={[styles.securityItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.securityItemContent}>
-                      <Text style={styles.securityItemIcon}>👤</Text>
+                      <Text style={styles.securityItemIcon}>
+                        {biometricType === 'Face ID' ? '👤' : '👆'}
+                      </Text>
                       <View style={styles.securityItemText}>
-                        <Text style={[styles.securityItemTitle, { color: colors.text }]}>Face ID / Touch ID</Text>
+                        <Text style={[styles.securityItemTitle, { color: colors.text }]}>
+                          {biometricType || 'Face ID / Touch ID'}
+                        </Text>
                         <Text style={[styles.securityItemSubtitle, { color: colors.textSecondary }]}>
-                          {biometricEnabled ? 'Ativado' : 'Desativado'}
+                          {!biometricAvailable 
+                            ? 'Não disponível' 
+                            : isBiometricEnabled ? 'Ativado' : 'Desativado'}
                         </Text>
                       </View>
                     </View>
-                    <TouchableOpacity 
-                      style={[styles.toggle, biometricEnabled && styles.toggleActive]}
-                      onPress={() => {
-                        setBiometricEnabled(!biometricEnabled)
-                        Alert.alert(
-                          biometricEnabled ? '✓ Desativado' : '✓ Ativado',
-                          biometricEnabled 
-                            ? 'Autenticação biométrica desativada' 
-                            : 'Autenticação biométrica ativada com sucesso!'
-                        )
-                      }}
-                    >
-                      <View style={[
-                        styles.toggleThumb, 
-                        biometricEnabled && styles.toggleThumbActive,
-                        { backgroundColor: biometricEnabled ? '#fff' : '#9ca3af' }
-                      ]} />
-                    </TouchableOpacity>
+                    {biometricAvailable && (
+                      <Switch
+                        value={isBiometricEnabled}
+                        onValueChange={async (value) => {
+                          if (value) {
+                            const success = await enableBiometric()
+                            if (success) {
+                              Alert.alert('✓ Ativado', 'Autenticação biométrica ativada com sucesso!')
+                            } else {
+                              Alert.alert('Erro', 'Falha ao ativar autenticação biométrica')
+                            }
+                          } else {
+                            await disableBiometric()
+                            Alert.alert('✓ Desativado', 'Autenticação biométrica desativada')
+                          }
+                        }}
+                        trackColor={{ false: colors.border, true: '#3b82f6' }}
+                        thumbColor={isBiometricEnabled ? '#ffffff' : '#f4f3f4'}
+                      />
+                    )}
                   </View>
                 </View>
 
@@ -1012,6 +1045,11 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 13,
     fontWeight: "300",
+  },
+  authProvider: {
+    fontSize: 12,
+    fontWeight: "400",
+    marginTop: 8,
   },
   // Menu
   menuSection: {

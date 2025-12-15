@@ -1,25 +1,40 @@
 import { NavigationContainer } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { StatusBar } from "expo-status-bar"
+import { ActivityIndicator, View } from "react-native"
 import Svg, { Path, Rect, Circle } from "react-native-svg"
 import { HomeScreen } from "./screens/HomeScreen"
 import { ExchangesScreen } from "./screens/ExchangesScreen"
 import { StrategyScreen } from "./screens/StrategyScreen"
 import { ProfileScreen } from "./screens/ProfileScreen"
+import { LoginScreen } from "./screens/LoginScreen"
+import { SignUpScreen } from "./screens/SignUpScreen"
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
 import { BalanceProvider } from "./contexts/BalanceContext"
+import { AuthProvider, useAuth } from "./contexts/AuthContext"
 
 const Tab = createBottomTabNavigator()
+const Stack = createNativeStackNavigator()
 
-function AppNavigator() {
+// Auth Stack (Login/SignUp)
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+    </Stack.Navigator>
+  )
+}
+
+// Main App Tabs (após login)
+function MainTabs() {
   const { t } = useLanguage()
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
   
   return (
-    <NavigationContainer>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <Tab.Navigator
+    <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
@@ -70,6 +85,26 @@ function AppNavigator() {
           }}
         />
       </Tab.Navigator>
+  )
+}
+
+// App Navigator - decide entre Auth ou Main baseado no login
+function AppNavigator() {
+  const { isAuthenticated, isLoading } = useAuth()
+  const { colors, isDark } = useTheme()
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    )
+  }
+
+  return (
+    <NavigationContainer>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      {isAuthenticated ? <MainTabs /> : <AuthStack />}
     </NavigationContainer>
   )
 }
@@ -78,9 +113,11 @@ export default function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
-        <BalanceProvider>
-          <AppNavigator />
-        </BalanceProvider>
+        <AuthProvider>
+          <BalanceProvider>
+            <AppNavigator />
+          </BalanceProvider>
+        </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>
   )
