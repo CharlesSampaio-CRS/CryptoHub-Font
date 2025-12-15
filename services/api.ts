@@ -1,4 +1,4 @@
-import { BalanceResponse, AvailableExchangesResponse, LinkedExchangesResponse } from '@/types/api';
+import { BalanceResponse, AvailableExchangesResponse, LinkedExchangesResponse, PortfolioEvolutionResponse } from '@/types/api';
 import { config } from '@/lib/config';
 
 const API_BASE_URL = config.apiBaseUrl;
@@ -126,5 +126,37 @@ export const apiService = {
       minimumFractionDigits: 2,
       maximumFractionDigits: 10,
     }).format(numValue);
+  },
+
+  /**
+   * Busca o histórico de evolução do portfólio
+   * @param userId ID do usuário
+   * @param days Número de dias para buscar (padrão: 7)
+   * @returns Promise com os dados de evolução
+   */
+  async getPortfolioEvolution(userId: string, days: number = 7): Promise<PortfolioEvolutionResponse> {
+    try {
+      const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
+      console.log('📊 Fetching portfolio evolution from:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Portfolio evolution data:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error fetching portfolio evolution:', error);
+      throw error;
+    }
   }
 };

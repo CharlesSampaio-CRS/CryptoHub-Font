@@ -66,3 +66,21 @@ export interface LinkedExchangesResponse {
   success: boolean;
   total: number;
 }
+
+export interface PortfolioEvolutionPoint {
+  date: string;
+  total_usd: number;
+  timestamp: string;
+}
+
+export interface PortfolioEvolutionResponse {
+  user_id: string;
+  days: number;
+  data: PortfolioEvolutionPoint[];
+  summary: {
+    start_value: number;
+    end_value: number;
+    change_usd: number;
+    change_percent: number;
+  };
+}
