@@ -63,6 +63,8 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
   const [selectedExchange, setSelectedExchange] = useState<string>("")
   const [token, setToken] = useState<string>("")
   const [showCustomTokenInput, setShowCustomTokenInput] = useState(false)
+  const [tokenSearchQuery, setTokenSearchQuery] = useState<string>("")
+  const [showTokenDropdown, setShowTokenDropdown] = useState(false)
 
   useEffect(() => {
     if (visible) {
@@ -75,6 +77,8 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       setToken("")
       setTokens([])
       setShowCustomTokenInput(false)
+      setTokenSearchQuery("")
+      setShowTokenDropdown(false)
     }
   }, [visible])
 
@@ -139,7 +143,8 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
   }
 
   const handleCreateStrategy = async () => {
-    if (!selectedTemplate || !selectedExchange || !token) {
+    const finalToken = token || tokenSearchQuery
+    if (!selectedTemplate || !selectedExchange || !finalToken.trim()) {
       Alert.alert("Atenção", "Preencha todos os campos")
       return
     }
@@ -149,7 +154,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       await strategiesService.createStrategy({
         user_id: userId,
         exchange_id: selectedExchange,
-        token: token.toUpperCase(),
+        token: finalToken.toUpperCase(),
         template: selectedTemplate as "simple" | "conservative" | "aggressive",
         is_active: true,
       })
@@ -167,7 +172,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
 
   const canProceedToStep2 = selectedTemplate !== ""
   const canProceedToStep3 = selectedExchange !== ""
-  const canCreate = token.trim() !== ""
+  const canCreate = token.trim() !== "" || tokenSearchQuery.trim() !== ""
 
   const getSelectedExchangeName = () => {
     const exchange = exchanges.find(e => {
@@ -419,66 +424,97 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                   </View>
                 ) : (
                   <>
-                    {/* Select de tokens */}
+                    {/* Select com autocomplete de tokens */}
                     <View style={styles.selectContainer}>
                       <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
                         Token
                       </Text>
-                      <View
+                      <TextInput
                         style={[
-                          styles.pickerWrapper,
-                          { backgroundColor: colors.background, borderColor: colors.border },
+                          styles.input,
+                          { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
                         ]}
-                      >
-                        <Picker
-                          selectedValue={showCustomTokenInput ? "custom" : token}
-                          onValueChange={(value) => {
-                            if (value === "custom") {
-                              setShowCustomTokenInput(true)
-                              setToken("")
-                            } else {
-                              setShowCustomTokenInput(false)
-                              setToken(value)
-                              console.log("🪙 Token selected:", value)
-                            }
-                          }}
-                          style={[styles.picker, { color: colors.text }]}
-                          dropdownIconColor={colors.text}
-                        >
-                          <Picker.Item label="Selecione um token" value="" />
-                          {tokens.map((tokenSymbol) => (
-                            <Picker.Item 
-                              key={tokenSymbol} 
-                              label={tokenSymbol} 
-                              value={tokenSymbol} 
-                            />
-                          ))}
-                          <Picker.Item label="✏️ Outro (digitar manualmente)" value="custom" />
-                        </Picker>
-                      </View>
-                    </View>
+                        placeholder="Digite ou selecione um token (Ex: BTC, ETH, SOL)"
+                        placeholderTextColor={colors.textSecondary}
+                        value={tokenSearchQuery}
+                        onChangeText={(text) => {
+                          setTokenSearchQuery(text.toUpperCase())
+                          setShowTokenDropdown(true)
+                        }}
+                        onFocus={() => setShowTokenDropdown(true)}
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                      />
 
-                    {/* Custom token input (aparece quando seleciona "Outro") */}
-                    {showCustomTokenInput && (
-                      <View style={styles.customInputContainer}>
-                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                          Digite o token
-                        </Text>
-                        <TextInput
-                          style={[
-                            styles.input,
-                            { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
-                          ]}
-                          placeholder="Ex: BTC, ETH, SOL"
-                          placeholderTextColor={colors.textSecondary}
-                          value={token}
-                          onChangeText={setToken}
-                          autoCapitalize="characters"
-                          autoCorrect={false}
-                          autoFocus
-                        />
-                      </View>
-                    )}
+                      {/* Dropdown com sugestões filtradas */}
+                      {showTokenDropdown && tokenSearchQuery && (
+                        <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                          <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                            {tokens
+                              .filter(t => t.includes(tokenSearchQuery))
+                              .map((tokenSymbol) => (
+                                <TouchableOpacity
+                                  key={tokenSymbol}
+                                  style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
+                                  onPress={() => {
+                                    setToken(tokenSymbol)
+                                    setTokenSearchQuery(tokenSymbol)
+                                    setShowTokenDropdown(false)
+                                    console.log("🪙 Token selected:", tokenSymbol)
+                                  }}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>
+                                    {tokenSymbol}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            
+                            {/* Se não encontrou correspondência, mostrar opção de usar o digitado */}
+                            {tokens.filter(t => t.includes(tokenSearchQuery)).length === 0 && (
+                              <TouchableOpacity
+                                style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
+                                onPress={() => {
+                                  setToken(tokenSearchQuery)
+                                  setShowTokenDropdown(false)
+                                  console.log("🪙 Custom token:", tokenSearchQuery)
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={[styles.dropdownItemText, { color: colors.primary }]}>
+                                  ✏️ Usar "{tokenSearchQuery}"
+                                </Text>
+                              </TouchableOpacity>
+                            )}
+                          </ScrollView>
+                        </View>
+                      )}
+
+                      {/* Lista completa quando campo está vazio mas com foco */}
+                      {showTokenDropdown && !tokenSearchQuery && tokens.length > 0 && (
+                        <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                          <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                            {tokens.map((tokenSymbol) => (
+                              <TouchableOpacity
+                                key={tokenSymbol}
+                                style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
+                                onPress={() => {
+                                  setToken(tokenSymbol)
+                                  setTokenSearchQuery(tokenSymbol)
+                                  setShowTokenDropdown(false)
+                                  console.log("🪙 Token selected:", tokenSymbol)
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={[styles.dropdownItemText, { color: colors.text }]}>
+                                  {tokenSymbol}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )}
+                    </View>
                   </>
                 )}
               </View>
@@ -731,6 +767,35 @@ const styles = StyleSheet.create({
   selectContainer: {
     gap: 8,
     marginBottom: 16,
+    position: "relative",
+    zIndex: 1000,
+  },
+  dropdown: {
+    position: "absolute",
+    top: 80,
+    left: 0,
+    right: 0,
+    maxHeight: 200,
+    borderWidth: 1,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1001,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: "400",
   },
   selectWrapper: {
     borderWidth: 1,
