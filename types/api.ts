@@ -67,20 +67,27 @@ export interface LinkedExchangesResponse {
   total: number;
 }
 
-export interface PortfolioEvolutionPoint {
-  date: string;
-  total_usd: number;
-  timestamp: string;
+export interface PortfolioEvolutionSummary {
+  period_days: number;
+  data_points: number;
+  start_value_usd: string;
+  end_value_usd: string;
+  min_value_usd: string;
+  max_value_usd: string;
+  change_usd: string;
+  change_percent: string;
+}
+
+export interface PortfolioEvolution {
+  timestamps: string[];
+  values_usd: number[];
+  values_brl: number[];
+  summary: PortfolioEvolutionSummary;
 }
 
 export interface PortfolioEvolutionResponse {
   user_id: string;
   days: number;
-  data: PortfolioEvolutionPoint[];
-  summary: {
-    start_value: number;
-    end_value: number;
-    change_usd: number;
-    change_percent: number;
-  };
+  success: boolean;
+  evolution: PortfolioEvolution;
 }
