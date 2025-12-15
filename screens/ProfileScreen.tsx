@@ -244,7 +244,10 @@ export function ProfileScreen() {
             style={[styles.modalContent, { backgroundColor: colors.card }]}
             onPress={(e) => e.stopPropagation()}
           >
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ padding: 24 }}
+            >
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>🚀 CryptoHub</Text>
                 <Text style={[styles.modalVersion, { color: colors.textSecondary }]}>Versão 1.0.0</Text>
@@ -318,7 +321,10 @@ export function ProfileScreen() {
             style={[styles.modalContent, { backgroundColor: colors.card }]}
             onPress={(e) => e.stopPropagation()}
           >
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ padding: 24 }}
+            >
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>📄 Termos de Uso</Text>
                 <Text style={[styles.modalVersion, { color: colors.textSecondary }]}>Última atualização: 14/12/2025</Text>
@@ -381,7 +387,7 @@ export function ProfileScreen() {
                   violem estes termos.
                 </Text>
 
-                <View style={styles.termsAcceptContainer}>
+                <View style={[styles.termsAcceptContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                   <TouchableOpacity 
                     style={styles.checkboxContainer}
                     onPress={() => setTermsAccepted(!termsAccepted)}
@@ -446,7 +452,10 @@ export function ProfileScreen() {
             style={[styles.modalContent, { backgroundColor: colors.card }]}
             onPress={(e) => e.stopPropagation()}
           >
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ padding: 24 }}
+            >
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>🔐 Política de Privacidade</Text>
                 <Text style={[styles.modalVersion, { color: colors.textSecondary }]}>Última atualização: 14/12/2025</Text>
@@ -623,7 +632,10 @@ export function ProfileScreen() {
             style={[styles.modalContent, { backgroundColor: colors.card }]}
             onPress={(e) => e.stopPropagation()}
           >
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ padding: 24 }}
+            >
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>🔒 Segurança</Text>
                 <Text style={[styles.modalVersion, { color: colors.textSecondary }]}>Configure a proteção da sua conta</Text>
@@ -1141,18 +1153,16 @@ const styles = StyleSheet.create({
     maxWidth: 500,
     maxHeight: "85%",
     borderRadius: 20,
-    padding: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    overflow: 'hidden',
   },
   modalHeader: {
     alignItems: "center",
     marginBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e3f2fd",
     paddingBottom: 16,
   },
   modalTitle: {
@@ -1230,10 +1240,8 @@ const styles = StyleSheet.create({
   termsAcceptContainer: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: "#f0f7ff",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#bbdefb",
   },
   checkboxContainer: {
     flexDirection: "row",
