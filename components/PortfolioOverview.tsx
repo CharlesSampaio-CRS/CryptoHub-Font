@@ -1,14 +1,30 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
-import { memo } from "react"
+import { memo, useEffect, useState } from "react"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
+import { config } from "@/lib/config"
+import { PortfolioEvolutionResponse } from "@/types/api"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error, refreshing, refresh } = useBalance()
+  const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
+
+  useEffect(() => {
+    loadEvolutionData()
+  }, [])
+
+  const loadEvolutionData = async () => {
+    try {
+      const evolution = await apiService.getPortfolioEvolution(config.userId, 7)
+      setEvolutionData(evolution)
+    } catch (err) {
+      console.error('Error loading evolution data:', err)
+    }
+  }
 
   if (loading) {
     return (
@@ -28,8 +44,31 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
   const totalValue = parseFloat(data.summary.total_usd)
   const formattedValue = apiService.formatUSD(totalValue)
-  const change24h = 0
-  const isPositive = change24h > 0
+  
+  // Calcula PNL baseado nos dados de evolução
+  const getPNL = () => {
+    if (!evolutionData?.evolution?.summary) {
+      return {
+        changeUsd: 0,
+        changePercent: 0,
+        isPositive: false,
+      }
+    }
+
+    const { change_usd, change_percent } = evolutionData.evolution.summary
+    const changeUsdValue = parseFloat(change_usd)
+    const changePercentValue = parseFloat(change_percent)
+
+    return {
+      changeUsd: changeUsdValue,
+      changePercent: changePercentValue,
+      isPositive: changeUsdValue >= 0,
+    }
+  }
+
+  const pnl = getPNL()
+  const change24h = pnl.changePercent
+  const isPositive = pnl.isPositive
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -64,10 +103,10 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
         </View>
 
         <Text style={[styles.changeValue, isPositive ? styles.textPositive : styles.textNegative]}>
-          {isPositive ? "+" : ""}${0}
+          {isPositive ? "+" : ""}{apiService.formatUSD(Math.abs(pnl.changeUsd))}
         </Text>
 
-        <Text style={styles.timeframe}>{t('home.last24h')}</Text>
+        <Text style={styles.timeframe}>Últimos 7 dias</Text>
       </View>
     </View>
   )
