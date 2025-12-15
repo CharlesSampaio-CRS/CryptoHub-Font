@@ -6,10 +6,11 @@ import { useLanguage } from "../contexts/LanguageContext"
 interface HeaderProps {
   hideIcons?: boolean
   onNotificationsPress?: () => void
+  onSettingsPress?: () => void
   unreadCount?: number
 }
 
-export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, unreadCount = 0 }: HeaderProps) {
+export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, onSettingsPress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const iconOpacity = useRef(new Animated.Value(1)).current
