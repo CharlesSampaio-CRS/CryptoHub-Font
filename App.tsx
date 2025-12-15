@@ -5,28 +5,31 @@ import { HomeScreen } from "./screens/HomeScreen"
 import { ExchangesScreen } from "./screens/ExchangesScreen"
 import { StrategyScreen } from "./screens/StrategyScreen"
 import { ProfileScreen } from "./screens/ProfileScreen"
-import { ThemeProvider } from "./contexts/ThemeContext"
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
+import { BalanceProvider } from "./contexts/BalanceContext"
 
 const Tab = createBottomTabNavigator()
 
 function AppNavigator() {
   const { t } = useLanguage()
+  const { colors, isDark } = useTheme()
   
   return (
     <NavigationContainer>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: "#ffffff",
-            borderTopColor: "#e0f2fe",
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
             height: 70,
             paddingBottom: 10,
             paddingTop: 10,
           },
-          tabBarActiveTintColor: "#3b82f6",
-          tabBarInactiveTintColor: "#94a3b8",
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textSecondary,
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: "400",
@@ -74,8 +77,9 @@ export default function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
-        <StatusBar style="light" />
-        <AppNavigator />
+        <BalanceProvider>
+          <AppNavigator />
+        </BalanceProvider>
       </ThemeProvider>
     </LanguageProvider>
   )
