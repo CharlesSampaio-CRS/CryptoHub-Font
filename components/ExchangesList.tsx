@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, AppState } from "react-native"
 import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
@@ -29,20 +29,6 @@ export const ExchangesList = memo(function ExchangesList() {
   const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
 
-  useEffect(() => {
-    fetchBalances()
-    
-    const handleBalancesUpdate = () => {
-      setTimeout(() => fetchBalances(true, true), 100)
-    }
-    
-    window.addEventListener('balancesUpdated', handleBalancesUpdate)
-    
-    return () => {
-      window.removeEventListener('balancesUpdated', handleBalancesUpdate)
-    }
-  }, [])
-
   const fetchBalances = useCallback(async (forceRefresh = false, silent = false) => {
     try {
       // Só mostra loading na primeira vez (quando não tem dados)
@@ -59,6 +45,20 @@ export const ExchangesList = memo(function ExchangesList() {
       setLoading(false)
     }
   }, [t, data])
+
+  useEffect(() => {
+    fetchBalances()
+    
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        setTimeout(() => fetchBalances(true, true), 100)
+      }
+    })
+    
+    return () => {
+      subscription.remove()
+    }
+  }, [fetchBalances])
 
   // Todos os hooks devem estar ANTES de qualquer return condicional
   const toggleExpandExchange = useCallback((exchangeId: string) => {

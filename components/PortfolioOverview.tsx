@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, AppState } from "react-native"
 import { useEffect, useState, useCallback, memo } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
@@ -13,20 +13,6 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-
-  useEffect(() => {
-    fetchBalances()
-    
-    const handleBalancesUpdate = () => {
-      setTimeout(() => fetchBalances(true, false, true), 100)
-    }
-    
-    window.addEventListener('balancesUpdated', handleBalancesUpdate)
-    
-    return () => {
-      window.removeEventListener('balancesUpdated', handleBalancesUpdate)
-    }
-  }, [])
 
   const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false) => {
     try {

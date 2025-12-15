@@ -6,7 +6,7 @@ import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
 import { mockNotifications } from "../types/notifications"
-import { QuickChart } from "@/components/quick-chart.web"
+import { QuickChart } from "../components/QuickChart"
 
 export const HomeScreen = memo(function HomeScreen() {
   const { colors } = useTheme()
