@@ -1,44 +1,14 @@
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, AppState } from "react-native"
-import { useEffect, useState, useCallback, memo } from "react"
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
+import { memo } from "react"
 import { apiService } from "@/services/api"
-import { BalanceResponse } from "@/types/api"
-import { config } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useBalance } from "@/contexts/BalanceContext"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
   const { t } = useLanguage()
-  const [data, setData] = useState<BalanceResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
-
-  const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false) => {
-    try {
-      // Nunca mostra loading se silent=true ou se já tem dados
-      if (!silent && !data) {
-        setLoading(true)
-      } else if (!silent && forceRefresh) {
-        setRefreshing(true)
-      }
-      setError(null)
-      
-      const response = await apiService.getBalances(config.userId)
-      setData(response)
-      
-      // Em React Native, não precisamos de window.dispatchEvent
-    } catch (err) {
-      setError(t('common.error'))
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [t, data])
-
-  const handleRefresh = useCallback(() => {
-    fetchBalances(true, true) // Force refresh e emite evento
-  }, [fetchBalances])
+  const { data, loading, error, refreshing, refresh } = useBalance()
 
   if (loading) {
     return (
@@ -67,7 +37,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
         <Text style={[styles.label, { color: colors.textSecondary }]}>{t('home.portfolio')}</Text>
         <TouchableOpacity 
           style={styles.refreshButton}
-          onPress={handleRefresh}
+          onPress={refresh}
           disabled={refreshing}
           activeOpacity={0.7}
         >

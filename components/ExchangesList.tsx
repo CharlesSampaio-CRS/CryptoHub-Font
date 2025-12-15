@@ -1,10 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, AppState } from "react-native"
-import { useEffect, useState, useCallback, useMemo, memo } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native"
+import { useState, useCallback, useMemo, memo } from "react"
 import { apiService } from "@/services/api"
-import { BalanceResponse } from "@/types/api"
-import { config } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useBalance } from "@/contexts/BalanceContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
@@ -22,43 +21,10 @@ const exchangeLogos: Record<string, any> = {
 export const ExchangesList = memo(function ExchangesList() {
   const { colors } = useTheme()
   const { t } = useLanguage()
-  const [data, setData] = useState<BalanceResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, loading, error } = useBalance()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
   const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
-
-  const fetchBalances = useCallback(async (forceRefresh = false, silent = false) => {
-    try {
-      // Só mostra loading na primeira vez (quando não tem dados)
-      if (!silent && !data) {
-        setLoading(true)
-      }
-      setError(null)
-      
-      const response = await apiService.getBalances(config.userId)
-      setData(response)
-    } catch (err) {
-      setError(t('exchanges.error'))
-    } finally {
-      setLoading(false)
-    }
-  }, [t, data])
-
-  useEffect(() => {
-    fetchBalances()
-    
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        setTimeout(() => fetchBalances(true, true), 100)
-      }
-    })
-    
-    return () => {
-      subscription.remove()
-    }
-  }, [fetchBalances])
 
   // Todos os hooks devem estar ANTES de qualquer return condicional
   const toggleExpandExchange = useCallback((exchangeId: string) => {
@@ -86,12 +52,24 @@ export const ExchangesList = memo(function ExchangesList() {
       })
   }, [data, hideZeroBalanceExchanges])
 
+  // Estilos dinâmicos baseados no tema
+  const themedStyles = useMemo(() => ({
+    card: { backgroundColor: colors.surface, borderColor: colors.border },
+    toggle: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+    toggleActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    toggleThumb: { backgroundColor: colors.background },
+    tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+    tokenSymbolBadge: { backgroundColor: colors.surfaceSecondary, borderColor: colors.primary },
+    tokenItem: { borderBottomColor: colors.border },
+    logoContainer: { backgroundColor: colors.surface, borderColor: colors.border },
+  }), [colors])
+
   if (loading) {
     return (
       <View style={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size={40} color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     )
@@ -101,7 +79,7 @@ export const ExchangesList = memo(function ExchangesList() {
     return (
       <View style={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
-        <Text style={styles.errorText}>{error || t('home.noData')}</Text>
+        <Text style={[styles.errorText, { color: colors.danger }]}>{error || t('home.noData')}</Text>
       </View>
     )
   }
@@ -111,7 +89,7 @@ export const ExchangesList = memo(function ExchangesList() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Adicionar</Text>
+          <Text style={[styles.addButtonText, { color: colors.primary }]}>+ Adicionar</Text>
         </TouchableOpacity>
       </View>
 
@@ -122,9 +100,9 @@ export const ExchangesList = memo(function ExchangesList() {
           onPress={toggleZeroBalanceExchanges}
           activeOpacity={0.7}
         >
-          <Text style={styles.toggleLabel}>{t('exchanges.hideZero')}</Text>
-          <View style={[styles.toggle, hideZeroBalanceExchanges && styles.toggleActive]}>
-            <View style={[styles.toggleThumb, hideZeroBalanceExchanges && styles.toggleThumbActive]} />
+          <Text style={[styles.toggleLabel, { color: colors.textSecondary }]}>{t('exchanges.hideZero')}</Text>
+          <View style={[styles.toggle, themedStyles.toggle, hideZeroBalanceExchanges && [styles.toggleActive, themedStyles.toggleActive]]}>
+            <View style={[styles.toggleThumb, themedStyles.toggleThumb, hideZeroBalanceExchanges && styles.toggleThumbActive]} />
           </View>
         </TouchableOpacity>
 
@@ -133,9 +111,9 @@ export const ExchangesList = memo(function ExchangesList() {
           onPress={toggleZeroBalanceTokens}
           activeOpacity={0.7}
         >
-          <Text style={styles.toggleLabel}>{t('exchanges.hideZeroTokens')}</Text>
-          <View style={[styles.toggle, hideZeroBalanceTokens && styles.toggleActive]}>
-            <View style={[styles.toggleThumb, hideZeroBalanceTokens && styles.toggleThumbActive]} />
+          <Text style={[styles.toggleLabel, { color: colors.textSecondary }]}>{t('exchanges.hideZeroTokens')}</Text>
+          <View style={[styles.toggle, themedStyles.toggle, hideZeroBalanceTokens && [styles.toggleActive, themedStyles.toggleActive]]}>
+            <View style={[styles.toggleThumb, themedStyles.toggleThumb, hideZeroBalanceTokens && styles.toggleThumbActive]} />
           </View>
         </TouchableOpacity>
       </View>
@@ -169,13 +147,13 @@ export const ExchangesList = memo(function ExchangesList() {
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
               <TouchableOpacity
-                style={styles.card}
+                style={[styles.card, themedStyles.card]}
                 activeOpacity={0.7}
                 onPress={() => toggleExpandExchange(exchange.exchange_id)}
               >
                 <View style={styles.cardContent}>
                   <View style={styles.leftSection}>
-                    <View style={styles.logoContainer}>
+                    <View style={[styles.logoContainer, themedStyles.logoContainer]}>
                       {logoSource ? (
                         <Image 
                           source={logoSource} 
@@ -187,25 +165,25 @@ export const ExchangesList = memo(function ExchangesList() {
                       )}
                     </View>
                     <View>
-                      <Text style={styles.exchangeName}>{exchange.name}</Text>
-                      <Text style={styles.assetsCount}>{tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}</Text>
+                      <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
+                      <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>{tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}</Text>
                     </View>
                   </View>
 
                   <View style={styles.rightSection}>
-                    <Text style={styles.balance}>
+                    <Text style={[styles.balance, { color: colors.text }]}>
                       {apiService.formatUSD(balance)}
                     </Text>
-                    <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
+                    <Text style={[styles.expandIcon, { color: colors.textSecondary }]}>{isExpanded ? '▲' : '▼'}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
 
               {isExpanded && (
-                <View style={styles.tokensContainer}>
-                  <Text style={styles.tokensTitle}>Tokens Disponíveis:</Text>
+                <View style={[styles.tokensContainer, themedStyles.tokensContainer]}>
+                  <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>Tokens Disponíveis:</Text>
                   {tokens.length === 0 ? (
-                    <Text style={styles.noTokensText}>Nenhum token disponível</Text>
+                    <Text style={[styles.noTokensText, { color: colors.textSecondary }]}>Nenhum token disponível</Text>
                   ) : (
                     tokens.map(([symbol, token]) => {
                       const amount = parseFloat(token.amount)
@@ -213,23 +191,23 @@ export const ExchangesList = memo(function ExchangesList() {
                       const valueUSD = parseFloat(token.value_usd)
 
                       return (
-                        <View key={symbol} style={styles.tokenItem}>
+                        <View key={symbol} style={[styles.tokenItem, themedStyles.tokenItem]}>
                           <View style={styles.tokenLeft}>
-                            <View style={styles.tokenSymbolBadge}>
-                              <Text style={styles.tokenSymbol}>{symbol}</Text>
+                            <View style={[styles.tokenSymbolBadge, themedStyles.tokenSymbolBadge]}>
+                              <Text style={[styles.tokenSymbol, { color: colors.primary }]}>{symbol}</Text>
                             </View>
                             <View style={styles.tokenInfo}>
-                              <Text style={styles.tokenAmount}>
+                              <Text style={[styles.tokenAmount, { color: colors.text }]}>
                                 {apiService.formatTokenAmount(token.amount)}
                               </Text>
                               {priceUSD > 0 && (
-                                <Text style={styles.tokenPrice}>
+                                <Text style={[styles.tokenPrice, { color: colors.textSecondary }]}>
                                   {apiService.formatUSD(priceUSD)}
                                 </Text>
                               )}
                             </View>
                           </View>
-                          <Text style={[styles.tokenValue, valueUSD === 0 && styles.tokenValueZero]}>
+                          <Text style={[styles.tokenValue, { color: colors.text }, valueUSD === 0 && { color: colors.textSecondary }]}>
                             {apiService.formatUSD(valueUSD)}
                           </Text>
                         </View>
@@ -267,7 +245,6 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#3b82f6",
   },
   filtersContainer: {
     paddingHorizontal: 4,
@@ -283,7 +260,6 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     fontSize: 11,
-    color: "#9ca3af",
     fontWeight: "400",
     flex: 1,
   },
@@ -291,21 +267,17 @@ const styles = StyleSheet.create({
     width: 38,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#e3f2fd",
     padding: 2,
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#374151",
   },
   toggleActive: {
-    backgroundColor: "#3b82f6",
-    borderColor: "#3b82f6",
+    // Colors from theme
   },
   toggleThumb: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#f9fafb",
   },
   toggleThumbActive: {
     transform: [{ translateX: 16 }],
@@ -314,11 +286,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e3f2fd",
   },
   cardMargin: {
     marginBottom: 12,
@@ -337,13 +307,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     padding: 4,
     borderWidth: 0.5,
-    borderColor: "#e5e7eb",
   },
   logoImage: {
     width: "100%",
@@ -359,7 +327,6 @@ const styles = StyleSheet.create({
   },
   assetsCount: {
     fontSize: 12,
-    color: "#6b7280",
   },
   rightSection: {
     alignItems: "flex-end",
@@ -374,10 +341,10 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   changePositive: {
-    color: "#3b82f6",
+    // Use colors.primary
   },
   changeNegative: {
-    color: "#ef4444",
+    // Use colors.danger
   },
   loadingContainer: {
     padding: 40,
@@ -386,33 +353,27 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
-    color: "#ef4444",
     textAlign: "center",
     padding: 20,
   },
   expandIcon: {
     fontSize: 12,
-    color: "#6b7280",
   },
   tokensContainer: {
-    backgroundColor: "#f0f7ff",
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: "#e3f2fd",
   },
   tokensTitle: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#9ca3af",
     marginBottom: 12,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   noTokensText: {
     fontSize: 13,
-    color: "#6b7280",
     textAlign: "center",
     paddingVertical: 8,
   },
@@ -422,7 +383,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#e3f2fd",
   },
   tokenLeft: {
     flexDirection: "row",
@@ -431,17 +391,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenSymbolBadge: {
-    backgroundColor: "#e3f2fd",
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 6,
     borderWidth: 0.5,
-    borderColor: "#3b82f6",
   },
   tokenSymbol: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#3b82f6",
     letterSpacing: 0.5,
   },
   tokenInfo: {
@@ -454,13 +411,12 @@ const styles = StyleSheet.create({
   },
   tokenPrice: {
     fontSize: 11,
-    color: "#6b7280",
   },
   tokenValue: {
     fontSize: 14,
     fontWeight: "500",
   },
   tokenValueZero: {
-    color: "#6b7280",
+    // Applied via inline style
   },
 })

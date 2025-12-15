@@ -1,9 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert } from "react-native"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useTheme } from "@/contexts/ThemeContext"
 
 // Mapeamento dos logos locais das exchanges
 const exchangeLogos: Record<string, any> = {
@@ -20,6 +21,7 @@ const exchangeLogos: Record<string, any> = {
 
 export function ExchangesManager() {
   const { t } = useLanguage()
+  const { colors } = useTheme()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
   const [loading, setLoading] = useState(true)
@@ -316,12 +318,23 @@ export function ExchangesManager() {
     }
   }
 
+  // Estilos dinâmicos baseados no tema
+  const themedStyles = useMemo(() => ({
+    container: { backgroundColor: colors.background },
+    card: { backgroundColor: colors.surface, borderColor: colors.border },
+    modal: { backgroundColor: colors.surface },
+    input: { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
+    button: { backgroundColor: colors.primary },
+    tabActive: { backgroundColor: colors.primary },
+    tabInactive: { backgroundColor: colors.surfaceSecondary },
+  }), [colors])
+
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, themedStyles.container]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size={40} color="#3b82f6" />
-          <Text style={styles.loadingText}>Carregando exchanges...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Carregando exchanges...</Text>
         </View>
       </View>
     )
@@ -329,9 +342,9 @@ export function ExchangesManager() {
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => fetchExchanges(true)}>
+      <View style={[styles.container, themedStyles.container]}>
+        <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+        <TouchableOpacity style={[styles.retryButton, themedStyles.button]} onPress={() => fetchExchanges(true)}>
           <Text style={styles.retryButtonText}>Tentar Novamente</Text>
         </TouchableOpacity>
       </View>
@@ -339,11 +352,11 @@ export function ExchangesManager() {
   }
 
   return (
-    <Pressable style={styles.container} onPress={() => setOpenMenuId(null)}>
+    <Pressable style={[styles.container, themedStyles.container]} onPress={() => setOpenMenuId(null)}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('exchanges.manage')}</Text>
-        <Text style={styles.headerSubtitle}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
           {linkedExchanges.length} {t('exchanges.connected').toLowerCase()}{linkedExchanges.length !== 1 ? 's' : ''}
         </Text>
       </View>
@@ -351,18 +364,18 @@ export function ExchangesManager() {
       {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'linked' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'linked' ? themedStyles.tabActive : themedStyles.tabInactive]}
           onPress={() => setActiveTab('linked')}
         >
-          <Text style={[styles.tabText, activeTab === 'linked' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, activeTab === 'linked' && { color: '#ffffff' }, activeTab !== 'linked' && { color: colors.textSecondary }]}>
             {t('exchanges.connected')} ({linkedExchanges.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'available' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'available' ? themedStyles.tabActive : themedStyles.tabInactive]}
           onPress={() => setActiveTab('available')}
         >
-          <Text style={[styles.tabText, activeTab === 'available' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, activeTab === 'available' && { color: '#ffffff' }, activeTab !== 'available' && { color: colors.textSecondary }]}>
             {t('exchanges.available')} ({availableExchanges.length})
           </Text>
         </TouchableOpacity>
@@ -374,19 +387,19 @@ export function ExchangesManager() {
           linkedExchanges.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>🔗</Text>
-              <Text style={styles.emptyTitle}>{t('home.noData')}</Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('home.noData')}</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 {t('exchanges.connectModal')}
               </Text>
               <TouchableOpacity
-                style={styles.primaryButton}
+                style={[styles.primaryButton, themedStyles.button]}
                 onPress={() => setActiveTab('available')}
               >
                 <Text style={styles.primaryButtonText}>{t('exchanges.viewAvailable')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
-<View style={styles.list}>
+            <View style={styles.list}>
               {linkedExchanges.map((linkedExchange, index) => {
                 const exchangeNameLower = linkedExchange.name.toLowerCase()
                 const localIcon = exchangeLogos[exchangeNameLower]
@@ -394,7 +407,7 @@ export function ExchangesManager() {
                 const isActive = linkedExchange.status === 'active'
                 
                 return (
-                  <View key={exchangeId + '_' + index} style={styles.card}>
+                  <View key={exchangeId + '_' + index} style={[styles.card, themedStyles.card]}>
                     <View style={styles.cardHeader}>
                       <View style={styles.cardLeft}>
                         <View style={styles.iconContainer}>
@@ -415,10 +428,10 @@ export function ExchangesManager() {
                           )}
                         </View>
                         <View style={styles.exchangeNameContainer}>
-                          <Text style={styles.exchangeName}>
+                          <Text style={[styles.exchangeName, { color: colors.text }]}>
                             {linkedExchange.name}
                           </Text>
-                          <Text style={styles.exchangeCountry}>
+                          <Text style={[styles.exchangeCountry, { color: colors.textSecondary }]}>
                             {linkedExchange.country}
                           </Text>
                         </View>
@@ -434,8 +447,8 @@ export function ExchangesManager() {
                     
                     <View style={styles.cardDetails}>
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('exchanges.connectedAt')}</Text>
-                        <Text style={styles.detailValue}>
+                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('exchanges.connectedAt')}</Text>
+                        <Text style={[styles.detailValue, { color: colors.text }]}>
                           {new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')}
                         </Text>
                       </View>
@@ -480,7 +493,7 @@ export function ExchangesManager() {
               )
               
               return (
-                <View key={exchange._id} style={styles.card}>
+                <View key={exchange._id} style={[styles.card, themedStyles.card]}>
                   <View style={styles.cardHeader}>
                     <View style={styles.cardLeft}>
                       <View style={styles.iconContainer}>
@@ -509,17 +522,17 @@ export function ExchangesManager() {
                         })()}
                       </View>
                       <View>
-                        <Text style={styles.exchangeName}>{exchange.nome}</Text>
-                        <Text style={styles.exchangeCountry}>{exchange.pais_de_origem}</Text>
+                        <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
+                        <Text style={[styles.exchangeCountry, { color: colors.textSecondary }]}>{exchange.pais_de_origem}</Text>
                       </View>
                     </View>
                     {isLinked ? (
-                      <View style={styles.connectedBadge}>
-                        <Text style={styles.connectedBadgeText}>✓ Conectada</Text>
+                      <View style={[styles.connectedBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+                        <Text style={[styles.connectedBadgeText, { color: colors.success }]}>✓ Conectada</Text>
                       </View>
                     ) : (
                       <TouchableOpacity 
-                        style={styles.connectButton}
+                        style={[styles.connectButton, themedStyles.button]}
                         onPress={() => openConnectModal(exchange)}
                       >
                         <Text style={styles.connectButtonText}>{t('exchanges.connect')}</Text>
@@ -527,8 +540,8 @@ export function ExchangesManager() {
                     )}
                   </View>
                   {exchange.requires_passphrase && (
-                    <View style={styles.infoBox}>
-                      <Text style={styles.infoText}>ℹ️ Requer passphrase</Text>
+                    <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
+                      <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
                     </View>
                   )}
                 </View>
@@ -550,7 +563,7 @@ export function ExchangesManager() {
           onPress={() => setOpenMenuId(null)}
         >
           <Pressable>
-            <View style={styles.menuModal}>
+            <View style={[styles.menuModal, themedStyles.modal]}>
               {(() => {
                 const index = openMenuId ? parseInt(openMenuId.split('_')[1]) : -1
                 const exchange = index >= 0 ? linkedExchanges[index] : null
@@ -572,12 +585,12 @@ export function ExchangesManager() {
                         }
                       }}
                     >
-                      <Text style={styles.menuItemText}>
+                      <Text style={[styles.menuItemText, { color: colors.text }]}>
                         {isActive ? t('exchanges.deactivate') : t('exchanges.activate')}
                       </Text>
                     </TouchableOpacity>
                     
-                    <View style={styles.menuDivider} />
+                    <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
                     
                     <TouchableOpacity
                       style={styles.menuItem}
@@ -589,7 +602,7 @@ export function ExchangesManager() {
                         }
                       }}
                     >
-                      <Text style={[styles.menuItemText, styles.menuItemDanger]}>{t('exchanges.delete')}</Text>
+                      <Text style={[styles.menuItemText, { color: colors.danger }]}>{t('exchanges.delete')}</Text>
                     </TouchableOpacity>
                   </>
                 )
@@ -607,12 +620,12 @@ export function ExchangesManager() {
         onRequestClose={closeConnectModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, themedStyles.modal]}>
             {/* Header do Modal */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('exchanges.connectModal')}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('exchanges.connectModal')}</Text>
               <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
               </TouchableOpacity>
             </View>
 
@@ -644,34 +657,34 @@ export function ExchangesManager() {
                     })()}
                   </View>
                   <View>
-                    <Text style={styles.modalExchangeName}>{selectedExchange.nome}</Text>
-                    <Text style={styles.modalExchangeCountry}>{selectedExchange.pais_de_origem}</Text>
+                    <Text style={[styles.modalExchangeName, { color: colors.text }]}>{selectedExchange.nome}</Text>
+                    <Text style={[styles.modalExchangeCountry, { color: colors.textSecondary }]}>{selectedExchange.pais_de_origem}</Text>
                   </View>
                 </View>
 
                 {/* Formulário */}
                 <View style={styles.form}>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>API Key *</Text>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>API Key *</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, themedStyles.input]}
                       value={apiKey}
                       onChangeText={setApiKey}
+                      placeholderTextColor={colors.textSecondary}
                       placeholder="Digite sua API Key"
-                      placeholderTextColor="#6b7280"
                       autoCapitalize="none"
                       autoCorrect={false}
                     />
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>API Secret *</Text>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>API Secret *</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, themedStyles.input]}
                       value={apiSecret}
                       onChangeText={setApiSecret}
                       placeholder="Digite seu API Secret"
-                      placeholderTextColor="#6b7280"
+                      placeholderTextColor={colors.textSecondary}
                       secureTextEntry
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -680,18 +693,18 @@ export function ExchangesManager() {
 
                   {selectedExchange.requires_passphrase && (
                     <View style={styles.inputGroup}>
-                      <Text style={styles.inputLabel}>Passphrase *</Text>
+                      <Text style={[styles.inputLabel, { color: colors.text }]}>Passphrase *</Text>
                       <TextInput
-                        style={styles.input}
+                        style={[styles.input, themedStyles.input]}
                         value={passphrase}
                         onChangeText={setPassphrase}
                         placeholder="Digite sua Passphrase"
-                        placeholderTextColor="#6b7280"
+                        placeholderTextColor={colors.textSecondary}
                         secureTextEntry
                         autoCapitalize="none"
                         autoCorrect={false}
                       />
-                      <Text style={styles.inputHint}>
+                      <Text style={[styles.inputHint, { color: colors.textSecondary }]}>
                         ℹ️ Esta exchange requer uma passphrase
                       </Text>
                     </View>
@@ -701,14 +714,14 @@ export function ExchangesManager() {
                 {/* Botões */}
                 <View style={styles.modalActions}>
                   <TouchableOpacity
-                    style={styles.cancelButton}
+                    style={[styles.cancelButton, { backgroundColor: colors.surfaceSecondary }]}
                     onPress={closeConnectModal}
                     disabled={connecting}
                   >
-                    <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
+                    <Text style={[styles.cancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.submitButton, connecting && styles.submitButtonDisabled]}
+                    style={[styles.submitButton, themedStyles.button, connecting && styles.submitButtonDisabled]}
                     onPress={handleLinkExchange}
                     disabled={connecting}
                   >
@@ -737,17 +750,17 @@ export function ExchangesManager() {
           onPress={() => setConfirmToggleModalVisible(false)}
         >
           <Pressable 
-            style={styles.confirmModalContent}
+            style={[styles.confirmModalContent, themedStyles.modal]}
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.confirmModalHeader}>
-              <Text style={styles.confirmModalTitle}>
+              <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
                 {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
               </Text>
             </View>
 
             <View style={styles.confirmModalBody}>
-              <Text style={styles.confirmModalMessage}>
+              <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
                 {toggleExchangeNewStatus === 'active' 
                   ? `${t('exchanges.activateConfirm')} ${toggleExchangeName}? ${t('exchanges.activateWarning')}`
                   : `${t('exchanges.deactivateConfirm')} ${toggleExchangeName}? ${t('exchanges.deactivateWarning')}`
@@ -757,13 +770,13 @@ export function ExchangesManager() {
 
             <View style={styles.confirmModalActions}>
               <TouchableOpacity
-                style={styles.confirmCancelButton}
+                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary }]}
                 onPress={() => setConfirmToggleModalVisible(false)}
               >
-                <Text style={styles.confirmCancelButtonText}>{t('common.cancel')}</Text>
+                <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.confirmSubmitButton}
+                style={[styles.confirmSubmitButton, themedStyles.button]}
                 onPress={confirmToggle}
               >
                 <Text style={styles.confirmSubmitButtonText}>
@@ -787,17 +800,17 @@ export function ExchangesManager() {
           onPress={() => setConfirmModalVisible(false)}
         >
           <Pressable 
-            style={styles.confirmModalContent}
+            style={[styles.confirmModalContent, themedStyles.modal]}
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.confirmModalHeader}>
-              <Text style={styles.confirmModalTitle}>
+              <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
                 {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
               </Text>
             </View>
 
             <View style={styles.confirmModalBody}>
-              <Text style={styles.confirmModalMessage}>
+              <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
                 {confirmAction === 'delete' 
                   ? `${t('exchanges.deleteConfirm')} ${confirmExchangeName}? ${t('exchanges.deleteWarning')}`
                   : `${t('exchanges.disconnectConfirm')} ${confirmExchangeName}?`
@@ -807,13 +820,13 @@ export function ExchangesManager() {
 
             <View style={styles.confirmModalActions}>
               <TouchableOpacity
-                style={styles.confirmCancelButton}
+                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary }]}
                 onPress={() => setConfirmModalVisible(false)}
               >
-                <Text style={styles.confirmCancelButtonText}>{t('common.cancel')}</Text>
+                <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmSubmitButton, confirmAction === 'delete' && styles.confirmDeleteButton]}
+                style={[styles.confirmSubmitButton, confirmAction === 'delete' ? { backgroundColor: colors.danger } : themedStyles.button]}
                 onPress={() => {
                   if (confirmAction === 'delete') {
                     confirmDelete()
