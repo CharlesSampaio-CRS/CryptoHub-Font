@@ -51,8 +51,8 @@ export function SettingsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Personalize seu app</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('settings.title')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.subtitle')}</Text>
         </View>
       </View>
 
@@ -63,7 +63,7 @@ export function SettingsScreen() {
       >
         {/* Seção: Aparência */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>APARÊNCIA</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.appearance')}</Text>
           
           {/* Dark Mode */}
           <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginBottom: 12 }]}>
@@ -82,7 +82,7 @@ export function SettingsScreen() {
               <View>
                 <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.darkMode')}</Text>
                 <Text style={[styles.menuItemSubtext, { color: colors.textSecondary }]}>
-                  {theme === 'dark' ? 'Ativado' : 'Desativado'}
+                  {theme === 'dark' ? t('settings.activated') : t('settings.deactivated')}
                 </Text>
               </View>
             </View>
@@ -142,7 +142,7 @@ export function SettingsScreen() {
 
         {/* Seção: Notificações */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>NOTIFICAÇÕES</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.notificationsSection')}</Text>
           
           <TouchableOpacity 
             style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
