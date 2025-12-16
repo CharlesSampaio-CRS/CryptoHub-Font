@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard } from "react-native"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback, memo } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
@@ -25,6 +25,191 @@ const exchangeLogos: Record<string, any> = {
 interface ExchangesManagerProps {
   initialTab?: 'available' | 'linked'
 }
+
+// Subcomponente memoizado para renderizar cada card de exchange
+const LinkedExchangeCard = memo(({ 
+  linkedExchange, 
+  index, 
+  colors, 
+  t, 
+  onToggle, 
+  onDelete 
+}: { 
+  linkedExchange: any
+  index: number
+  colors: any
+  t: any
+  onToggle: (id: string, status: string, name: string) => void
+  onDelete: (id: string, name: string) => void
+}) => {
+  const exchangeNameLower = linkedExchange.name.toLowerCase()
+  const localIcon = exchangeLogos[exchangeNameLower]
+  const exchangeId = linkedExchange.exchange_id
+  const isActive = linkedExchange.status === 'active'
+  
+  // Memoizar a formatação da data
+  const formattedDate = useMemo(() => {
+    return new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')
+  }, [linkedExchange.linked_at])
+
+  const themedStyles = useMemo(() => ({
+    card: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+  }), [colors])
+
+  return (
+    <View key={exchangeId + '_' + index} style={[styles.card, themedStyles.card]}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardLeft}>
+          <View style={styles.iconContainer}>
+            {localIcon ? (
+              <Image 
+                source={localIcon} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : linkedExchange.icon ? (
+              <Image 
+                source={{ uri: linkedExchange.icon }} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={styles.iconText}>🔗</Text>
+            )}
+          </View>
+          <View style={styles.exchangeNameContainer}>
+            <Text style={[styles.exchangeName, { color: colors.text }]}>
+              {linkedExchange.name}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity 
+          style={[styles.toggleButton, isActive && styles.toggleButtonActive]}
+          onPress={() => onToggle(exchangeId, linkedExchange.status, linkedExchange.name)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.toggleThumb, isActive && styles.toggleThumbActive]} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.cardDetails}>
+        <View style={styles.detailRow}>
+          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('exchanges.connectedAt')}</Text>
+          <Text style={[styles.detailValue, { color: colors.text }]}>
+            {formattedDate}
+          </Text>
+        </View>
+      </View>
+
+      {/* Footer com status e delete */}
+      <View style={styles.exchangeFooter}>
+        <View style={[
+          styles.statusBadge,
+          isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
+        ]}>
+          <View style={[
+            styles.statusDot,
+            isActive ? styles.statusDotActive : styles.statusDotInactive
+          ]} />
+          <Text style={[
+            styles.statusText,
+            isActive ? styles.statusTextActive : styles.statusTextInactive
+          ]}>
+            {isActive ? t('strategy.active') : t('strategy.inactive')}
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => onDelete(exchangeId, linkedExchange.name)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteIcon}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+})
+
+LinkedExchangeCard.displayName = 'LinkedExchangeCard'
+
+// Subcomponente memoizado para exchanges disponíveis
+const AvailableExchangeCard = memo(({ 
+  exchange, 
+  isLinked, 
+  colors, 
+  t, 
+  onConnect 
+}: { 
+  exchange: any
+  isLinked: boolean
+  colors: any
+  t: any
+  onConnect: (exchange: any) => void
+}) => {
+  const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
+  
+  const themedStyles = useMemo(() => ({
+    card: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    button: {
+      backgroundColor: colors.primary,
+    },
+  }), [colors])
+
+  return (
+    <View key={exchange._id} style={[styles.card, themedStyles.card]}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardLeft}>
+          <View style={styles.iconContainer}>
+            {localIcon ? (
+              <Image 
+                source={localIcon} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : exchange.icon ? (
+              <Image 
+                source={{ uri: exchange.icon }} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={styles.iconText}>🔗</Text>
+            )}
+          </View>
+          <View>
+            <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
+          </View>
+        </View>
+        {isLinked ? (
+          <View style={[styles.connectedBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+            <Text style={[styles.connectedBadgeText, { color: colors.success }]}>✓ Conectada</Text>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.connectButton, themedStyles.button]}
+            onPress={() => onConnect(exchange)}
+          >
+            <Text style={styles.connectButtonText}>{t('exchanges.connect')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      {exchange.requires_passphrase && (
+        <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
+          <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
+        </View>
+      )}
+    </View>
+  )
+})
+
+AvailableExchangeCard.displayName = 'AvailableExchangeCard'
 
 export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
@@ -63,7 +248,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     fetchExchanges()
   }, [])
 
-  const fetchExchanges = async (forceRefresh: boolean = false) => {
+  const fetchExchanges = useCallback(async (forceRefresh: boolean = false) => {
     try {
       setLoading(true)
       setError(null)
@@ -88,9 +273,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleConnect = async (exchangeId: string, exchangeName: string) => {
+  const handleConnect = useCallback(async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
     try {
@@ -123,20 +308,20 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } catch (err) {
       alert('Não foi possível conectar a exchange')
     }
-  }
+  }, [fetchExchanges, refreshOnExchangeChange])
 
   // Mostra modal de confirmação para toggle
-  const toggleExchange = (exchangeId: string, currentStatus: string, exchangeName: string) => {
+  const toggleExchange = useCallback((exchangeId: string, currentStatus: string, exchangeName: string) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
     
     setToggleExchangeId(exchangeId)
     setToggleExchangeName(exchangeName)
     setToggleExchangeNewStatus(newStatus)
     setConfirmToggleModalVisible(true)
-  }
+  }, [])
 
   // Executa o toggle após confirmação
-  const confirmToggle = async () => {
+  const confirmToggle = useCallback(async () => {
     const exchangeId = toggleExchangeId
     const newStatus = toggleExchangeNewStatus
     const currentStatus = toggleExchangeNewStatus === 'active' ? 'inactive' : 'active'
@@ -169,17 +354,17 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       )
       alert("Não foi possível atualizar o status da exchange")
     }
-  }
+  }, [toggleExchangeId, toggleExchangeNewStatus, refreshOnExchangeChange])
 
-  const handleDisconnect = (exchangeId: string, exchangeName: string) => {
+  const handleDisconnect = useCallback((exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     setConfirmExchangeId(exchangeId)
     setConfirmExchangeName(exchangeName)
     setConfirmAction('disconnect')
     setConfirmModalVisible(true)
-  }
+  }, [])
 
-  const confirmDisconnect = async () => {
+  const confirmDisconnect = useCallback(async () => {
     setConfirmModalVisible(false)
     
     
@@ -215,17 +400,17 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } catch (err) {
       alert('Não foi possível desconectar a exchange')
     }
-  }
+  }, [confirmExchangeId, fetchExchanges, refreshOnExchangeChange])
 
-  const handleDelete = (exchangeId: string, exchangeName: string) => {
+  const handleDelete = useCallback((exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     setConfirmExchangeId(exchangeId)
     setConfirmExchangeName(exchangeName)
     setConfirmAction('delete')
     setConfirmModalVisible(true)
-  }
+  }, [])
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     setConfirmModalVisible(false)
     
     
@@ -262,21 +447,21 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } catch (err) {
       alert('Não foi possível deletar a exchange')
     }
-  }
+  }, [confirmExchangeId, fetchExchanges, refreshOnExchangeChange])
 
-  const toggleMenu = (exchangeId: string) => {
+  const toggleMenu = useCallback((exchangeId: string) => {
     setOpenMenuId(openMenuId === exchangeId ? null : exchangeId)
-  }
+  }, [openMenuId])
 
-  const openConnectModal = (exchange: AvailableExchange) => {
+  const openConnectModal = useCallback((exchange: AvailableExchange) => {
     setSelectedExchange(exchange)
     setApiKey('')
     setApiSecret('')
     setPassphrase('')
     setConnectModalVisible(true)
-  }
+  }, [])
 
-  const closeConnectModal = () => {
+  const closeConnectModal = useCallback(() => {
     setConnectModalVisible(false)
     setSelectedExchange(null)
     setApiKey('')
@@ -284,14 +469,14 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     setPassphrase('')
     setQrScannerVisible(false)
     setCurrentScanField(null)
-  }
+  }, [])
 
-  const handleOpenQRScanner = (field: 'apiKey' | 'apiSecret' | 'passphrase') => {
+  const handleOpenQRScanner = useCallback((field: 'apiKey' | 'apiSecret' | 'passphrase') => {
     setCurrentScanField(field)
     setQrScannerVisible(true)
-  }
+  }, [])
 
-  const handleQRScanned = (data: string) => {
+  const handleQRScanned = useCallback((data: string) => {
     // Tenta parsear JSON se for um QR code estruturado
     try {
       const parsed = JSON.parse(data)
@@ -306,9 +491,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     }
     setQrScannerVisible(false)
     setCurrentScanField(null)
-  }
+  }, [currentScanField])
 
-  const handlePasteFromClipboard = async (field: 'apiKey' | 'apiSecret' | 'passphrase') => {
+  const handlePasteFromClipboard = useCallback(async (field: 'apiKey' | 'apiSecret' | 'passphrase') => {
     try {
       const text = await Clipboard.getString()
       if (text) {
@@ -323,9 +508,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível colar da área de transferência')
     }
-  }
+  }, [])
 
-  const handleLinkExchange = async () => {
+  const handleLinkExchange = useCallback(async () => {
     if (!selectedExchange) return
     
     
@@ -386,7 +571,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } finally {
       setConnecting(false)
     }
-  }
+  }, [selectedExchange, apiKey, apiSecret, passphrase, closeConnectModal, fetchExchanges, refreshOnExchangeChange])
 
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
@@ -475,86 +660,17 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
             </View>
           ) : (
             <View style={styles.list}>
-              {linkedExchanges.map((linkedExchange, index) => {
-                const exchangeNameLower = linkedExchange.name.toLowerCase()
-                const localIcon = exchangeLogos[exchangeNameLower]
-                const exchangeId = linkedExchange.exchange_id
-                const isActive = linkedExchange.status === 'active'
-                
-                return (
-                  <View key={exchangeId + '_' + index} style={[styles.card, themedStyles.card]}>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardLeft}>
-                        <View style={styles.iconContainer}>
-                          {localIcon ? (
-                            <Image 
-                              source={localIcon} 
-                              style={styles.exchangeIcon}
-                              resizeMode="contain"
-                            />
-                          ) : linkedExchange.icon ? (
-                            <Image 
-                              source={{ uri: linkedExchange.icon }} 
-                              style={styles.exchangeIcon}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Text style={styles.iconText}>🔗</Text>
-                          )}
-                        </View>
-                        <View style={styles.exchangeNameContainer}>
-                          <Text style={[styles.exchangeName, { color: colors.text }]}>
-                            {linkedExchange.name}
-                          </Text>
-                        </View>
-                      </View>
-                      <TouchableOpacity 
-                        style={[styles.toggleButton, isActive && styles.toggleButtonActive]}
-                        onPress={() => toggleExchange(exchangeId, linkedExchange.status, linkedExchange.name)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.toggleThumb, isActive && styles.toggleThumbActive]} />
-                      </TouchableOpacity>
-                    </View>
-                    
-                    <View style={styles.cardDetails}>
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('exchanges.connectedAt')}</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                          {new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Footer com status e delete */}
-                    <View style={styles.exchangeFooter}>
-                      <View style={[
-                        styles.statusBadge,
-                        isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
-                      ]}>
-                        <View style={[
-                          styles.statusDot,
-                          isActive ? styles.statusDotActive : styles.statusDotInactive
-                        ]} />
-                        <Text style={[
-                          styles.statusText,
-                          isActive ? styles.statusTextActive : styles.statusTextInactive
-                        ]}>
-                          {isActive ? t('strategy.active') : t('strategy.inactive')}
-                        </Text>
-                      </View>
-                      
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDelete(exchangeId, linkedExchange.name)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.deleteIcon}>🗑️</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )
-              })}
+              {linkedExchanges.map((linkedExchange, index) => (
+                <LinkedExchangeCard
+                  key={linkedExchange.exchange_id + '_' + index}
+                  linkedExchange={linkedExchange}
+                  index={index}
+                  colors={colors}
+                  t={t}
+                  onToggle={toggleExchange}
+                  onDelete={handleDelete}
+                />
+              ))}
             </View>
           )
         ) : (
@@ -565,57 +681,14 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
               )
               
               return (
-                <View key={exchange._id} style={[styles.card, themedStyles.card]}>
-                  <View style={styles.cardHeader}>
-                    <View style={styles.cardLeft}>
-                      <View style={styles.iconContainer}>
-                        {(() => {
-                          const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
-                          
-                          if (localIcon) {
-                            return (
-                              <Image 
-                                source={localIcon} 
-                                style={styles.exchangeIcon}
-                                resizeMode="contain"
-                              />
-                            )
-                          } else if (exchange.icon) {
-                            return (
-                              <Image 
-                                source={{ uri: exchange.icon }} 
-                                style={styles.exchangeIcon}
-                                resizeMode="contain"
-                              />
-                            )
-                          } else {
-                            return <Text style={styles.iconText}>🔗</Text>
-                          }
-                        })()}
-                      </View>
-                      <View>
-                        <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
-                      </View>
-                    </View>
-                    {isLinked ? (
-                      <View style={[styles.connectedBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-                        <Text style={[styles.connectedBadgeText, { color: colors.success }]}>✓ Conectada</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity 
-                        style={[styles.connectButton, themedStyles.button]}
-                        onPress={() => openConnectModal(exchange)}
-                      >
-                        <Text style={styles.connectButtonText}>{t('exchanges.connect')}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  {exchange.requires_passphrase && (
-                    <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
-                      <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
-                    </View>
-                  )}
-                </View>
+                <AvailableExchangeCard
+                  key={exchange._id}
+                  exchange={exchange}
+                  isLinked={isLinked}
+                  colors={colors}
+                  t={t}
+                  onConnect={openConnectModal}
+                />
               )
             })}
           </View>
