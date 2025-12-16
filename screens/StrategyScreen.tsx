@@ -393,7 +393,6 @@ export function StrategyScreen() {
         ) : activeTab === "strategies" ? (
           strategies.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📭</Text>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('strategy.empty')}</Text>
               <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
                 {t('strategy.emptyDesc')}

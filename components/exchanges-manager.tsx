@@ -300,9 +300,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
 
       const data = await response.json()
 
-      if (response.ok && data.success) {
-        console.log('🔗 Exchange conectada, atualizando dados...')
-        
+      if (response.ok && data.success) {        
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
@@ -391,7 +389,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🔌 Exchange desconectada, atualizando dados...')
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
@@ -634,7 +631,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           onPress={() => setActiveTab('linked')}
         >
           <Text style={[styles.tabText, activeTab === 'linked' && { color: '#ffffff' }, activeTab !== 'linked' && { color: colors.textSecondary }]}>
-            {t('exchanges.connected')} ({linkedExchanges.length})
+            {t('exchanges.connected')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -642,7 +639,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           onPress={() => setActiveTab('available')}
         >
           <Text style={[styles.tabText, activeTab === 'available' && { color: '#ffffff' }, activeTab !== 'available' && { color: colors.textSecondary }]}>
-            {t('exchanges.available')} ({availableExchanges.length})
+            {t('exchanges.available')}
           </Text>
         </TouchableOpacity>
       </View>
