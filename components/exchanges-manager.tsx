@@ -5,6 +5,7 @@ import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
+import { QRScanner } from "./QRScanner"
 import Svg, { Path } from "react-native-svg"
 
 // Mapeamento dos logos locais das exchanges
@@ -963,6 +964,23 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        visible={qrScannerVisible}
+        onClose={() => {
+          setQrScannerVisible(false)
+          setCurrentScanField(null)
+        }}
+        onScan={handleQRScanned}
+        title={
+          currentScanField === 'apiKey' 
+            ? 'Escanear API Key' 
+            : currentScanField === 'apiSecret'
+            ? 'Escanear API Secret'
+            : 'Escanear Passphrase'
+        }
+      />
     </Pressable>
   )
 }
@@ -1389,7 +1407,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e3f2fd",
     borderRadius: 8,
     padding: 14,
-    paddingRight: 90,
+    paddingRight: 96,
     fontSize: 15,
     borderWidth: 1,
     borderColor: "#bbdefb",
@@ -1397,7 +1415,8 @@ const styles = StyleSheet.create({
   inputActions: {
     position: 'absolute',
     right: 8,
-    top: 8,
+    top: '50%',
+    transform: [{ translateY: -18 }],
     flexDirection: 'row',
     gap: 6,
   },

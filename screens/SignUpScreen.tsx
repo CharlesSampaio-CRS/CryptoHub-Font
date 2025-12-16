@@ -416,7 +416,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             disabled={isLoading}
           >
             <GoogleIcon />
-            <Text style={styles.socialButtonText}>Continuar com Google</Text>
+            <Text style={styles.socialButtonText}>Google</Text>
           </TouchableOpacity>
 
           {Platform.OS === 'ios' && (
