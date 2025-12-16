@@ -98,7 +98,7 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
   return (
     <View style={[styles.header, { backgroundColor: colors.background }]}>
       <View>
-        <Text style={[styles.title, { color: colors.text }]}>CryptoHub-Mex</Text>
+        <Text style={[styles.title, { color: colors.text }]}>CryptoHub</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
       </View>
 
