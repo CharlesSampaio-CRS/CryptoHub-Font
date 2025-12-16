@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableWithoutFeedback } from "react-native"
 import { memo, useEffect, useState } from "react"
 import { LineChart } from "react-native-chart-kit"
 import { useLanguage } from "@/contexts/LanguageContext"
@@ -67,13 +67,13 @@ export const QuickChart = memo(function QuickChart() {
   const chartData = getChartData()
   
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-      <View style={styles.titleContainer}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
-        <Text style={[styles.hint, { color: colors.textSecondary }]}>Toque para ver valor</Text>
-      </View>
+    <TouchableWithoutFeedback onPress={() => setSelectedPointIndex(null)}>
+      <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+        <View style={styles.titleContainer}>
+          <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+        </View>
 
-      {loading ? (
+        {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -169,7 +169,8 @@ export const QuickChart = memo(function QuickChart() {
           }}
         />
       )}
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   )
 })
 
