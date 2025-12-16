@@ -23,7 +23,7 @@ Os ícones das exchanges estão localizados em:
 | Binance | `binance.png` | PNG | ✅ |
 | NovaDAX | `novadax.png` | PNG | ✅ |
 | MEXC | `mexc.png` | PNG | ✅ |
-| Coinbase | `coinbase.jpeg` | JPEG | ✅ |
+| Coinbase | `coinbase.png` | PNG | ✅ |
 | Kraken | `kraken.png` | PNG | ✅ |
 | Bybit | `bybit.png` | PNG | ✅ |
 | Gate.io | `gateio.png` | PNG | ✅ |
@@ -41,7 +41,7 @@ const exchangeLogos: Record<string, any> = {
   "Binance": require("@/assets/binance.png"),
   "NovaDAX": require("@/assets/novadax.png"),
   "MEXC": require("@/assets/mexc.png"),
-  "Coinbase": require("@/assets/coinbase.jpeg"),
+  "Coinbase": require("@/assets/coinbase.png"),
   "Kraken": require("@/assets/kraken.png"),
   "Bybit": require("@/assets/bybit.png"),
   "Gate.io": require("@/assets/gateio.png"),

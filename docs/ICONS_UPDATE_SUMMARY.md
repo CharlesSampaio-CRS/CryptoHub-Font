@@ -55,7 +55,7 @@ logoImage: {
 | Binance | `binance.png` |
 | NovaDAX | `novadax.png` |
 | MEXC | `mexc.png` |
-| Coinbase | `coinbase.jpeg` |
+| Coinbase | `coinbase.png` |
 | Kraken | `kraken.png` |
 | Bybit | `bybit.png` |
 | Gate.io | `gateio.png` |
