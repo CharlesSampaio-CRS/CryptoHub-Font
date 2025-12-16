@@ -86,17 +86,14 @@ function MainTabs() {
             tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
           }}
         />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarButton: () => null,
+          }}
+        />
       </Tab.Navigator>
-  )
-}
-
-// Main Stack (inclui Tabs + Profile)
-function MainStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabs} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-    </Stack.Navigator>
   )
 }
 
@@ -116,7 +113,7 @@ function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {isAuthenticated ? <MainStack /> : <AuthStack />}
+      {isAuthenticated ? <MainTabs /> : <AuthStack />}
     </NavigationContainer>
   )
 }
