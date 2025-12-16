@@ -650,9 +650,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       {/* Content */}
       <ScrollView 
         style={styles.content}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={true}
-        nestedScrollEnabled={true}
       >
         {activeTab === 'linked' ? (
           linkedExchanges.length === 0 ? (
@@ -670,7 +669,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.list}>
+            <>
               {linkedExchanges.map((linkedExchange, index) => (
                 <LinkedExchangeCard
                   key={linkedExchange.exchange_id + '_' + index}
@@ -682,10 +681,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                   onDelete={handleDelete}
                 />
               ))}
-            </View>
+            </>
           )
         ) : (
-          <View style={styles.list}>
+          <>
             {availableExchanges.map((exchange) => {
               const isLinked = linkedExchanges.some(
                 linked => linked.exchange_id === exchange._id
@@ -702,7 +701,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 />
               )
             })}
-          </View>
+          </>
         )}
       </ScrollView>
 
