@@ -4,6 +4,7 @@ import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
+import { usePrivacy } from "@/contexts/PrivacyContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
@@ -22,6 +23,7 @@ export const ExchangesList = memo(function ExchangesList() {
   const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error } = useBalance()
+  const { hideValue } = usePrivacy()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
   const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
@@ -172,7 +174,7 @@ export const ExchangesList = memo(function ExchangesList() {
 
                   <View style={styles.rightSection}>
                     <Text style={[styles.balance, { color: colors.text }]}>
-                      {apiService.formatUSD(balance)}
+                      {hideValue(apiService.formatUSD(balance))}
                     </Text>
                     <Text style={[styles.expandIcon, { color: colors.textSecondary }]}>{isExpanded ? '▲' : '▼'}</Text>
                   </View>
@@ -198,17 +200,17 @@ export const ExchangesList = memo(function ExchangesList() {
                             </View>
                             <View style={styles.tokenInfo}>
                               <Text style={[styles.tokenAmount, { color: colors.text }]}>
-                                {apiService.formatTokenAmount(token.amount)}
+                                {hideValue(apiService.formatTokenAmount(token.amount))}
                               </Text>
                               {priceUSD > 0 && (
                                 <Text style={[styles.tokenPrice, { color: colors.textSecondary }]}>
-                                  {apiService.formatUSD(priceUSD)}
+                                  {hideValue(apiService.formatUSD(priceUSD))}
                                 </Text>
                               )}
                             </View>
                           </View>
                           <Text style={[styles.tokenValue, { color: colors.text }, valueUSD === 0 && { color: colors.textSecondary }]}>
-                            {apiService.formatUSD(valueUSD)}
+                            {hideValue(apiService.formatUSD(valueUSD))}
                           </Text>
                         </View>
                       )

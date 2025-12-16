@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native
 import { useEffect, useRef, memo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
+import { usePrivacy } from "../contexts/PrivacyContext"
 
 interface HeaderProps {
   hideIcons?: boolean
@@ -13,6 +14,7 @@ interface HeaderProps {
 export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, onSettingsPress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
   const { t } = useLanguage()
+  const { valuesHidden, toggleValuesVisibility } = usePrivacy()
   const iconOpacity = useRef(new Animated.Value(1)).current
   const iconScale = useRef(new Animated.Value(1)).current
   
@@ -48,6 +50,12 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
         ]}
         pointerEvents={hideIcons ? "none" : "auto"}
       >
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={toggleValuesVisibility}
+        >
+          <Text style={styles.iconText}>{valuesHidden ? '👁️' : '👁️‍🗨️'}</Text>
+        </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={onNotificationsPress}

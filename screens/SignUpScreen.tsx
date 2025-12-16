@@ -423,7 +423,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             >
               <AppleIcon color={isDark ? '#000000' : '#ffffff'} />
               <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>
-                Continuar com Apple
+                Apple
               </Text>
             </TouchableOpacity>
           )}

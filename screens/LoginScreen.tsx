@@ -282,7 +282,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       >
         <View style={styles.header}>
           <Text style={styles.logo}>🔐</Text>
-          <Text style={styles.title}>Bem-vindo de volta</Text>
+          <Text style={styles.title}>Bem vindo!</Text>
           <Text style={styles.subtitle}>Acesse sua conta para continuar</Text>
         </View>
 
@@ -390,7 +390,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             >
               <AppleIcon color={isDark ? '#000000' : '#ffffff'} />
               <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>
-                Continuar com Apple
+                Apple
               </Text>
             </TouchableOpacity>
           )}

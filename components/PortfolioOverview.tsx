@@ -4,6 +4,7 @@ import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
+import { usePrivacy } from "@/contexts/PrivacyContext"
 import { config } from "@/lib/config"
 import { PortfolioEvolutionResponse } from "@/types/api"
 
@@ -11,6 +12,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error, refreshing, refresh } = useBalance()
+  const { hideValue } = usePrivacy()
   const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
 
   useEffect(() => {
@@ -91,19 +93,18 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
       </View>
 
       <Text style={[styles.value, { color: colors.text }]}>
-        {formattedValue}
+        {hideValue(formattedValue)}
       </Text>
 
       <View style={styles.changeContainer}>
         <View style={[styles.badge, isPositive ? styles.badgePositive : styles.badgeNegative]}>
           <Text style={[styles.badgeText, isPositive ? styles.textPositive : styles.textNegative]}>
-            {isPositive ? "↑" : "↓"} {isPositive ? "+" : ""}
-            {change24h.toFixed(2)}%
+            {isPositive ? "↑" : "↓"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
           </Text>
         </View>
 
         <Text style={[styles.changeValue, isPositive ? styles.textPositive : styles.textNegative]}>
-          {isPositive ? "+" : ""}{apiService.formatUSD(Math.abs(pnl.changeUsd))}
+          {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
         </Text>
 
         <Text style={styles.timeframe}>Últimos 7 dias</Text>
