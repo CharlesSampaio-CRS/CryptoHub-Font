@@ -1,8 +1,43 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native"
 import { useEffect, useRef, memo } from "react"
+import Svg, { Path, Circle } from "react-native-svg"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { usePrivacy } from "../contexts/PrivacyContext"
+
+// Eye Icon (valores visíveis)
+const EyeIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+  </Svg>
+)
+
+// Eye Off Icon (valores ocultos)
+const EyeOffIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M3 3l18 18M10.5 10.677a2.5 2.5 0 0 0 3.323 3.323"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M7.362 7.561C5.68 8.74 4.279 10.42 3 12.5c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.85M12 5c.87 0 1.71.09 2.52.26M19.82 15.13C21.16 13.73 22.27 12.23 23 12.5c-.73-1.84-1.84-3.34-3.18-4.37"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
 
 interface HeaderProps {
   hideIcons?: boolean
@@ -54,7 +89,11 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={toggleValuesVisibility}
         >
-          <Text style={styles.iconText}>{valuesHidden ? '👁️' : '👁️‍🗨️'}</Text>
+          {valuesHidden ? (
+            <EyeOffIcon color={colors.text} />
+          ) : (
+            <EyeIcon color={colors.text} />
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}

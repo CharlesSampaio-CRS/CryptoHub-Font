@@ -3,6 +3,15 @@ import { config } from '@/lib/config';
 
 const API_BASE_URL = config.apiBaseUrl;
 
+// Cache simples para portfolio evolution (30 segundos)
+interface CacheEntry {
+  data: PortfolioEvolutionResponse;
+  timestamp: number;
+}
+
+const portfolioEvolutionCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 30000; // 30 segundos
+
 export const apiService = {
   /**
    * Busca os balances de todas as exchanges para um usuário
@@ -135,6 +144,16 @@ export const apiService = {
    * @returns Promise com os dados de evolução
    */
   async getPortfolioEvolution(userId: string, days: number = 7): Promise<PortfolioEvolutionResponse> {
+    const cacheKey = `${userId}-${days}`;
+    const now = Date.now();
+
+    // Verifica se existe cache válido
+    const cached = portfolioEvolutionCache.get(cacheKey);
+    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+      console.log('📊 Using cached portfolio evolution data');
+      return cached.data;
+    }
+
     try {
       const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
       console.log('📊 Fetching portfolio evolution from:', url);
@@ -153,6 +172,13 @@ export const apiService = {
       
       const data = await response.json();
       console.log('✅ Portfolio evolution data:', data);
+      
+      // Armazena no cache
+      portfolioEvolutionCache.set(cacheKey, {
+        data,
+        timestamp: now
+      });
+
       return data;
     } catch (error) {
       console.error('❌ Error fetching portfolio evolution:', error);
