@@ -359,7 +359,15 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     <Pressable style={[styles.container, themedStyles.container]} onPress={() => setOpenMenuId(null)}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
+        <View>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            {activeTab === 'linked' 
+              ? `${linkedExchanges.length} ${linkedExchanges.length === 1 ? 'conectada' : 'conectadas'}`
+              : `${availableExchanges.length} ${availableExchanges.length === 1 ? 'disponível' : 'disponíveis'}`
+            }
+          </Text>
+        </View>
       </View>
 
       {/* Tabs */}
