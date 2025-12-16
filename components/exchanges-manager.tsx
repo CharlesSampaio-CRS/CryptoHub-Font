@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard } from "react-native"
 import { useEffect, useState, useMemo } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
+import Svg, { Path } from "react-native-svg"
 
 // Mapeamento dos logos locais das exchanges
 const exchangeLogos: Record<string, any> = {
@@ -40,6 +41,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const [apiSecret, setApiSecret] = useState('')
   const [passphrase, setPassphrase] = useState('')
   const [connecting, setConnecting] = useState(false)
+  const [qrScannerVisible, setQrScannerVisible] = useState(false)
+  const [currentScanField, setCurrentScanField] = useState<'apiKey' | 'apiSecret' | 'passphrase' | null>(null)
   
   // Modal de confirmação (delete/disconnect)
   const [confirmModalVisible, setConfirmModalVisible] = useState(false)
@@ -264,6 +267,47 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     setApiKey('')
     setApiSecret('')
     setPassphrase('')
+    setQrScannerVisible(false)
+    setCurrentScanField(null)
+  }
+
+  const handleOpenQRScanner = (field: 'apiKey' | 'apiSecret' | 'passphrase') => {
+    setCurrentScanField(field)
+    setQrScannerVisible(true)
+  }
+
+  const handleQRScanned = (data: string) => {
+    // Tenta parsear JSON se for um QR code estruturado
+    try {
+      const parsed = JSON.parse(data)
+      if (parsed.apiKey) setApiKey(parsed.apiKey)
+      if (parsed.apiSecret) setApiSecret(parsed.apiSecret)
+      if (parsed.passphrase) setPassphrase(parsed.passphrase)
+    } catch {
+      // Se não for JSON, coloca o texto no campo atual
+      if (currentScanField === 'apiKey') setApiKey(data)
+      else if (currentScanField === 'apiSecret') setApiSecret(data)
+      else if (currentScanField === 'passphrase') setPassphrase(data)
+    }
+    setQrScannerVisible(false)
+    setCurrentScanField(null)
+  }
+
+  const handlePasteFromClipboard = async (field: 'apiKey' | 'apiSecret' | 'passphrase') => {
+    try {
+      const text = await Clipboard.getString()
+      if (text) {
+        if (field === 'apiKey') setApiKey(text.trim())
+        else if (field === 'apiSecret') setApiSecret(text.trim())
+        else if (field === 'passphrase') setPassphrase(text.trim())
+        
+        Alert.alert('✅ Colado!', 'Texto colado da área de transferência')
+      } else {
+        Alert.alert('⚠️ Área vazia', 'Não há texto na área de transferência')
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível colar da área de transferência')
+    }
   }
 
   const handleLinkExchange = async () => {
@@ -624,17 +668,25 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         animationType="slide"
         onRequestClose={closeConnectModal}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, themedStyles.modal]}>
-            {/* Header do Modal */}
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('exchanges.connectModal')}</Text>
-              <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
-                <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.modalContent, themedStyles.modal]}>
+              {/* Header do Modal */}
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>{t('exchanges.connectModal')}</Text>
+                <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
+                  <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
 
-            {selectedExchange && (
+              {selectedExchange && (
               <>
                 {/* Info da Exchange */}
                 <View style={styles.exchangeInfo}>
@@ -670,44 +722,107 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 <View style={styles.form}>
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: colors.text }]}>API Key *</Text>
-                    <TextInput
-                      style={[styles.input, themedStyles.input]}
-                      value={apiKey}
-                      onChangeText={setApiKey}
-                      placeholderTextColor={colors.textSecondary}
-                      placeholder="Digite sua API Key"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
+                    <View style={styles.inputWithButtons}>
+                      <TextInput
+                        style={[styles.inputWithIcons, themedStyles.input]}
+                        value={apiKey}
+                        onChangeText={setApiKey}
+                        placeholderTextColor={colors.textSecondary}
+                        placeholder="Digite sua API Key"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <View style={styles.inputActions}>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+                          onPress={() => handlePasteFromClipboard('apiKey')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </Svg>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.primary }]}
+                          onPress={() => handleOpenQRScanner('apiKey')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill="#ffffff"/>
+                          </Svg>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
 
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: colors.text }]}>API Secret *</Text>
-                    <TextInput
-                      style={[styles.input, themedStyles.input]}
-                      value={apiSecret}
-                      onChangeText={setApiSecret}
-                      placeholder="Digite seu API Secret"
-                      placeholderTextColor={colors.textSecondary}
-                      secureTextEntry
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </View>
-
-                  {selectedExchange.requires_passphrase && (
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.text }]}>Passphrase *</Text>
+                    <View style={styles.inputWithButtons}>
                       <TextInput
-                        style={[styles.input, themedStyles.input]}
-                        value={passphrase}
-                        onChangeText={setPassphrase}
-                        placeholder="Digite sua Passphrase"
+                        style={[styles.inputWithIcons, themedStyles.input]}
+                        value={apiSecret}
+                        onChangeText={setApiSecret}
+                        placeholder="Digite seu API Secret"
                         placeholderTextColor={colors.textSecondary}
                         secureTextEntry
                         autoCapitalize="none"
                         autoCorrect={false}
                       />
+                      <View style={styles.inputActions}>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+                          onPress={() => handlePasteFromClipboard('apiSecret')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </Svg>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.primary }]}
+                          onPress={() => handleOpenQRScanner('apiSecret')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill="#ffffff"/>
+                          </Svg>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+
+                  {selectedExchange.requires_passphrase && (
+                    <View style={styles.inputGroup}>
+                      <Text style={[styles.inputLabel, { color: colors.text }]}>Passphrase *</Text>
+                      <View style={styles.inputWithButtons}>
+                        <TextInput
+                          style={[styles.inputWithIcons, themedStyles.input]}
+                          value={passphrase}
+                          onChangeText={setPassphrase}
+                          placeholder="Digite sua Passphrase"
+                          placeholderTextColor={colors.textSecondary}
+                          secureTextEntry
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                        <View style={styles.inputActions}>
+                          <TouchableOpacity
+                            style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+                            onPress={() => handlePasteFromClipboard('passphrase')}
+                          >
+                            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <Path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </Svg>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.iconButton, { backgroundColor: colors.primary }]}
+                            onPress={() => handleOpenQRScanner('passphrase')}
+                          >
+                            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill="#ffffff"/>
+                            </Svg>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
                       <Text style={[styles.inputHint, { color: colors.textSecondary }]}>
                         ℹ️ Esta exchange requer uma passphrase
                       </Text>
@@ -738,8 +853,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 </View>
               </>
             )}
-          </View>
-        </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal de Confirmação de Toggle */}
@@ -1265,6 +1381,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
     borderWidth: 1,
     borderColor: "#bbdefb",
+  },
+  inputWithButtons: {
+    position: 'relative',
+  },
+  inputWithIcons: {
+    backgroundColor: "#e3f2fd",
+    borderRadius: 8,
+    padding: 14,
+    paddingRight: 90,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: "#bbdefb",
+  },
+  inputActions: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   inputHint: {
     fontSize: 12,

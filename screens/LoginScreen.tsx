@@ -277,10 +277,12 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
       >
         <View style={styles.header}>
           <Text style={styles.logo}>🔐</Text>
