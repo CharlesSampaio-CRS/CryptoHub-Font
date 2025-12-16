@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
     marginBottom: 4,
   },
   profileEmail: {
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   section: {
     marginBottom: 32,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "400",
   },
   statsGrid: {
     flexDirection: 'row',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
     marginBottom: 4,
   },
   statLabel: {
@@ -345,8 +345,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionText: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "400",
   },
   actionArrow: {
     fontSize: 24,

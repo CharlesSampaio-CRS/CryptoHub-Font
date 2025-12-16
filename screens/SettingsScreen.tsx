@@ -547,8 +547,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemText: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "400",
   },
   menuItemSubtext: {
     fontSize: 13,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "400",
     marginBottom: 4,
   },
   settingDescription: {
