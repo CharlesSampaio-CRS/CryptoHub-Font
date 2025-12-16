@@ -111,6 +111,9 @@ const translations = {
     // Exchanges
     'exchanges.title': 'Corretoras',
     'exchanges.hideZeroTokens': 'Ocultar saldo $0',
+    'exchanges.tokensAvailable': 'Tokens Disponíveis',
+    'exchanges.asset': 'ativo',
+    'exchanges.assets': 'ativos',
     'exchanges.error': 'Erro ao carregar corretoras',
     'exchanges.manage': 'Corretoras',
     'exchanges.connected': 'Conectadas',
@@ -257,6 +260,7 @@ const translations = {
     'exchanges.title': 'Exchanges',
     'exchanges.hideZero': 'Hide exchanges with $0 balance',
     'exchanges.hideZeroTokens': 'Hide tokens with $0 balance',
+    'exchanges.tokensAvailable': 'Available Tokens',
     'exchanges.error': 'Error loading exchanges',
     'exchanges.manage': 'Exchanges',
     'exchanges.connected': 'Connected',

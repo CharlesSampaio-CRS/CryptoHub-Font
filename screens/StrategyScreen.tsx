@@ -570,7 +570,6 @@ export function StrategyScreen() {
         ) : (
           executions.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📭</Text>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhuma execução</Text>
               <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
                 As ordens executadas aparecerão aqui

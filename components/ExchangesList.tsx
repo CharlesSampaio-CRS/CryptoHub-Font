@@ -205,14 +205,14 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
 
               {isExpanded && (
                 <View style={[styles.tokensContainer, themedStyles.tokensContainer]}>
-                  <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>Tokens Disponíveis:</Text>
+                  <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>{t('exchanges.tokensAvailable')}:</Text>
                   {loadingDetails[exchange.exchange_id] ? (
                     <View style={styles.loadingTokens}>
                       <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={[styles.loadingTokensText, { color: colors.textSecondary }]}>Carregando tokens...</Text>
+                      <Text style={[styles.loadingTokensText, { color: colors.textSecondary }]}>{t('common.loading')}</Text>
                     </View>
                   ) : tokens.length === 0 ? (
-                    <Text style={[styles.noTokensText, { color: colors.textSecondary }]}>Nenhum token disponível</Text>
+                    <Text style={[styles.noTokensText, { color: colors.textSecondary }]}>{t('home.noData')}</Text>
                   ) : (
                     tokens.map(([symbol, token]) => {
                       const amount = parseFloat(token.amount)
