@@ -317,7 +317,7 @@ export function SettingsScreen() {
             <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Autenticação de Dois Fatores</Text>
               <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>2FA via SMS</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                     Receba códigos de verificação por SMS
@@ -333,7 +333,7 @@ export function SettingsScreen() {
               </View>
 
               <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Google Authenticator</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                     Use o app Google Authenticator
@@ -352,7 +352,7 @@ export function SettingsScreen() {
             <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Bloqueio Automático</Text>
               <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Ativar Bloqueio</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                     Bloquear app após inatividade
@@ -394,7 +394,7 @@ export function SettingsScreen() {
             <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Alertas</Text>
               <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Alertas de Login</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                     Notificar sobre novos logins
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   },
   languageButtonText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   modalContainer: {
     flex: 1,
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   modalClose: {
     fontSize: 16,
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   },
   modalSectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "400",
     marginBottom: 12,
   },
   settingItem: {
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
   },
   timeOptionText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   aboutContent: {
     alignItems: "center",
