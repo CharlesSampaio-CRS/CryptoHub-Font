@@ -1,6 +1,5 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Image, Animated } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Image } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
@@ -10,18 +9,6 @@ export function ProfileScreen() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const { user } = useAuth()
-  const scrollY = useRef(new Animated.Value(0)).current
-  
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  })
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -80],
-    extrapolate: 'clamp',
-  })
 
   // Usuário mockado para demonstração
   const userData = {
@@ -34,30 +21,10 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Animated Header */}
-      <Animated.View 
-        style={[
-          styles.animatedHeader,
-          { 
-            opacity: headerOpacity, 
-            transform: [{ translateY: headerTranslateY }],
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
-          }
-        ]}
-      >
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Perfil</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Suas informações pessoais</Text>
-      </Animated.View>
-
-      <Animated.ScrollView 
+      <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.content}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
       >
         {/* Avatar e Nome */}
         <View style={[styles.profileHeader, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -239,7 +206,7 @@ export function ProfileScreen() {
         </View>
 
         <View style={{ height: 40 }} />
-      </Animated.ScrollView>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -248,27 +215,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  animatedHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 0.5,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: "300",
-  },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 20,
-    paddingTop: 24,
+    paddingTop: 20,
   },
   profileHeader: {
     borderRadius: 16,
