@@ -90,6 +90,16 @@ function MainTabs() {
   )
 }
 
+// Main Stack (inclui Tabs + Profile)
+function MainStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+    </Stack.Navigator>
+  )
+}
+
 // App Navigator - decide entre Auth ou Main baseado no login
 function AppNavigator() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -106,7 +116,7 @@ function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {isAuthenticated ? <MainTabs /> : <AuthStack />}
+      {isAuthenticated ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   )
 }
@@ -149,13 +159,6 @@ const RobotIcon = ({ color }: { color: string }) => (
     <Path d="M12 3v5" stroke={color} strokeWidth="2" strokeLinecap="round" />
     <Circle cx="12" cy="3" r="1" fill={color} />
     <Path d="M5 14h2M17 14h2" stroke={color} strokeWidth="2" strokeLinecap="round" />
-  </Svg>
-)
-
-const ProfileIcon = ({ color }: { color: string }) => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth="2" />
-    <Path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke={color} strokeWidth="2" />
   </Svg>
 )
 
