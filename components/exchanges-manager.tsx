@@ -613,7 +613,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   }
 
   return (
-    <Pressable style={[styles.container, themedStyles.container]} onPress={() => setOpenMenuId(null)}>
+    <View style={[styles.container, themedStyles.container]}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -648,7 +648,12 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
         {activeTab === 'linked' ? (
           linkedExchanges.length === 0 ? (
             <View style={styles.emptyState}>
@@ -1060,7 +1065,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
             : 'Escanear Passphrase'
         }
       />
-    </Pressable>
+    </View>
   )
 }
 
@@ -1184,8 +1189,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    paddingHorizontal: 20,
-    gap: 12,
+    padding: 20,
+    paddingBottom: 100, // Espaço extra no final para o scroll
   },
   card: {
     backgroundColor: "#ffffff",
