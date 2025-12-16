@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "CryptoHub - Centralize seus Investimentos",
+  title: "CryptoHub - Centralize seus Investimentos --- Camila",
   description: "Unifique todas as suas exchanges em um só lugar",
   generator: "v0.app",
   icons: {
