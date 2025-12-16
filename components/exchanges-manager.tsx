@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ef4444",
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
   },
   statusTextActive: {
