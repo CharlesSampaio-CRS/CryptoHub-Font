@@ -105,8 +105,8 @@ export const QuickChart = memo(function QuickChart() {
             propsForDots: {
               r: "6",
               strokeWidth: "2",
-              stroke: isDark ? "#e2e8f0" : "#3b82f6", // Slate 200 : Blue 500
-              fill: isDark ? "#1e293b" : "#ffffff",
+              stroke: isDark ? "#ffffff" : "#3b82f6", // Branco no dark mode : Blue 500 no light mode
+              fill: isDark ? "#1e293b" : "#ffffff", // Fundo escuro no dark mode para contraste
             },
             propsForBackgroundLines: {
               strokeDasharray: "",
