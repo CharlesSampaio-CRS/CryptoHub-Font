@@ -1,14 +1,16 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Image } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Image, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
+import { useNavigation } from "@react-navigation/native"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function ProfileScreen() {
   const { colors } = useTheme()
   const { t } = useLanguage()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigation = useNavigation()
 
   // Usuário mockado para demonstração
   const userData = {
@@ -17,6 +19,34 @@ export function ProfileScreen() {
     phone: "+55 (11) 98765-4321",
     memberSince: "Janeiro 2024",
     avatar: null
+  }
+
+  const handleLogout = () => {
+    Alert.alert(
+      t('profile.logout'),
+      t('profile.logoutConfirm'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout()
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' as never }]
+              })
+            } catch (error) {
+              Alert.alert(t('common.error'), 'Não foi possível realizar o logout')
+            }
+          }
+        }
+      ]
+    )
   }
 
   return (
@@ -162,7 +192,7 @@ export function ProfileScreen() {
             <Text style={[styles.actionArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <Path
                 d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
@@ -172,7 +202,7 @@ export function ProfileScreen() {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={styles.logoutButtonText}>Sair</Text>
+            <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
 

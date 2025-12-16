@@ -363,8 +363,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             {activeTab === 'linked' 
-              ? `${linkedExchanges.length} ${linkedExchanges.length === 1 ? 'conectada' : 'conectadas'}`
-              : `${availableExchanges.length} ${availableExchanges.length === 1 ? 'disponível' : 'disponíveis'}`
+              ? `${linkedExchanges.length} ${linkedExchanges.length === 1 ? t('exchanges.connectedSingular') : t('exchanges.connectedPlural')}`
+              : `${availableExchanges.length} ${availableExchanges.length === 1 ? t('exchanges.availableSingular') : t('exchanges.availablePlural')}`
             }
           </Text>
         </View>

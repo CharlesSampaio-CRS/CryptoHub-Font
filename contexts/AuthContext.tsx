@@ -59,7 +59,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     checkBiometricAvailability()
     checkBiometricEnabled()
-    loadUser()
+    // Não carrega o usuário automaticamente - sempre começa pelo login
+    setIsLoading(false)
   }, [])
 
   const checkBiometricAvailability = async () => {
@@ -93,6 +94,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }
 
+  // Função desabilitada - sistema sempre inicia no login
+  // Pode ser reativada no futuro para implementar "lembrar-me"
   const loadUser = async () => {
     try {
       setIsLoading(true)

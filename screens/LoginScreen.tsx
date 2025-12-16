@@ -120,14 +120,16 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       textAlign: 'center',
     },
     title: {
-      fontSize: 32,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '300',
+      letterSpacing: -0.2,
       color: colors.text,
       marginBottom: 8,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: 12,
+      fontWeight: '300',
       color: colors.textSecondary,
       textAlign: 'center',
     },
@@ -139,8 +141,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       marginBottom: 16,
     },
     label: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: 16,
+      fontWeight: '400',
       color: colors.text,
       marginBottom: 8,
     },
@@ -181,7 +183,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     forgotPasswordText: {
       color: '#3b82f6',
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '400',
     },
     loginButton: {
       backgroundColor: '#3b82f6',
@@ -195,8 +197,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     loginButtonText: {
       color: '#ffffff',
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: 15,
+      fontWeight: '400',
     },
     divider: {
       flexDirection: 'row',
@@ -231,7 +233,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     biometricButtonText: {
       color: colors.text,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: '400',
     },
     socialButtons: {
       gap: 12,
@@ -251,7 +253,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     socialButtonText: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: '400',
     },
     signupContainer: {
       flexDirection: 'row',
@@ -266,7 +268,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     signupLink: {
       color: '#3b82f6',
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '400',
       marginLeft: 4,
     },
   })

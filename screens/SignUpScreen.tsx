@@ -129,7 +129,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     backButtonText: {
       color: colors.text,
       fontSize: 20,
-      fontWeight: 'bold',
+      fontWeight: '400',
     },
     logo: {
       fontSize: 48,
@@ -137,14 +137,16 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       textAlign: 'center',
     },
     title: {
-      fontSize: 32,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '300',
+      letterSpacing: -0.2,
       color: colors.text,
       marginBottom: 8,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: 12,
+      fontWeight: '300',
       color: colors.textSecondary,
       textAlign: 'center',
     },
@@ -156,8 +158,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       marginBottom: 16,
     },
     label: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: 16,
+      fontWeight: '400',
       color: colors.text,
       marginBottom: 8,
     },
@@ -204,8 +206,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     registerButtonText: {
       color: '#ffffff',
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: 15,
+      fontWeight: '400',
     },
     divider: {
       flexDirection: 'row',
@@ -240,7 +242,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     socialButtonText: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: '400',
     },
     loginContainer: {
       flexDirection: 'row',
@@ -255,7 +257,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     loginLink: {
       color: '#3b82f6',
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '400',
       marginLeft: 4,
     },
     termsContainer: {
@@ -270,7 +272,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     termsLink: {
       color: '#3b82f6',
-      fontWeight: '600',
+      fontWeight: '400',
     },
   })
 
