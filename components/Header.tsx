@@ -39,6 +39,38 @@ const EyeOffIcon = ({ color }: { color: string }) => (
   </Svg>
 )
 
+// Bell Icon (notificações)
+const BellIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
+// Settings Icon (configurações)
+const SettingsIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+    <Path
+      d="M12 1v6m0 6v10M1 12h6m6 0h10"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <Path
+      d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24M4.93 19.07l4.24-4.24m5.66-5.66 4.24-4.24"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </Svg>
+)
+
 interface HeaderProps {
   hideIcons?: boolean
   onNotificationsPress?: () => void
@@ -99,7 +131,7 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={onNotificationsPress}
         >
-          <Text style={styles.iconText}>🔔</Text>
+          <BellIcon color={colors.text} />
           {unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -110,7 +142,7 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={onSettingsPress}
         >
-          <Text style={styles.iconText}>⚙️</Text>
+          <SettingsIcon color={colors.text} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -147,10 +179,6 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     borderWidth: 0.5,
     position: "relative",
-  },
-  iconText: {
-    fontSize: 13,
-    opacity: 0.5,
   },
   badge: {
     position: "absolute",
