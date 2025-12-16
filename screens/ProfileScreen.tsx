@@ -172,7 +172,7 @@ export function ProfileScreen() {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+            <Text style={styles.logoutButtonText}>Sair</Text>
           </TouchableOpacity>
         </View>
 

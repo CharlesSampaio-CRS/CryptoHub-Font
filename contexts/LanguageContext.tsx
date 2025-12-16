@@ -45,8 +45,8 @@ const translations = {
     'profile.aboutApp': 'Sobre o App',
     'profile.terms': 'Termos de Uso',
     'profile.privacy': 'Privacidade',
-    'profile.logout': 'Sair da Conta',
-    'profile.logoutConfirm': 'Tem certeza que deseja sair da sua conta?',
+    'profile.logout': 'Sair',
+    'profile.logoutConfirm': 'Tem certeza que deseja sair?',
     'profile.version': 'Versão',
     
     // Strategy Screen
