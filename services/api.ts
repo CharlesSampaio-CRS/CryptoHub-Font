@@ -16,15 +16,18 @@ export const apiService = {
   /**
    * Busca os balances de todas as exchanges para um usuário
    * @param userId ID do usuário
+   * @param forceRefresh Se true, força atualização sem cache (cache: false no backend)
    * @returns Promise com os dados de balance
    */
-  async getBalances(userId: string): Promise<BalanceResponse> {
+  async getBalances(userId: string, forceRefresh: boolean = false): Promise<BalanceResponse> {
     try {
       const timestamp = Date.now();
+      // Só adiciona force_refresh=true quando explicitamente solicitado
+      const forceParam = forceRefresh ? '&force_refresh=true' : '';
       const response = await fetch(
-        `${API_BASE_URL}/balances?user_id=${userId}&force_refresh=true&_t=${timestamp}`,
+        `${API_BASE_URL}/balances?user_id=${userId}${forceParam}&_t=${timestamp}`,
         {
-          cache: 'no-store'
+          cache: forceRefresh ? 'no-store' : 'default'
         }
       );
       

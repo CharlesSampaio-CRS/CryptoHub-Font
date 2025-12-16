@@ -14,6 +14,7 @@ interface BalanceContextType {
   refreshing: boolean
   fetchBalances: (forceRefresh?: boolean, emitEvent?: boolean, silent?: boolean) => Promise<void>
   refresh: () => Promise<void>
+  refreshOnExchangeChange: () => Promise<void>
 }
 
 const BalanceContext = createContext<BalanceContextType | undefined>(undefined)
@@ -34,7 +35,8 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       }
       setError(null)
       
-      const response = await apiService.getBalances(config.userId)
+      // Se forceRefresh é true, força busca sem cache (cache: false no backend)
+      const response = await apiService.getBalances(config.userId, forceRefresh)
       setData(response)
       
       // Emite evento para outros componentes que precisem saber da atualização
@@ -57,10 +59,26 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     await fetchBalances(true, true, false)
   }, [fetchBalances])
 
-  // Fetch inicial
+  // Função específica para atualizar quando exchanges mudam
+  const refreshOnExchangeChange = useCallback(async () => {
+    // Atualiza com cache: false, de forma silenciosa, e emite evento
+    await fetchBalances(true, true, true)
+  }, [fetchBalances])
+
+  // Fetch inicial (com cache)
   useEffect(() => {
-    fetchBalances()
+    fetchBalances(false) // Primeira carga usa cache se disponível
   }, [])
+
+  // Auto-refresh a cada 5 minutos de forma silenciosa com cache: false
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refresh: Atualizando balances (5 minutos)')
+      fetchBalances(true, false, true) // forceRefresh=true, silent=true
+    }, 5 * 60 * 1000) // 5 minutos
+
+    return () => clearInterval(interval)
+  }, [fetchBalances])
 
   // Listener para eventos externos (como exchanges-manager)
   useEffect(() => {
@@ -83,8 +101,9 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     error,
     refreshing,
     fetchBalances,
-    refresh
-  }), [data, loading, error, refreshing, fetchBalances, refresh])
+    refresh,
+    refreshOnExchangeChange
+  }), [data, loading, error, refreshing, fetchBalances, refresh, refreshOnExchangeChange])
 
   return (
     <BalanceContext.Provider value={value}>

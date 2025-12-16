@@ -5,6 +5,7 @@ import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useBalance } from "@/contexts/BalanceContext"
 import { QRScanner } from "./QRScanner"
 import Svg, { Path } from "react-native-svg"
 
@@ -28,6 +29,7 @@ interface ExchangesManagerProps {
 export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
   const { colors } = useTheme()
+  const { refreshOnExchangeChange } = useBalance()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
   const [loading, setLoading] = useState(true)
@@ -112,6 +114,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
+        
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
       } else {
         alert(data.error || 'Falha ao conectar exchange')
       }
@@ -149,6 +154,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
 
     try {
       console.log(`🔄 Status da exchange atualizado: ${exchangeId} → ${newStatus}`)
+      
+      // Atualizar balances com cache:false (toggle afeta quais exchanges são incluídas)
+      await refreshOnExchangeChange()
       
       // Em React Native, não precisamos de window.dispatchEvent
     } catch (error) {
@@ -197,6 +205,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
+        
         // Em React Native, não precisamos de window.dispatchEvent
       } else {
         alert(data.error || 'Falha ao desconectar exchange')
@@ -242,6 +253,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
+        
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
       } else {
         alert(data.error || 'Falha ao deletar exchange')
       }
@@ -357,6 +371,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
+        
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
       } else {
         alert(data.error || 'Falha ao conectar exchange')
       }
