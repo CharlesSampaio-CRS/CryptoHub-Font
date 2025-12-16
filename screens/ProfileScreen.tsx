@@ -51,9 +51,6 @@ export function ProfileScreen() {
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.text }]}>{userData.name}</Text>
             <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>{userData.email}</Text>
-            <Text style={[styles.memberSince, { color: colors.textSecondary }]}>
-              Membro desde {userData.memberSince}
-            </Text>
           </View>
 
           <TouchableOpacity style={[styles.editButton, { borderColor: colors.border }]}>
@@ -125,35 +122,6 @@ export function ProfileScreen() {
           </View>
         </View>
 
-        {/* Seção: Estatísticas */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ESTATÍSTICAS</Text>
-          
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-              <Text style={[styles.statValue, { color: colors.text }]}>5</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Exchanges</Text>
-            </View>
-            
-            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-              <Text style={[styles.statValue, { color: colors.text }]}>18</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Criptomoedas</Text>
-            </View>
-          </View>
-
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-              <Text style={[styles.statValue, { color: colors.text }]}>247</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Dias ativos</Text>
-            </View>
-            
-            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-              <Text style={[styles.statValue, { color: colors.text }]}>143</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Transações</Text>
-            </View>
-          </View>
-        </View>
-
         {/* Seção: Ações */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>AÇÕES</Text>
@@ -194,22 +162,17 @@ export function ProfileScreen() {
             <Text style={[styles.actionArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            <View style={styles.actionLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
-                    stroke="#ef4444"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </View>
-              <Text style={[styles.actionText, { color: '#ef4444' }]}>Sair da Conta</Text>
-            </View>
-            <Text style={[styles.actionArrow, { color: colors.textSecondary }]}>›</Text>
+          <TouchableOpacity style={styles.logoutButton}>
+            <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                stroke="#ffffff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+            <Text style={styles.logoutButtonText}>Sair da Conta</Text>
           </TouchableOpacity>
         </View>
 
@@ -388,5 +351,19 @@ const styles = StyleSheet.create({
   actionArrow: {
     fontSize: 24,
     fontWeight: "300",
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: "#ef4444",
+  },
+  logoutButtonText: {
+    fontSize: 15,
+    fontWeight: "400",
+    color: "#ffffff",
   },
 })
