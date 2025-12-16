@@ -57,6 +57,12 @@ const LinkedExchangeCard = memo(({
       backgroundColor: colors.surface,
       borderColor: colors.border,
     },
+    statusDotActive: {
+      backgroundColor: colors.primary,
+    },
+    statusDotInactive: {
+      backgroundColor: colors.error,
+    },
   }), [colors])
 
   return (
@@ -112,7 +118,7 @@ const LinkedExchangeCard = memo(({
         ]}>
           <View style={[
             styles.statusDot,
-            isActive ? styles.statusDotActive : styles.statusDotInactive
+            isActive ? themedStyles.statusDotActive : themedStyles.statusDotInactive
           ]} />
           <Text style={[
             styles.statusText,
@@ -1249,10 +1255,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusDotActive: {
-    backgroundColor: "#3b82f6",
+    // Cor definida dinamicamente via themedStyles
   },
   statusDotInactive: {
-    backgroundColor: "#ef4444",
+    // Cor definida dinamicamente via themedStyles
   },
   statusText: {
     fontSize: 12,
