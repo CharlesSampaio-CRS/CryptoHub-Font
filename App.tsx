@@ -79,14 +79,6 @@ function MainTabs() {
           }}
         />
         <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarLabel: t('nav.profile'),
-            tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
-          }}
-        />
-        <Tab.Screen
           name="Settings"
           component={SettingsScreen}
           options={{
