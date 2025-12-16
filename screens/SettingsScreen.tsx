@@ -48,6 +48,14 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Personalize seu app</Text>
+        </View>
+      </View>
+
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.content}
@@ -476,12 +484,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 20,
-    paddingTop: 20,
+    paddingTop: 0,
   },
   section: {
     marginBottom: 32,
