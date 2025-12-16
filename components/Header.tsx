@@ -55,10 +55,25 @@ const BellIcon = ({ color }: { color: string }) => (
 interface HeaderProps {
   hideIcons?: boolean
   onNotificationsPress?: () => void
+  onProfilePress?: () => void
   unreadCount?: number
 }
 
-export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, unreadCount = 0 }: HeaderProps) {
+// User Icon (perfil)
+const UserIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="7" r="4" stroke={color} strokeWidth="2" />
+  </Svg>
+)
+
+export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, onProfilePress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const { valuesHidden, toggleValuesVisibility } = usePrivacy()
@@ -117,6 +132,12 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
               <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
             </View>
           )}
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={onProfilePress}
+        >
+          <UserIcon color={colors.text} />
         </TouchableOpacity>
       </Animated.View>
     </View>

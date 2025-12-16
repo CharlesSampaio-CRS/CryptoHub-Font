@@ -1,5 +1,5 @@
 import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
-import { useRef, useState, useMemo, useCallback, memo } from "react"
+import { useRef, useState, useMemo, useCallback, memo, useEffect } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { ExchangesList } from "../components/ExchangesList"
@@ -7,12 +7,15 @@ import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
 import { mockNotifications } from "../types/notifications"
 import { QuickChart } from "../components/QuickChart"
+import { apiService } from "../services/api"
+import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
+  const [availableExchangesCount, setAvailableExchangesCount] = useState(0)
   const lastScrollY = useRef(0)
 
   const unreadCount = useMemo(() => 
@@ -20,9 +23,30 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
     []
   )
 
+  useEffect(() => {
+    loadAvailableExchanges()
+  }, [])
+
+  const loadAvailableExchanges = async () => {
+    try {
+      const data = await apiService.getAvailableExchanges(config.userId)
+      setAvailableExchangesCount(data.exchanges?.length || 0)
+    } catch (error) {
+      console.error('Error loading available exchanges:', error)
+    }
+  }
+
   const onNotificationsPress = useCallback(() => {
     setNotificationsModalVisible(true)
   }, [])
+
+  const onProfilePress = useCallback(() => {
+    navigation?.navigate('Profile')
+  }, [navigation])
+
+  const onAddExchange = useCallback(() => {
+    navigation?.navigate('Exchanges', { openTab: 'available' })
+  }, [navigation])
 
   const onModalClose = useCallback(() => {
     setNotificationsModalVisible(false)
@@ -52,6 +76,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
       <Header 
         hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}
+        onProfilePress={onProfilePress}
         unreadCount={unreadCount}
       />
       <Animated.ScrollView
@@ -64,7 +89,10 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
       >
         <PortfolioOverview />
         <QuickChart />
-        <ExchangesList />
+        <ExchangesList 
+          onAddExchange={onAddExchange}
+          availableExchangesCount={availableExchangesCount}
+        />
       </Animated.ScrollView>
 
       <NotificationsModal 

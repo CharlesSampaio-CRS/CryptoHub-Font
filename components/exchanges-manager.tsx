@@ -19,14 +19,18 @@ const exchangeLogos: Record<string, any> = {
   "okx": require("@/assets/okx.png"),
 }
 
-export function ExchangesManager() {
+interface ExchangesManagerProps {
+  initialTab?: 'available' | 'linked'
+}
+
+export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
   const { colors } = useTheme()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'available' | 'linked'>('linked')
+  const [activeTab, setActiveTab] = useState<'available' | 'linked'>(initialTab)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   
   // Modal de conexão
@@ -356,9 +360,6 @@ export function ExchangesManager() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-          {linkedExchanges.length} {t('exchanges.connected').toLowerCase()}{linkedExchanges.length !== 1 ? 's' : ''}
-        </Text>
       </View>
 
       {/* Tabs */}
@@ -430,9 +431,6 @@ export function ExchangesManager() {
                         <View style={styles.exchangeNameContainer}>
                           <Text style={[styles.exchangeName, { color: colors.text }]}>
                             {linkedExchange.name}
-                          </Text>
-                          <Text style={[styles.exchangeCountry, { color: colors.textSecondary }]}>
-                            {linkedExchange.country}
                           </Text>
                         </View>
                       </View>
@@ -523,7 +521,6 @@ export function ExchangesManager() {
                       </View>
                       <View>
                         <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
-                        <Text style={[styles.exchangeCountry, { color: colors.textSecondary }]}>{exchange.pais_de_origem}</Text>
                       </View>
                     </View>
                     {isLinked ? (
@@ -658,7 +655,6 @@ export function ExchangesManager() {
                   </View>
                   <View>
                     <Text style={[styles.modalExchangeName, { color: colors.text }]}>{selectedExchange.nome}</Text>
-                    <Text style={[styles.modalExchangeCountry, { color: colors.textSecondary }]}>{selectedExchange.pais_de_origem}</Text>
                   </View>
                 </View>
 

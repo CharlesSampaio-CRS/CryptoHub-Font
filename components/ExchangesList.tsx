@@ -19,22 +19,22 @@ const exchangeLogos: Record<string, any> = {
   "okx": require("@/assets/okx.png"),
 }
 
-export const ExchangesList = memo(function ExchangesList() {
+interface ExchangesListProps {
+  onAddExchange?: () => void
+  availableExchangesCount?: number
+}
+
+export const ExchangesList = memo(function ExchangesList({ onAddExchange, availableExchangesCount = 0 }: ExchangesListProps) {
   const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error } = useBalance()
   const { hideValue } = usePrivacy()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
-  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(false)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
 
   // Todos os hooks devem estar ANTES de qualquer return condicional
   const toggleExpandExchange = useCallback((exchangeId: string) => {
     setExpandedExchangeId(prev => prev === exchangeId ? null : exchangeId)
-  }, [])
-
-  const toggleZeroBalanceExchanges = useCallback(() => {
-    setHideZeroBalanceExchanges(prev => !prev)
   }, [])
 
   const toggleZeroBalanceTokens = useCallback(() => {
@@ -44,15 +44,8 @@ export const ExchangesList = memo(function ExchangesList() {
   // Filtrar exchanges - só executa se data existir
   const filteredExchanges = useMemo(() => {
     if (!data) return []
-    return data.exchanges
-      .filter(ex => ex.success)
-      .filter(ex => {
-        if (hideZeroBalanceExchanges) {
-          return parseFloat(ex.total_usd) > 0
-        }
-        return true
-      })
-  }, [data, hideZeroBalanceExchanges])
+    return data.exchanges.filter(ex => ex.success)
+  }, [data])
 
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
@@ -63,7 +56,7 @@ export const ExchangesList = memo(function ExchangesList() {
     tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
     tokenSymbolBadge: { backgroundColor: colors.surfaceSecondary, borderColor: colors.primary },
     tokenItem: { borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : colors.border }, // Borda mais suave no dark mode
-    logoContainer: { backgroundColor: colors.surface, borderColor: colors.border },
+    logoContainer: { backgroundColor: '#ffffff', borderColor: colors.border }, // Fundo branco em ambos os modos para os ícones
   }), [colors, isDark])
 
   if (loading) {
@@ -90,24 +83,15 @@ export const ExchangesList = memo(function ExchangesList() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={[styles.addButtonText, { color: colors.primary }]}>+ Adicionar</Text>
-        </TouchableOpacity>
+        {availableExchangesCount > 0 && onAddExchange && (
+          <TouchableOpacity style={styles.addButton} onPress={onAddExchange}>
+            <Text style={[styles.addButtonText, { color: colors.primary }]}>+ Adicionar</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Toggles de Filtro */}
+      {/* Toggle de Filtro */}
       <View style={styles.filtersContainer}>
-        <TouchableOpacity 
-          style={styles.toggleRow}
-          onPress={toggleZeroBalanceExchanges}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.toggleLabel, { color: colors.textSecondary }]}>{t('exchanges.hideZero')}</Text>
-          <View style={[styles.toggle, themedStyles.toggle, hideZeroBalanceExchanges && [styles.toggleActive, themedStyles.toggleActive]]}>
-            <View style={[styles.toggleThumb, themedStyles.toggleThumb, hideZeroBalanceExchanges && styles.toggleThumbActive]} />
-          </View>
-        </TouchableOpacity>
-
         <TouchableOpacity 
           style={styles.toggleRow}
           onPress={toggleZeroBalanceTokens}
