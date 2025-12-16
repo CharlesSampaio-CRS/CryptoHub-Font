@@ -16,6 +16,7 @@ export interface BalanceResponse {
   exchanges: Exchange[];
   meta: {
     from_cache: boolean;
+    fetch_time?: string;
   };
   summary: {
     exchanges_count: number;

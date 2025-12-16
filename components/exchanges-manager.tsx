@@ -363,17 +363,21 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🔗 Exchange linkada, atualizando dados...')
+        console.log(`🔗 Exchange "${selectedExchange.nome}" linkada com sucesso!`)
         closeConnectModal()
         
         // Pequeno delay para garantir que o backend processou
-        await new Promise(resolve => setTimeout(resolve, 500))
+        console.log('⏳ Aguardando 300ms para backend processar...')
+        await new Promise(resolve => setTimeout(resolve, 300))
         
-        // Recarregar lista de exchanges sem cache
-        await fetchExchanges(true)
+        // Atualizar exchanges e balances em paralelo para ser mais rápido
+        console.log('� Atualizando exchanges e balances...')
+        await Promise.all([
+          fetchExchanges(true),
+          refreshOnExchangeChange()
+        ])
         
-        // Atualizar balances com cache:false
-        await refreshOnExchangeChange()
+        console.log('✅ Processo de link completo!')
       } else {
         alert(data.error || 'Falha ao conectar exchange')
       }
@@ -810,37 +814,16 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                   {selectedExchange.requires_passphrase && (
                     <View style={styles.inputGroup}>
                       <Text style={[styles.inputLabel, { color: colors.text }]}>Passphrase *</Text>
-                      <View style={styles.inputWithButtons}>
-                        <TextInput
-                          style={[styles.inputWithIcons, themedStyles.input]}
-                          value={passphrase}
-                          onChangeText={setPassphrase}
-                          placeholder="Digite sua Passphrase"
-                          placeholderTextColor={colors.textSecondary}
-                          secureTextEntry
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                        />
-                        <View style={styles.inputActions}>
-                          <TouchableOpacity
-                            style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
-                            onPress={() => handlePasteFromClipboard('passphrase')}
-                          >
-                            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <Path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </Svg>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.iconButton, { backgroundColor: colors.primary }]}
-                            onPress={() => handleOpenQRScanner('passphrase')}
-                          >
-                            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill="#ffffff"/>
-                            </Svg>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
+                      <TextInput
+                        style={[styles.input, themedStyles.input]}
+                        value={passphrase}
+                        onChangeText={setPassphrase}
+                        placeholder="Digite sua Passphrase"
+                        placeholderTextColor={colors.textSecondary}
+                        secureTextEntry
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
                       <Text style={[styles.inputHint, { color: colors.textSecondary }]}>
                         ℹ️ Esta exchange requer uma passphrase
                       </Text>

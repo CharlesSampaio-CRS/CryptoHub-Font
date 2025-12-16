@@ -296,8 +296,9 @@ class StrategiesService {
    * Busca todas as execuções do usuário (agregadas de todas as estratégias)
    * Nota: A API não tem endpoint específico para execuções, então buscamos
    * a última execução de cada estratégia via stats
+   * @param skipStrategyIds - IDs de estratégias para pular (ex: recém-criadas)
    */
-  async getUserExecutions(userId: string): Promise<Execution[]> {
+  async getUserExecutions(userId: string, skipStrategyIds: Set<string> = new Set()): Promise<Execution[]> {
     try {
       // Primeiro busca todas as estratégias do usuário
       const strategies = await this.getUserStrategies(userId)
@@ -306,6 +307,12 @@ class StrategiesService {
       const executionsPromises = strategies.map(async (strategy) => {
         const strategyId = strategy._id || strategy.id
         if (!strategyId) return null
+        
+        // Pula estratégias recém-criadas (sem stats ainda)
+        if (skipStrategyIds.has(strategyId)) {
+          console.log(`⏭️ Skipping executions for newly created strategy: ${strategyId}`)
+          return null
+        }
 
         try {
           const statsResponse = await this.getStrategyStats(strategyId, userId)

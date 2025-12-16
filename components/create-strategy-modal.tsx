@@ -24,7 +24,7 @@ import { LinkedExchange } from "@/types/api"
 interface CreateStrategyModalProps {
   visible: boolean
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (strategyId: string) => void
   userId: string
 }
 
@@ -161,7 +161,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
 
     try {
       setLoading(true)
-      await strategiesService.createStrategy({
+      const createdStrategy = await strategiesService.createStrategy({
         user_id: userId,
         exchange_id: selectedExchange,
         token: finalToken.toUpperCase(),
@@ -173,10 +173,13 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       setLoading(false)
       onClose()
       
+      const strategyId = createdStrategy._id || createdStrategy.id || ""
+      console.log(`✅ Strategy created successfully with ID: ${strategyId}`)
+      
       // Aguarda um pouco para o modal fechar antes de recarregar
       setTimeout(() => {
         Alert.alert("Sucesso", "Estratégia criada com sucesso!")
-        onSuccess()
+        onSuccess(strategyId)
       }, 300)
     } catch (error: any) {
       console.error("Error creating strategy:", error)

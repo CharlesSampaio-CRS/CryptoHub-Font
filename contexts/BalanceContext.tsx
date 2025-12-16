@@ -12,9 +12,11 @@ interface BalanceContextType {
   loading: boolean
   error: string | null
   refreshing: boolean
-  fetchBalances: (forceRefresh?: boolean, emitEvent?: boolean, silent?: boolean) => Promise<void>
+  fetchBalances: (forceRefresh?: boolean, emitEvent?: boolean, silent?: boolean, useSummary?: boolean) => Promise<void>
   refresh: () => Promise<void>
   refreshOnExchangeChange: () => Promise<void>
+  fetchExchangeDetails: (exchangeId: string) => Promise<any>
+  updateExchangeInCache: (exchangeId: string, exchangeData: any) => void
 }
 
 const BalanceContext = createContext<BalanceContextType | undefined>(undefined)
@@ -25,7 +27,7 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false) => {
+  const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false, useSummary = false) => {
     try {
       // Controle inteligente de loading states
       if (!silent && !data) {
@@ -35,8 +37,21 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       }
       setError(null)
       
-      // Se forceRefresh é true, força busca sem cache (cache: false no backend)
-      const response = await apiService.getBalances(config.userId, forceRefresh)
+      console.log(`📊 BalanceContext: Buscando ${useSummary ? 'summary' : 'balances'} (forceRefresh=${forceRefresh}, silent=${silent})`)
+      
+      // Usa summary (rápido) ou balances completo (com tokens)
+      const response = useSummary 
+        ? await apiService.getBalancesSummary(config.userId, forceRefresh)
+        : await apiService.getBalances(config.userId, forceRefresh)
+      
+      console.log(`✅ BalanceContext: Recebido ${response.exchanges?.length || 0} exchanges`)
+      if (response.exchanges) {
+        response.exchanges.forEach(ex => {
+          const tokenCount = Object.keys(ex.tokens || {}).length
+          console.log(`   - ${ex.name}: ${ex.success ? '✓' : '✗'} ${tokenCount > 0 ? `(${tokenCount} tokens)` : '(summary only)'}`)
+        })
+      }
+      
       setData(response)
       
       // Emite evento para outros componentes que precisem saber da atualização
@@ -61,13 +76,15 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
 
   // Função específica para atualizar quando exchanges mudam
   const refreshOnExchangeChange = useCallback(async () => {
+    console.log('🔄 refreshOnExchangeChange: Iniciando atualização de balances após mudança de exchange')
     // Atualiza com cache: false, de forma silenciosa, e emite evento
     await fetchBalances(true, true, true)
+    console.log('✅ refreshOnExchangeChange: Atualização concluída')
   }, [fetchBalances])
 
-  // Fetch inicial (com cache)
+  // Fetch inicial usando SUMMARY (rápido ~1-2s)
   useEffect(() => {
-    fetchBalances(false) // Primeira carga usa cache se disponível
+    fetchBalances(false, false, false, true) // forceRefresh=false, emitEvent=false, silent=false, useSummary=true
   }, [])
 
   // Auto-refresh a cada 5 minutos de forma silenciosa com cache: false
@@ -95,6 +112,32 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchBalances])
 
+  // 📊 Lazy load: Busca detalhes de UMA exchange específica
+  const fetchExchangeDetails = useCallback(async (exchangeId: string) => {
+    try {
+      console.log(`📊 Fetching details for exchange: ${exchangeId}`)
+      const details = await apiService.getExchangeDetails(config.userId, exchangeId, false)
+      return details
+    } catch (err) {
+      console.error('Error fetching exchange details:', err)
+      throw err
+    }
+  }, [])
+
+  // Atualiza uma exchange específica no cache local
+  const updateExchangeInCache = useCallback((exchangeId: string, exchangeData: any) => {
+    if (!data) return
+    
+    const updatedExchanges = data.exchanges.map(ex => {
+      if (ex.exchange_id === exchangeId) {
+        return { ...ex, ...exchangeData }
+      }
+      return ex
+    })
+    
+    setData({ ...data, exchanges: updatedExchanges })
+  }, [data])
+
   const value = useMemo(() => ({
     data,
     loading,
@@ -102,8 +145,10 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     refreshing,
     fetchBalances,
     refresh,
-    refreshOnExchangeChange
-  }), [data, loading, error, refreshing, fetchBalances, refresh, refreshOnExchangeChange])
+    refreshOnExchangeChange,
+    fetchExchangeDetails,
+    updateExchangeInCache
+  }), [data, loading, error, refreshing, fetchBalances, refresh, refreshOnExchangeChange, fetchExchangeDetails, updateExchangeInCache])
 
   return (
     <BalanceContext.Provider value={value}>

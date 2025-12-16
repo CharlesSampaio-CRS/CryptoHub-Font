@@ -27,25 +27,61 @@ interface ExchangesListProps {
 export const ExchangesList = memo(function ExchangesList({ onAddExchange, availableExchangesCount = 0 }: ExchangesListProps) {
   const { colors, isDark } = useTheme()
   const { t } = useLanguage()
-  const { data, loading, error } = useBalance()
+  const { data, loading, error, fetchExchangeDetails, updateExchangeInCache } = useBalance()
   const { hideValue } = usePrivacy()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
   const [hideZeroBalanceTokens, setHideZeroBalanceTokens] = useState(false)
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({})
 
-  // Todos os hooks devem estar ANTES de qualquer return condicional
-  const toggleExpandExchange = useCallback((exchangeId: string) => {
+  // Lazy load: Busca tokens quando expandir
+  const toggleExpandExchange = useCallback(async (exchangeId: string) => {
+    const isExpanding = expandedExchangeId !== exchangeId
     setExpandedExchangeId(prev => prev === exchangeId ? null : exchangeId)
-  }, [])
+    
+    // Se está expandindo e ainda não tem tokens, busca detalhes
+    if (isExpanding) {
+      const exchange = data?.exchanges.find(ex => ex.exchange_id === exchangeId)
+      const hasTokens = exchange && Object.keys(exchange.tokens || {}).length > 0
+      
+      if (!hasTokens) {
+        setLoadingDetails(prev => ({ ...prev, [exchangeId]: true }))
+        try {
+          console.log(`📊 Lazy loading tokens for: ${exchange?.name}`)
+          const details = await fetchExchangeDetails(exchangeId)
+          updateExchangeInCache(exchangeId, details)
+        } catch (err) {
+          console.error('Error loading exchange details:', err)
+        } finally {
+          setLoadingDetails(prev => ({ ...prev, [exchangeId]: false }))
+        }
+      }
+    }
+  }, [expandedExchangeId, data, fetchExchangeDetails, updateExchangeInCache])
 
   const toggleZeroBalanceTokens = useCallback(() => {
     setHideZeroBalanceTokens(prev => !prev)
   }, [])
 
-  // Filtrar exchanges - só executa se data existir
+  // Filtrar exchanges - mostra todas as exchanges conectadas (mesmo sem tokens)
   const filteredExchanges = useMemo(() => {
-    if (!data) return []
-    return data.exchanges.filter(ex => ex.success)
-  }, [data])
+    if (!data) {
+      console.log(`⚠️ ExchangesList: Nenhum dado disponível (data é null)`)
+      return []
+    }
+    
+    if (!data.exchanges || data.exchanges.length === 0) {
+      console.log(`⚠️ ExchangesList: data.exchanges está vazio ou undefined`)
+      return []
+    }
+    
+    // Mostra exchanges com sucesso OU que foram conectadas (mesmo que dê erro de API temporário)
+    const filtered = data.exchanges
+    console.log(`📋 ExchangesList: ${filtered.length} exchanges retornadas pela API (timestamp: ${data.timestamp})`)
+    filtered.forEach(ex => {
+      console.log(`   - ${ex.name}: ${ex.success ? '✓' : '✗'} (${Object.keys(ex.tokens || {}).length} tokens) - Total: $${ex.total_usd}`)
+    })
+    return filtered
+  }, [data, data?.timestamp])
 
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
@@ -104,9 +140,9 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
         </TouchableOpacity>
       </View>
 
-      <View style={styles.list}>
+      <View style={styles.list} collapsable={false}>
         {filteredExchanges.map((exchange, index) => {
-          const allTokens = Object.entries(exchange.tokens)
+          const allTokens = Object.entries(exchange.tokens || {})
           
           // Filtrar tokens com saldo zero se toggle ativado
           let tokens = hideZeroBalanceTokens 
@@ -152,7 +188,9 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                     </View>
                     <View>
                       <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
-                      <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>{tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}</Text>
+                      <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>
+                        {tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}
+                      </Text>
                     </View>
                   </View>
 
@@ -168,7 +206,12 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
               {isExpanded && (
                 <View style={[styles.tokensContainer, themedStyles.tokensContainer]}>
                   <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>Tokens Disponíveis:</Text>
-                  {tokens.length === 0 ? (
+                  {loadingDetails[exchange.exchange_id] ? (
+                    <View style={styles.loadingTokens}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={[styles.loadingTokensText, { color: colors.textSecondary }]}>Carregando tokens...</Text>
+                    </View>
+                  ) : tokens.length === 0 ? (
                     <Text style={[styles.noTokensText, { color: colors.textSecondary }]}>Nenhum token disponível</Text>
                   ) : (
                     tokens.map(([symbol, token]) => {
@@ -229,7 +272,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   addButtonText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "400",
   },
   filtersContainer: {
@@ -404,5 +447,16 @@ const styles = StyleSheet.create({
   },
   tokenValueZero: {
     // Applied via inline style
+  },
+  loadingTokens: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    gap: 12,
+  },
+  loadingTokensText: {
+    fontSize: 13,
+    fontWeight: "400",
   },
 })

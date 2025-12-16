@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
-import { memo, useEffect, useState } from "react"
+import { memo, useEffect, useState, useCallback } from "react"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
@@ -15,18 +15,18 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const { hideValue } = usePrivacy()
   const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
 
-  useEffect(() => {
-    loadEvolutionData()
-  }, [])
-
-  const loadEvolutionData = async () => {
+  const loadEvolutionData = useCallback(async () => {
     try {
       const evolution = await apiService.getPortfolioEvolution(config.userId, 7)
       setEvolutionData(evolution)
     } catch (err) {
       console.error('Error loading evolution data:', err)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadEvolutionData()
+  }, [loadEvolutionData])
 
   if (loading) {
     return (
@@ -46,6 +46,8 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
   const totalValue = parseFloat(data.summary.total_usd)
   const formattedValue = apiService.formatUSD(totalValue)
+  
+  console.log(`💰 PortfolioOverview: Total USD = $${totalValue} (timestamp: ${data.timestamp})`)
   
   // Calcula PNL baseado nos dados de evolução
   const getPNL = () => {

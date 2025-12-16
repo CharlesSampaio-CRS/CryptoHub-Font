@@ -1,6 +1,6 @@
 import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { strategiesService, type Strategy as APIStrategy, type Execution } from "../services/strategies"
@@ -48,19 +48,17 @@ export function StrategyScreen() {
   const [toggleStrategyId, setToggleStrategyId] = useState<string>("")
   const [toggleStrategyName, setToggleStrategyName] = useState<string>("")
   const [toggleStrategyNewStatus, setToggleStrategyNewStatus] = useState<boolean>(false)
+  
+  // Ref para rastrear IDs de estratégias recém-criadas (sem stats ainda)
+  const newlyCreatedStrategyIds = useRef<Set<string>>(new Set())
 
-  // Load strategies and executions from API
-  useEffect(() => {
-    loadStrategies()
-    loadExecutions()
-  }, [])
-
-  const loadStrategies = async (skipStats: boolean = false) => {
+  const loadStrategies = useCallback(async (skipStats: boolean = false) => {
     try {
       setLoading(true)
       const apiStrategies = await strategiesService.getUserStrategies(USER_ID)
       
       console.log("📊 Loaded strategies from API:", apiStrategies.length)
+      console.log(`📈 Skip stats: ${skipStats ? 'YES (strategy just created)' : 'NO (normal load)'}`)
       
       // Transform API data to local format - Filter out invalid strategies
       const validStrategies = apiStrategies.filter(apiStrategy => {
@@ -80,6 +78,13 @@ export function StrategyScreen() {
       if (!skipStats) {
         const statsPromises = validStrategies.map(apiStrategy => {
           const strategyId = apiStrategy._id || apiStrategy.id || ""
+          
+          // Pula stats de estratégias recém-criadas (ainda não têm execuções)
+          if (newlyCreatedStrategyIds.current.has(strategyId)) {
+            console.log(`⏭️ Skipping stats for newly created strategy: ${strategyId}`)
+            return Promise.resolve(null)
+          }
+          
           return strategiesService.getStrategyStats(strategyId, USER_ID)
         })
         statsResults = await Promise.allSettled(statsPromises)
@@ -97,7 +102,7 @@ export function StrategyScreen() {
         if (!skipStats && statsResults[index]) {
           const statsResult = statsResults[index]
           
-          if (statsResult.status === 'fulfilled') {
+          if (statsResult.status === 'fulfilled' && statsResult.value !== null) {
             const statsResponse = statsResult.value
             stats = {
               totalExecutions: statsResponse.stats.total_executions,
@@ -109,7 +114,10 @@ export function StrategyScreen() {
               totalPnlUsd: statsResponse.stats.total_pnl_usd,
               winRate: statsResponse.stats.win_rate,
             }
-          } else {
+          } else if (statsResult.status === 'fulfilled' && statsResult.value === null) {
+            // Estratégia recém-criada - stats serão undefined
+            console.log(`📝 Strategy ${strategyId} is newly created - no stats yet`)
+          } else if (statsResult.status === 'rejected') {
             // Apenas loga warning se não for erro 404 (estratégia nova)
             const errorMsg = statsResult.reason?.message || ''
             const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
@@ -141,19 +149,26 @@ export function StrategyScreen() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [])
 
-  const loadExecutions = async () => {
+  const loadExecutions = useCallback(async () => {
     try {
       console.log("🔄 Loading executions from API...")
-      const apiExecutions = await strategiesService.getUserExecutions(USER_ID)
+      // Passa a lista de estratégias recém-criadas para pular
+      const apiExecutions = await strategiesService.getUserExecutions(USER_ID, newlyCreatedStrategyIds.current)
       console.log("📊 Loaded executions:", apiExecutions.length)
       setExecutions(apiExecutions)
     } catch (error) {
       console.error("Error loading executions:", error)
       setExecutions([])
     }
-  }
+  }, [])
+
+  // Load strategies and executions from API on mount
+  useEffect(() => {
+    loadStrategies()
+    loadExecutions()
+  }, [loadStrategies, loadExecutions])
 
   const toggleStrategy = useCallback((id: string) => {
     const strategyToToggle = strategies.find(s => s.id === id)
@@ -238,13 +253,23 @@ export function StrategyScreen() {
     setCreateModalVisible(true)
   }, [])
 
-  const handleStrategyCreated = useCallback(async () => {
+  const handleStrategyCreated = useCallback(async (strategyId: string) => {
     setCreateModalVisible(false)
+    
+    // Adiciona o ID da nova estratégia à lista de recém-criadas
+    console.log(`📝 Marking strategy ${strategyId} as newly created (will skip stats)`)
+    newlyCreatedStrategyIds.current.add(strategyId)
+    
+    // Limpa o ID após 5 minutos (tempo suficiente para primeira execução)
+    setTimeout(() => {
+      console.log(`⏰ Removing ${strategyId} from newly created list`)
+      newlyCreatedStrategyIds.current.delete(strategyId)
+    }, 5 * 60 * 1000)
+    
     try {
-      // Recarrega estratégias sem buscar stats (estratégia nova não terá execuções)
-      // Recarrega execuções também (que será vazio para estratégia nova)
+      // Recarrega estratégias (mas pulará stats da recém-criada)
       await Promise.all([
-        loadStrategies(true), // skipStats = true
+        loadStrategies(false), // Não pula todos os stats, só da nova
         loadExecutions()
       ])
     } catch (error) {
@@ -779,7 +804,7 @@ const styles = StyleSheet.create({
   },
   newButtonText: {
     color: "#ffffff",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "400",
   },
   scrollView: {
@@ -936,7 +961,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "400",
   },
   // Loading
@@ -959,8 +984,8 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "400",
   },
   // Stats
   statsSection: {

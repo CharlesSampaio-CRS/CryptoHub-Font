@@ -1,10 +1,11 @@
-import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
+import { StyleSheet, ScrollView, SafeAreaView, Animated, RefreshControl } from "react-native"
 import { useRef, useState, useMemo, useCallback, memo, useEffect } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
+import { useBalance } from "../contexts/BalanceContext"
 import { mockNotifications } from "../types/notifications"
 import { QuickChart } from "../components/QuickChart"
 import { apiService } from "../services/api"
@@ -12,6 +13,7 @@ import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
+  const { refresh, refreshing } = useBalance()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
@@ -86,6 +88,15 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         removeClippedSubviews={true}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <PortfolioOverview />
         <QuickChart />

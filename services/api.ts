@@ -44,6 +44,69 @@ export const apiService = {
   },
 
   /**
+   * 🚀 FAST: Busca apenas os totais (summary) sem detalhes de tokens
+   * Usado para carregamento inicial rápido (~1-2s)
+   * @param userId ID do usuário
+   * @param forceRefresh Se true, força atualização sem cache
+   * @returns Promise com summary das exchanges (sem tokens)
+   */
+  async getBalancesSummary(userId: string, forceRefresh: boolean = false): Promise<BalanceResponse> {
+    try {
+      const timestamp = Date.now();
+      const forceParam = forceRefresh ? '&force_refresh=true' : '';
+      const response = await fetch(
+        `${API_BASE_URL}/balances/summary?user_id=${userId}${forceParam}&_t=${timestamp}`,
+        {
+          cache: forceRefresh ? 'no-store' : 'default'
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: BalanceResponse = await response.json();
+      console.log(`🚀 Summary loaded: ${data.summary.exchanges_count} exchanges in ${data.meta?.fetch_time || 'N/A'}s`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching balances summary:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📊 LAZY LOAD: Busca detalhes completos (tokens) de UMA exchange específica
+   * Chamado quando usuário expande o card da exchange
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @param includeChanges Se true, inclui variações de preço
+   * @returns Promise com detalhes completos da exchange
+   */
+  async getExchangeDetails(userId: string, exchangeId: string, includeChanges: boolean = false): Promise<any> {
+    try {
+      const timestamp = Date.now();
+      const changesParam = includeChanges ? '&include_changes=true' : '';
+      const response = await fetch(
+        `${API_BASE_URL}/balances/exchange/${exchangeId}?user_id=${userId}${changesParam}&_t=${timestamp}`,
+        {
+          cache: 'default'
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`📊 Exchange details loaded: ${data.name} - ${Object.keys(data.tokens || {}).length} tokens`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching exchange details:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Busca todas as exchanges disponíveis para conexão
    * @param userId ID do usuário
    * @param forceRefresh Força atualização sem cache
@@ -174,7 +237,7 @@ export const apiService = {
       }
       
       const data = await response.json();
-      console.log('✅ Portfolio evolution data:', data);
+      console.log(`✅ Portfolio evolution fetched: ${days} days, ${data.evolution?.data?.length || 0} data points`);
       
       // Armazena no cache
       portfolioEvolutionCache.set(cacheKey, {
