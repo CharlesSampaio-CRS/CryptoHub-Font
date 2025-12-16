@@ -24,10 +24,6 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
     setNotificationsModalVisible(true)
   }, [])
 
-  const onSettingsPress = useCallback(() => {
-    navigation.navigate('Profile')
-  }, [navigation])
-
   const onModalClose = useCallback(() => {
     setNotificationsModalVisible(false)
   }, [])
@@ -56,7 +52,6 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
       <Header 
         hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}
-        onSettingsPress={onSettingsPress}
         unreadCount={unreadCount}
       />
       <Animated.ScrollView

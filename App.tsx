@@ -8,6 +8,7 @@ import { HomeScreen } from "./screens/HomeScreen"
 import { ExchangesScreen } from "./screens/ExchangesScreen"
 import { StrategyScreen } from "./screens/StrategyScreen"
 import { ProfileScreen } from "./screens/ProfileScreen"
+import { SettingsScreen } from "./screens/SettingsScreen"
 import { LoginScreen } from "./screens/LoginScreen"
 import { SignUpScreen } from "./screens/SignUpScreen"
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
@@ -85,6 +86,14 @@ function MainTabs() {
             tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
           }}
         />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            tabBarLabel: 'Config',
+            tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
+          }}
+        />
       </Tab.Navigator>
   )
 }
@@ -155,5 +164,19 @@ const ProfileIcon = ({ color }: { color: string }) => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth="2" />
     <Path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke={color} strokeWidth="2" />
+  </Svg>
+)
+
+const SettingsIcon = ({ color }: { color: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <Circle cx="6" cy="12" r="2" stroke={color} strokeWidth="2" />
+    <Circle cx="18" cy="6" r="2" stroke={color} strokeWidth="2" />
+    <Circle cx="18" cy="18" r="2" stroke={color} strokeWidth="2" />
+    <Path
+      d="M8 12h13M3 12h2M8 6h8M3 18h12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </Svg>
 )
