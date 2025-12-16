@@ -21,6 +21,14 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={[styles.title, { color: colors.text }]}>Perfil</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Suas informações pessoais</Text>
+        </View>
+      </View>
+
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.content}
