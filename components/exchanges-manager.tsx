@@ -914,17 +914,21 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   header: {
-    padding: 20,
-    paddingBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "500",
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: "#9ca3af",
+    marginTop: 4,
   },
   tabs: {
     flexDirection: "row",
