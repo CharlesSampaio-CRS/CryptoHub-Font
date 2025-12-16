@@ -930,13 +930,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    letterSpacing: -0.5,
+    fontSize: 18,
+    fontWeight: "300",
+    letterSpacing: -0.2,
   },
   headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: "300",
   },
   tabs: {
     flexDirection: "row",
