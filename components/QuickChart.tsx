@@ -82,41 +82,73 @@ export const QuickChart = memo(function QuickChart() {
       ) : (
         <LineChart
           data={chartData}
-        width={screenWidth - 64}
-        height={200}
-        chartConfig={{
-          backgroundColor: isDark ? "#1e293b" : "#ffffff",
-          backgroundGradientFrom: isDark ? "#1e293b" : "#ffffff",
-          backgroundGradientTo: isDark ? "#1e293b" : "#ffffff",
-          decimalPlaces: 0,
-          color: (opacity = 1) => isDark 
-            ? `rgba(226, 232, 240, ${opacity})` // Slate 200 - cinza bem clarinho
-            : `rgba(59, 130, 246, ${opacity})`, // Blue 500
-          labelColor: (opacity = 1) => isDark
-            ? `rgba(203, 213, 225, ${opacity})` // Slate 300
-            : `rgba(156, 163, 175, ${opacity})`, // Gray 400
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "4",
-            strokeWidth: "2",
-            stroke: isDark ? "#e2e8f0" : "#3b82f6", // Slate 200 : Blue 500
-          },
-          propsForBackgroundLines: {
-            strokeDasharray: "",
-            stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "#e3f2fd", // Slate 600 low opacity : Light blue
-            strokeWidth: 1,
-          },
-        }}
-        bezier
-        style={styles.chart}
-        withInnerLines={true}
-        withOuterLines={false}
-        withVerticalLabels={true}
-        withHorizontalLabels={false}
-        withDots={true}
-        withShadow={false}
+          width={screenWidth - 64}
+          height={200}
+          chartConfig={{
+            backgroundColor: isDark ? "#1e293b" : "#ffffff",
+            backgroundGradientFrom: isDark ? "#1e293b" : "#ffffff",
+            backgroundGradientTo: isDark ? "#1e293b" : "#ffffff",
+            decimalPlaces: 0,
+            color: (opacity = 1) => isDark 
+              ? `rgba(226, 232, 240, ${opacity})` // Slate 200 - cinza bem clarinho
+              : `rgba(59, 130, 246, ${opacity})`, // Blue 500
+            labelColor: (opacity = 1) => isDark
+              ? `rgba(203, 213, 225, ${opacity})` // Slate 300
+              : `rgba(156, 163, 175, ${opacity})`, // Gray 400
+            style: {
+              borderRadius: 16,
+            },
+            propsForDots: {
+              r: "5",
+              strokeWidth: "2",
+              stroke: isDark ? "#e2e8f0" : "#3b82f6", // Slate 200 : Blue 500
+            },
+            propsForBackgroundLines: {
+              strokeDasharray: "",
+              stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "#e3f2fd", // Slate 600 low opacity : Light blue
+              strokeWidth: 1,
+            },
+          }}
+          bezier
+          style={styles.chart}
+          withInnerLines={true}
+          withOuterLines={false}
+          withVerticalLabels={true}
+          withHorizontalLabels={false}
+          withDots={true}
+          withShadow={false}
+          decorator={() => {
+            return chartData.datasets[0].data.map((value, index) => {
+              const x = (index * ((screenWidth - 64 - 32) / (chartData.datasets[0].data.length - 1))) + 16
+              const maxValue = Math.max(...chartData.datasets[0].data)
+              const minValue = Math.min(...chartData.datasets[0].data)
+              const range = maxValue - minValue || 1
+              const percentage = (value - minValue) / range
+              const y = 200 - 40 - (percentage * (200 - 80)) // Ajusta posição Y baseado no valor
+              
+              return (
+                <View key={index}>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      left: x - 20,
+                      top: y - 25,
+                      fontSize: 10,
+                      fontWeight: '600',
+                      color: isDark ? '#e2e8f0' : '#3b82f6',
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    ${value.toFixed(0)}
+                  </Text>
+                </View>
+              )
+            })
+          }}
         />
       )}
     </View>
