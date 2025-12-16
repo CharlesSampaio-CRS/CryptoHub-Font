@@ -250,10 +250,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const [toggleExchangeName, setToggleExchangeName] = useState<string>('')
   const [toggleExchangeNewStatus, setToggleExchangeNewStatus] = useState<string>('')
 
-  useEffect(() => {
-    fetchExchanges()
-  }, [])
-
   const fetchExchanges = useCallback(async (forceRefresh: boolean = false) => {
     try {
       setLoading(true)
@@ -280,6 +276,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    fetchExchanges()
+  }, [fetchExchanges])
 
   const handleConnect = useCallback(async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
