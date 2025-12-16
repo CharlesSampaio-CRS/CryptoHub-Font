@@ -937,7 +937,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   // Loading
   loadingContainer: {

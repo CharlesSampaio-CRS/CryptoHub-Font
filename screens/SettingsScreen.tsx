@@ -1,4 +1,4 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Alert, Modal, Pressable, Switch } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Alert, Modal, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState } from "react"
 import { useTheme } from "../contexts/ThemeContext"
@@ -86,12 +86,13 @@ export function SettingsScreen() {
                 </Text>
               </View>
             </View>
-            <Switch
-              value={theme === 'dark'}
-              onValueChange={(value) => setTheme(value ? 'dark' : 'light')}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#ffffff"
-            />
+            <TouchableOpacity 
+              style={[styles.toggle, theme === 'dark' && styles.toggleActive]}
+              onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.toggleThumb, theme === 'dark' && styles.toggleThumbActive]} />
+            </TouchableOpacity>
           </View>
 
           {/* Idioma */}
@@ -213,12 +214,13 @@ export function SettingsScreen() {
                   </Text>
                 </View>
               </View>
-              <Switch
-                value={isBiometricEnabled}
-                onValueChange={handleBiometricToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#ffffff"
-              />
+              <TouchableOpacity 
+                style={[styles.toggle, isBiometricEnabled && styles.toggleActive]}
+                onPress={handleBiometricToggle}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.toggleThumb, isBiometricEnabled && styles.toggleThumbActive]} />
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -321,12 +323,13 @@ export function SettingsScreen() {
                     Receba códigos de verificação por SMS
                   </Text>
                 </View>
-                <Switch
-                  value={twoFactorEnabled}
-                  onValueChange={setTwoFactorEnabled}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#ffffff"
-                />
+                <TouchableOpacity 
+                  style={[styles.toggle, twoFactorEnabled && styles.toggleActive]}
+                  onPress={() => setTwoFactorEnabled(!twoFactorEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.toggleThumb, twoFactorEnabled && styles.toggleThumbActive]} />
+                </TouchableOpacity>
               </View>
 
               <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -336,12 +339,13 @@ export function SettingsScreen() {
                     Use o app Google Authenticator
                   </Text>
                 </View>
-                <Switch
-                  value={googleAuthEnabled}
-                  onValueChange={setGoogleAuthEnabled}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#ffffff"
-                />
+                <TouchableOpacity 
+                  style={[styles.toggle, googleAuthEnabled && styles.toggleActive]}
+                  onPress={() => setGoogleAuthEnabled(!googleAuthEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.toggleThumb, googleAuthEnabled && styles.toggleThumbActive]} />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -354,12 +358,13 @@ export function SettingsScreen() {
                     Bloquear app após inatividade
                   </Text>
                 </View>
-                <Switch
-                  value={autoLockEnabled}
-                  onValueChange={setAutoLockEnabled}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#ffffff"
-                />
+                <TouchableOpacity 
+                  style={[styles.toggle, autoLockEnabled && styles.toggleActive]}
+                  onPress={() => setAutoLockEnabled(!autoLockEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.toggleThumb, autoLockEnabled && styles.toggleThumbActive]} />
+                </TouchableOpacity>
               </View>
 
               {autoLockEnabled && (
@@ -395,12 +400,13 @@ export function SettingsScreen() {
                     Notificar sobre novos logins
                   </Text>
                 </View>
-                <Switch
-                  value={loginAlertsEnabled}
-                  onValueChange={setLoginAlertsEnabled}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#ffffff"
-                />
+                <TouchableOpacity 
+                  style={[styles.toggle, loginAlertsEnabled && styles.toggleActive]}
+                  onPress={() => setLoginAlertsEnabled(!loginAlertsEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.toggleThumb, loginAlertsEnabled && styles.toggleThumbActive]} />
+                </TouchableOpacity>
               </View>
             </View>
           </ScrollView>
@@ -525,6 +531,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 0.5,
+    marginBottom: 12,
   },
   menuItemLeft: {
     flexDirection: "row",
@@ -651,4 +658,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+  // Toggle Button
+  toggle: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#d4d4d4",
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleActive: {
+    backgroundColor: "#3b82f6",
+  },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#ffffff",
+  },
+  toggleThumbActive: {
+    alignSelf: "flex-end",
+  },
 })
+
