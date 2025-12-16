@@ -52,18 +52,62 @@ const BellIcon = ({ color }: { color: string }) => (
   </Svg>
 )
 
-// Settings Icon (configurações)
-const SettingsIcon = ({ color }: { color: string }) => (
+// Settings Icon - Opção 1: Engrenagem clássica com 6 dentes
+const SettingsIcon1 = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
+// Settings Icon - Opção 2: Engrenagem simples com 8 dentes
+const SettingsIcon2 = ({ color }: { color: string }) => (
   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
     <Path
-      d="M12 1v6m0 6v10M1 12h6m6 0h10"
+      d="M12 1v3m0 16v3M23 12h-3M4 12H1m18.36-6.36-2.12 2.12M6.76 17.24l-2.12 2.12M23 19.07l-2.12-2.12M6.76 6.76 4.64 4.64"
       stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
     />
+  </Svg>
+)
+
+// Settings Icon - Opção 3: Três barras horizontais (mais minimalista)
+const SettingsIcon3 = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Circle cx="6" cy="12" r="2" stroke={color} strokeWidth="2" />
+    <Circle cx="18" cy="6" r="2" stroke={color} strokeWidth="2" />
+    <Circle cx="18" cy="18" r="2" stroke={color} strokeWidth="2" />
     <Path
-      d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24M4.93 19.07l4.24-4.24m5.66-5.66 4.24-4.24"
+      d="M8 12h13M3 12h2M8 6h8M3 18h12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </Svg>
+)
+
+// Settings Icon - Opção 3: Três barras horizontais (mais minimalista) ⭐ ATIVO
+const SettingsIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <Circle cx="6" cy="12" r="2" stroke={color} strokeWidth="2" />
+    <Circle cx="18" cy="6" r="2" stroke={color} strokeWidth="2" />
+    <Circle cx="18" cy="18" r="2" stroke={color} strokeWidth="2" />
+    <Path
+      d="M8 12h13M3 12h2M8 6h8M3 18h12"
       stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
