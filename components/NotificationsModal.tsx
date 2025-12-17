@@ -1,6 +1,7 @@
 import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable } from "react-native"
 import { useState, useMemo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
+import { useLanguage } from "../contexts/LanguageContext"
 import { Notification, mockNotifications } from "../types/notifications"
 
 interface NotificationsModalProps {
@@ -10,6 +11,7 @@ interface NotificationsModalProps {
 
 export function NotificationsModal({ visible, onClose }: NotificationsModalProps) {
   const { colors } = useTheme()
+  const { t, language } = useLanguage()
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
 
   const unreadCount = useMemo(() => 
@@ -42,12 +44,13 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (minutes < 1) return 'Agora'
-    if (minutes < 60) return `${minutes}m atrás`
-    if (hours < 24) return `${hours}h atrás`
-    if (days === 1) return 'Ontem'
-    if (days < 7) return `${days}d atrás`
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    if (minutes < 1) return t('notifications.now')
+    if (minutes < 60) return `${minutes}m ${t('notifications.minutesAgo')}`
+    if (hours < 24) return `${hours}h ${t('notifications.hoursAgo')}`
+    if (days === 1) return t('notifications.yesterday')
+    if (days < 7) return `${days}d ${t('notifications.daysAgo')}`
+    const locale = language === 'pt-BR' ? 'pt-BR' : 'en-US'
+    return date.toLocaleDateString(locale, { day: '2-digit', month: 'short' })
   }
 
   const getTypeColor = (type: string) => {
@@ -72,17 +75,17 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
           {/* Header */}
           <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
             <View>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Notificações</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('notifications.title')}</Text>
               {unreadCount > 0 && (
                 <Text style={[styles.unreadText, { color: colors.textSecondary }]}>
-                  {unreadCount} não {unreadCount === 1 ? 'lida' : 'lidas'}
+                  {unreadCount} {t('notifications.unread')} {unreadCount === 1 ? t('notifications.unreadSingular') : t('notifications.unreadPlural')}
                 </Text>
               )}
             </View>
             <View style={styles.headerActions}>
               {unreadCount > 0 && (
                 <TouchableOpacity onPress={handleMarkAllAsRead}>
-                  <Text style={styles.markAllButton}>Marcar todas</Text>
+                  <Text style={styles.markAllButton}>{t('notifications.markAll')}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -97,10 +100,10 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>🔔</Text>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                  Nenhuma notificação
+                  {t('notifications.empty')}
                 </Text>
                 <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-                  Você está em dia! Não há notificações no momento.
+                  {t('notifications.emptyMessage')}
                 </Text>
               </View>
             ) : (

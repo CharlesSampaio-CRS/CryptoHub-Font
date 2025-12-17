@@ -107,9 +107,16 @@ const translations = {
     // Notifications
     'notifications.title': 'Notificações',
     'notifications.unread': 'não lidas',
+    'notifications.unreadSingular': 'lida',
+    'notifications.unreadPlural': 'lidas',
     'notifications.markAll': 'Marcar todas',
     'notifications.empty': 'Nenhuma notificação',
     'notifications.emptyMessage': 'Você está em dia! Não há notificações no momento.',
+    'notifications.now': 'Agora',
+    'notifications.minutesAgo': 'atrás',
+    'notifications.hoursAgo': 'atrás',
+    'notifications.yesterday': 'Ontem',
+    'notifications.daysAgo': 'atrás',
     
     // Exchanges
     'exchanges.title': 'Corretoras',
@@ -258,9 +265,16 @@ const translations = {
     // Notifications
     'notifications.title': 'Notifications',
     'notifications.unread': 'unread',
+    'notifications.unreadSingular': 'read',
+    'notifications.unreadPlural': 'read',
     'notifications.markAll': 'Mark all',
     'notifications.empty': 'No notifications',
     'notifications.emptyMessage': 'You\'re all caught up! No notifications at this time.',
+    'notifications.now': 'Now',
+    'notifications.minutesAgo': 'ago',
+    'notifications.hoursAgo': 'ago',
+    'notifications.yesterday': 'Yesterday',
+    'notifications.daysAgo': 'ago',
     
     // Exchanges
     'exchanges.title': 'Exchanges',
