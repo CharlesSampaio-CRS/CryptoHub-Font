@@ -22,6 +22,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       if (showLoading) setLoading(true)
       setError(null)
       
+      console.log(`📊 PortfolioContext: Carregando evolution (showLoading=${showLoading})...`)
       const startTime = Date.now()
       
       const data = await apiService.getPortfolioEvolution(config.userId, 7)
@@ -43,8 +44,10 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     loadEvolutionData()
   }, [loadEvolutionData])
 
+  // Refresh sem mostrar loading (usado no pull-to-refresh)
   const refreshEvolution = useCallback(async () => {
-    await loadEvolutionData()
+    console.log('🔄 PortfolioContext: Refresh evolution solicitado')
+    await loadEvolutionData(false)
   }, [loadEvolutionData])
 
   const value = useMemo(() => ({

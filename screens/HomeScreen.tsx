@@ -6,6 +6,7 @@ import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
+import { usePortfolio } from "../contexts/PortfolioContext"
 import { mockNotifications } from "../types/notifications"
 import { QuickChart } from "../components/QuickChart"
 import { apiService } from "../services/api"
@@ -13,7 +14,8 @@ import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
-  const { refresh, refreshing } = useBalance()
+  const { refresh: refreshBalance, refreshing } = useBalance()
+  const { refreshEvolution } = usePortfolio()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
@@ -54,6 +56,16 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
     setNotificationsModalVisible(false)
   }, [])
 
+  // Refresh completo: balances + evolution
+  const handleRefresh = useCallback(async () => {
+    console.log('🔄 HomeScreen: Iniciando refresh completo (balances + evolution)')
+    await Promise.all([
+      refreshBalance(),
+      refreshEvolution()
+    ])
+    console.log('✅ HomeScreen: Refresh completo finalizado')
+  }, [refreshBalance, refreshEvolution])
+
   const handleScroll = useMemo(() => Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
@@ -92,7 +104,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={refresh}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
