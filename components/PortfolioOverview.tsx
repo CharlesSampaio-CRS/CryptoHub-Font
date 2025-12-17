@@ -1,32 +1,18 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
-import { memo, useEffect, useState, useCallback } from "react"
-import { apiService } from "@/services/api"
+import { memo } from "react"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { usePrivacy } from "@/contexts/PrivacyContext"
-import { config } from "@/lib/config"
-import { PortfolioEvolutionResponse } from "@/types/api"
+import { usePortfolio } from "@/contexts/PortfolioContext"
+import { apiService } from "@/services/api"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error, refreshing, refresh } = useBalance()
   const { hideValue } = usePrivacy()
-  const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
-
-  const loadEvolutionData = useCallback(async () => {
-    try {
-      const evolution = await apiService.getPortfolioEvolution(config.userId, 7)
-      setEvolutionData(evolution)
-    } catch (err) {
-      console.error('Error loading evolution data:', err)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadEvolutionData()
-  }, [loadEvolutionData])
+  const { evolutionData } = usePortfolio()
 
   if (loading) {
     return (

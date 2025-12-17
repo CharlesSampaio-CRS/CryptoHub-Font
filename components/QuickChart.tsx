@@ -1,39 +1,17 @@
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableWithoutFeedback } from "react-native"
-import { memo, useEffect, useState } from "react"
+import { memo, useState } from "react"
 import { LineChart } from "react-native-chart-kit"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
-import { apiService } from "@/services/api"
-import { config } from "@/lib/config"
-import { PortfolioEvolutionResponse } from "@/types/api"
+import { usePortfolio } from "@/contexts/PortfolioContext"
 
 const screenWidth = Dimensions.get("window").width
 
 export const QuickChart = memo(function QuickChart() {
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
+  const { evolutionData, loading, error } = usePortfolio()
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    loadEvolutionData()
-  }, [])
-
-  const loadEvolutionData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await apiService.getPortfolioEvolution(config.userId, 7)
-      setEvolutionData(data)
-    } catch (err: any) {
-      console.error('❌ Error loading evolution data:', err)
-      setError(err.message || 'Failed to load chart data')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // Processa dados para o gráfico
   const getChartData = () => {
