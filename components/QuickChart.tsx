@@ -4,6 +4,7 @@ import { LineChart } from "react-native-chart-kit"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
+import { SkeletonChart } from "./SkeletonLoaders"
 
 const screenWidth = Dimensions.get("window").width
 
@@ -44,6 +45,10 @@ export const QuickChart = memo(function QuickChart() {
 
   const chartData = getChartData()
   
+  if (loading) {
+    return <SkeletonChart />
+  }
+  
   return (
     <TouchableWithoutFeedback onPress={() => setSelectedPointIndex(null)}>
       <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -51,11 +56,7 @@ export const QuickChart = memo(function QuickChart() {
           <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
         </View>
 
-        {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : error ? (
+        {error ? (
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: colors.textSecondary }]}>
             {error}

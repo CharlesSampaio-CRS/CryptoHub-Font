@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import * as LocalAuthentication from 'expo-local-authentication'
-import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
+import { secureStorage } from '@/lib/secure-storage'
 
 interface User {
   id: string
@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkBiometricEnabled = async () => {
     try {
-      const enabled = await SecureStore.getItemAsync('biometric_enabled')
+      const enabled = await secureStorage.getItemAsync('biometric_enabled')
       setIsBiometricEnabled(enabled === 'true')
     } catch (error) {
       console.error('Error checking biometric enabled:', error)
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const loadUser = async () => {
     try {
       setIsLoading(true)
-      const userData = await SecureStore.getItemAsync('user_data')
+      const userData = await secureStorage.getItemAsync('user_data')
       
       if (userData) {
         setUser(JSON.parse(userData))
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const saveUser = async (userData: User) => {
     try {
-      await SecureStore.setItemAsync('user_data', JSON.stringify(userData))
+      await secureStorage.setItemAsync('user_data', JSON.stringify(userData))
       setUser(userData)
     } catch (error) {
       console.error('Error saving user:', error)
@@ -249,8 +249,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync('user_data')
-      await SecureStore.deleteItemAsync('biometric_enabled')
+      await secureStorage.deleteItemAsync('user_data')
+      await secureStorage.deleteItemAsync('biometric_enabled')
       setUser(null)
       setIsBiometricEnabled(false)
     } catch (error) {
@@ -271,7 +271,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       })
 
       if (result.success) {
-        await SecureStore.setItemAsync('biometric_enabled', 'true')
+        await secureStorage.setItemAsync('biometric_enabled', 'true')
         setIsBiometricEnabled(true)
         return true
       }
@@ -285,7 +285,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const disableBiometric = async () => {
     try {
-      await SecureStore.deleteItemAsync('biometric_enabled')
+      await secureStorage.deleteItemAsync('biometric_enabled')
       setIsBiometricEnabled(false)
     } catch (error) {
       console.error('Disable biometric error:', error)

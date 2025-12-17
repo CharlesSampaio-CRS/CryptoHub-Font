@@ -17,17 +17,24 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadEvolutionData = useCallback(async () => {
+  const loadEvolutionData = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true)
+      if (showLoading) setLoading(true)
       setError(null)
+      
+      const startTime = Date.now()
+      
       const data = await apiService.getPortfolioEvolution(config.userId, 7)
+      
+      const duration = Date.now() - startTime
+      console.log(`✅ PortfolioContext: Evolution carregado em ${duration}ms`)
+      
       setEvolutionData(data)
     } catch (err: any) {
       console.error('❌ Error loading evolution data:', err)
       setError(err.message || 'Failed to load evolution data')
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
   }, [])
 

@@ -6,6 +6,7 @@ import { useBalance } from "@/contexts/BalanceContext"
 import { usePrivacy } from "@/contexts/PrivacyContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
 import { apiService } from "@/services/api"
+import { SkeletonPortfolioOverview } from "./SkeletonLoaders"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors } = useTheme()
@@ -15,11 +16,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const { evolutionData } = usePortfolio()
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size={40} color="#3b82f6" />
-      </View>
-    )
+    return <SkeletonPortfolioOverview />
   }
 
   if (error || !data) {

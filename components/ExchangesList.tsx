@@ -5,6 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { usePrivacy } from "@/contexts/PrivacyContext"
+import { SkeletonExchangeItem } from "./SkeletonLoaders"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
@@ -99,9 +100,9 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
     return (
       <View style={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <SkeletonExchangeItem />
+        <SkeletonExchangeItem />
+        <SkeletonExchangeItem />
       </View>
     )
   }

@@ -3,14 +3,61 @@ import { config } from '@/lib/config';
 
 const API_BASE_URL = config.apiBaseUrl;
 
-// Cache simples para portfolio evolution (30 segundos)
+// Timeout padrão para requisições (30 segundos para cold start do Render)
+const DEFAULT_TIMEOUT = 30000;
+const MAX_RETRIES = 2;
+
+// Helper para adicionar timeout às requisições com retry
+async function fetchWithTimeout(
+  url: string, 
+  options: RequestInit = {}, 
+  timeout = DEFAULT_TIMEOUT,
+  retries = MAX_RETRIES
+): Promise<Response> {
+  console.log(`🌐 Fetching: ${url} (timeout: ${timeout}ms, retries left: ${retries})`);
+  const startTime = Date.now();
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await Promise.race([
+        fetch(url, options).then(response => {
+          const duration = Date.now() - startTime;
+          console.log(`✅ Response received in ${duration}ms: ${response.status} ${response.statusText}`);
+          return response;
+        }),
+        new Promise<Response>((_, reject) =>
+          setTimeout(() => {
+            reject(new Error(`Request timeout after ${timeout}ms`));
+          }, timeout)
+        )
+      ]);
+      
+      return response;
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      if (attempt < retries) {
+        console.warn(`⚠️ Attempt ${attempt + 1} failed after ${duration}ms. Retrying...`);
+        // Espera 1 segundo antes de tentar novamente
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        console.error(`❌ All attempts failed after ${duration}ms:`, error.message);
+        throw error;
+      }
+    }
+  }
+  
+  throw new Error('Failed after all retries');
+}
+
+// Cache simples para portfolio evolution (5 minutos)
 interface CacheEntry {
   data: PortfolioEvolutionResponse;
   timestamp: number;
 }
 
 const portfolioEvolutionCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 30000; // 30 segundos
+const CACHE_TTL = 300000; // 5 minutos (aumentado de 30s)
 
 export const apiService = {
   /**
@@ -24,11 +71,12 @@ export const apiService = {
       const timestamp = Date.now();
       // Só adiciona force_refresh=true quando explicitamente solicitado
       const forceParam = forceRefresh ? '&force_refresh=true' : '';
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${API_BASE_URL}/balances?user_id=${userId}${forceParam}&_t=${timestamp}`,
         {
           cache: forceRefresh ? 'no-store' : 'default'
-        }
+        },
+        20000 // 20s timeout para balances completos
       );
       
       if (!response.ok) {
@@ -54,11 +102,12 @@ export const apiService = {
     try {
       const timestamp = Date.now();
       const forceParam = forceRefresh ? '&force_refresh=true' : '';
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${API_BASE_URL}/balances/summary?user_id=${userId}${forceParam}&_t=${timestamp}`,
         {
           cache: forceRefresh ? 'no-store' : 'default'
-        }
+        },
+        10000 // 10s timeout para summary (mais rápido)
       );
       
       if (!response.ok) {
@@ -86,11 +135,12 @@ export const apiService = {
     try {
       const timestamp = Date.now();
       const changesParam = includeChanges ? '&include_changes=true' : '';
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${API_BASE_URL}/balances/exchange/${exchangeId}?user_id=${userId}${changesParam}&_t=${timestamp}`,
         {
           cache: 'default'
-        }
+        },
+        10000 // 10s timeout
       );
       
       if (!response.ok) {
@@ -118,10 +168,10 @@ export const apiService = {
       console.log('Fetching available exchanges from:', url, 'forceRefresh:', forceRefresh);
       
       // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
-      const response = await fetch(url, { 
+      const response = await fetchWithTimeout(url, { 
         method: 'GET',
         cache: forceRefresh ? 'no-store' : 'default'
-      });
+      }, 10000);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -147,10 +197,10 @@ export const apiService = {
       console.log('Fetching linked exchanges from:', url, 'forceRefresh:', forceRefresh);
       
       // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
-      const response = await fetch(url, { 
+      const response = await fetchWithTimeout(url, { 
         method: 'GET',
         cache: forceRefresh ? 'no-store' : 'default'
-      });
+      }, 10000);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -224,13 +274,13 @@ export const apiService = {
       const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
       console.log('📊 Fetching portfolio evolution from:', url);
       
-      const response = await fetch(url, {
+      const response = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
         cache: 'no-store'
-      });
+      }, 15000);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
