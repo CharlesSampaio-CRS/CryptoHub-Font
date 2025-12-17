@@ -16,6 +16,7 @@ import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
 import { BalanceProvider } from "./contexts/BalanceContext"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { PrivacyProvider } from "./contexts/PrivacyContext"
+import { PortfolioProvider } from "./contexts/PortfolioContext"
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -125,7 +126,9 @@ export default function App() {
         <AuthProvider>
           <PrivacyProvider>
             <BalanceProvider>
-              <AppNavigator />
+              <PortfolioProvider>
+                <AppNavigator />
+              </PortfolioProvider>
             </BalanceProvider>
           </PrivacyProvider>
         </AuthProvider>
