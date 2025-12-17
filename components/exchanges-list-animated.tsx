@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react"
 import { apiService } from "@/services/api"
 import { BalanceResponse } from "@/types/api"
 import { config } from "@/lib/config"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
@@ -30,6 +31,7 @@ function ExchangeItem({
   isExpanded: boolean
   onToggle: () => void 
 }) {
+  const { t } = useLanguage()
   const animatedHeight = useRef(new Animated.Value(0)).current
   const tokenCount = Object.keys(exchange.tokens).length
   const balance = parseFloat(exchange.total_usd)
@@ -77,7 +79,7 @@ function ExchangeItem({
             <View>
               <Text style={styles.exchangeName}>{exchange.name}</Text>
               <Text style={styles.assetsCount}>
-                {tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}
+                {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
               </Text>
             </View>
           </View>

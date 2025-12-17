@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-
+import { useLanguage } from "@/contexts/LanguageContext"
 import { Card } from "@/components/ui/card"
 import { Line, LineChart, ResponsiveContainer } from "recharts"
 
@@ -21,10 +21,12 @@ const data = [
 ]
 
 export function QuickChart() {
+  const { t } = useLanguage()
+  
   return (
     <Card className="p-4 bg-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">Desempenho (7 dias)</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t('home.performance7days')}</h3>
         <div className="flex gap-2">
           {["1D", "7D", "1M", "3M", "1A"].map((period, i) => (
             <button

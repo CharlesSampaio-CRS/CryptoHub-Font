@@ -189,7 +189,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                     <View>
                       <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
                       <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>
-                        {tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}
+                        {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
                       </Text>
                     </View>
                   </View>

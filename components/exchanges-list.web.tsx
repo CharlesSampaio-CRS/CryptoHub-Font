@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-
+import { useLanguage } from "@/contexts/LanguageContext"
 import { Card } from "@/components/ui/card"
 import { ChevronRight, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,8 @@ const exchanges = [
 ]
 
 export function ExchangesList() {
+  const { t } = useLanguage()
+  
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -51,7 +53,7 @@ export function ExchangesList() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-foreground">{exchange.name}</h4>
-                  <p className="text-xs text-muted-foreground">{exchange.assets} ativos</p>
+                  <p className="text-xs text-muted-foreground">{exchange.assets} {exchange.assets === 1 ? t('exchanges.asset') : t('exchanges.assets')}</p>
                 </div>
               </div>
 
