@@ -4,6 +4,7 @@ import { LineChart } from "react-native-chart-kit"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
+import { usePrivacy } from "@/contexts/PrivacyContext"
 import { SkeletonChart } from "./SkeletonLoaders"
 
 const screenWidth = Dimensions.get("window").width
@@ -12,6 +13,7 @@ export const QuickChart = memo(function QuickChart() {
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
   const { evolutionData, loading, error } = usePortfolio()
+  const { valuesHidden } = usePrivacy()
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null)
 
   // Processa dados para o gráfico
@@ -25,17 +27,33 @@ export const QuickChart = memo(function QuickChart() {
 
     const { timestamps, values_usd } = evolutionData.evolution
     
-    // Formata labels (últimos 3 caracteres da data/hora)
-    const labels = timestamps.map(ts => {
+    // Pega últimos 7 dias
+    const last7Timestamps = timestamps.slice(-7)
+    const last7Values = values_usd.slice(-7)
+    
+    // Formata labels para mobile - mostra apenas alguns para evitar sobreposição
+    const labels = last7Timestamps.map((ts, index) => {
       const date = new Date(ts)
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      const day = date.getDate()
+      const month = date.getMonth() + 1
+      
+      // No mobile, mostra apenas primeiro, meio e último dia
+      if (screenWidth < 400) {
+        if (index === 0 || index === Math.floor(last7Timestamps.length / 2) || index === last7Timestamps.length - 1) {
+          return `${day}/${month}`
+        }
+        return '' // Label vazio para os demais
+      }
+      
+      // Tablets e maiores: mostra todos
+      return `${day}/${month}`
     })
 
     return {
-      labels: labels.length > 7 ? labels.slice(-7) : labels,
+      labels,
       datasets: [
         {
-          data: values_usd.length > 7 ? values_usd.slice(-7) : values_usd,
+          data: last7Values,
           color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
           strokeWidth: 3,
         },
@@ -66,7 +84,7 @@ export const QuickChart = memo(function QuickChart() {
         <LineChart
           data={chartData}
           width={screenWidth - 64}
-          height={220}
+          height={240}
           chartConfig={{
             backgroundColor: isDark ? "#1e293b" : "#ffffff",
             backgroundGradientFrom: isDark ? "#1e293b" : "#ffffff",
@@ -82,15 +100,19 @@ export const QuickChart = memo(function QuickChart() {
               borderRadius: 16,
             },
             propsForDots: {
-              r: "6",
-              strokeWidth: "3",
-              stroke: isDark ? "#ffffff" : "#3b82f6", // Branco no dark mode : Blue 500 no light mode
-              fill: isDark ? "#ffffff" : "#3b82f6", // Preenchimento branco no dark mode
+              r: "5",
+              strokeWidth: "2",
+              stroke: isDark ? "#ffffff" : "#3b82f6",
+              fill: isDark ? "#ffffff" : "#3b82f6",
             },
             propsForBackgroundLines: {
               strokeDasharray: "",
-              stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "#e3f2fd", // Slate 600 low opacity : Light blue
+              stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "#e3f2fd",
               strokeWidth: 1,
+            },
+            propsForLabels: {
+              fontSize: 10,
+              fontFamily: 'System',
             },
           }}
           bezier
@@ -101,7 +123,19 @@ export const QuickChart = memo(function QuickChart() {
           withHorizontalLabels={true}
           withDots={true}
           withShadow={false}
-          formatYLabel={(value) => `$${parseInt(value)}`}
+          segments={4}
+          formatYLabel={(value) => {
+            if (valuesHidden) {
+              return '••••'
+            }
+            const num = parseFloat(value)
+            if (num >= 1000000) {
+              return `$${(num / 1000000).toFixed(1)}M`
+            } else if (num >= 1000) {
+              return `$${(num / 1000).toFixed(1)}K`
+            }
+            return `$${Math.round(num)}`
+          }}
           onDataPointClick={(data) => {
             const { index } = data
             // Toggle: se clicar no mesmo ponto, esconde. Se clicar em outro, mostra
@@ -117,22 +151,35 @@ export const QuickChart = memo(function QuickChart() {
             const minValue = Math.min(...chartData.datasets[0].data)
             const range = maxValue - minValue || 1
             const percentage = (value - minValue) / range
-            const y = 220 - 40 - (percentage * (220 - 80)) // Ajustado para altura 220
+            const y = 240 - 45 - (percentage * (240 - 85)) // Ajustado para altura 240
+            
+            // Formata valor do tooltip
+            const formatValue = (val: number) => {
+              if (valuesHidden) {
+                return '••••••'
+              }
+              if (val >= 1000000) {
+                return `$${(val / 1000000).toFixed(2)}M`
+              } else if (val >= 1000) {
+                return `$${(val / 1000).toFixed(2)}K`
+              }
+              return `$${val.toFixed(2)}`
+            }
             
             return (
               <View key={index}>
                 <Text
                   style={{
                     position: 'absolute',
-                    left: x - 25,
-                    top: y - 30,
-                    fontSize: 12,
+                    left: x - 30,
+                    top: y - 35,
+                    fontSize: 11,
                     fontWeight: '700',
                     color: '#ffffff',
                     backgroundColor: isDark ? '#3b82f6' : '#2563eb',
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
                     overflow: 'hidden',
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
@@ -141,7 +188,7 @@ export const QuickChart = memo(function QuickChart() {
                     elevation: 6,
                   }}
                 >
-                  ${value.toFixed(2)}
+                  {formatValue(value)}
                 </Text>
               </View>
             )
