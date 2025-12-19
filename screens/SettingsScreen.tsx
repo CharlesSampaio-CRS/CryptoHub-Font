@@ -17,6 +17,7 @@ import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
 import { NotificationsModal } from "../components/NotificationsModal"
+import { MockModeBadge } from "../components/MockModeBadge"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function SettingsScreen() {
@@ -85,6 +86,7 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <MockModeBadge />
       {/* Header */}
       <View style={styles.header}>
         <View>

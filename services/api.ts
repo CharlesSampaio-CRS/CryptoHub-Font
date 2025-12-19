@@ -1,5 +1,6 @@
 import { BalanceResponse, AvailableExchangesResponse, LinkedExchangesResponse, PortfolioEvolutionResponse } from '@/types/api';
 import { config } from '@/lib/config';
+import { mockApiResponses } from '@/lib/mock-data';
 
 const API_BASE_URL = config.apiBaseUrl;
 
@@ -67,6 +68,12 @@ export const apiService = {
    * @returns Promise com os dados de balance
    */
   async getBalances(userId: string, forceRefresh: boolean = false): Promise<BalanceResponse> {
+    // 🧪 Se modo mock está ativo, retorna dados mockados
+    if (config.isMockMode()) {
+      console.log('🧪 [MOCK] Returning mock balances data');
+      return mockApiResponses.getBalances();
+    }
+
     try {
       const timestamp = Date.now();
       // Só adiciona force_refresh=true quando explicitamente solicitado
@@ -99,6 +106,12 @@ export const apiService = {
    * @returns Promise com summary das exchanges (sem tokens)
    */
   async getBalancesSummary(userId: string, forceRefresh: boolean = false): Promise<BalanceResponse> {
+    // 🧪 Se modo mock está ativo, retorna dados mockados
+    if (config.isMockMode()) {
+      console.log('🧪 [MOCK] Returning mock balances summary');
+      return mockApiResponses.getBalances();
+    }
+
     try {
       const timestamp = Date.now();
       const forceParam = forceRefresh ? '&force_refresh=true' : '';
@@ -185,6 +198,12 @@ export const apiService = {
    * @returns Promise com a lista de exchanges disponíveis
    */
   async getAvailableExchanges(userId: string, forceRefresh: boolean = false): Promise<AvailableExchangesResponse> {
+    // 🧪 Se modo mock está ativo, retorna dados mockados
+    if (config.isMockMode()) {
+      console.log('🧪 [MOCK] Returning mock available exchanges');
+      return mockApiResponses.getAvailableExchanges();
+    }
+
     try {
       const url = `${API_BASE_URL}/exchanges/available?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
       console.log('Fetching available exchanges from:', url, 'forceRefresh:', forceRefresh);
@@ -214,6 +233,12 @@ export const apiService = {
    * @returns Promise com a lista de exchanges conectadas
    */
   async getLinkedExchanges(userId: string, forceRefresh: boolean = false): Promise<LinkedExchangesResponse> {
+    // 🧪 Se modo mock está ativo, retorna dados mockados
+    if (config.isMockMode()) {
+      console.log('🧪 [MOCK] Returning mock linked exchanges');
+      return mockApiResponses.getLinkedExchanges();
+    }
+
     try {
       const url = `${API_BASE_URL}/exchanges/linked?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
       console.log('Fetching linked exchanges from:', url, 'forceRefresh:', forceRefresh);
@@ -282,6 +307,12 @@ export const apiService = {
    * @returns Promise com os dados de evolução
    */
   async getPortfolioEvolution(userId: string, days: number = 7): Promise<PortfolioEvolutionResponse> {
+    // 🧪 Se modo mock está ativo, retorna dados mockados
+    if (config.isMockMode()) {
+      console.log('🧪 [MOCK] Returning mock portfolio evolution');
+      return mockApiResponses.getPortfolioEvolution(userId, days);
+    }
+
     const cacheKey = `${userId}-${days}`;
     const now = Date.now();
 

@@ -4,6 +4,7 @@ import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
+import { MockModeBadge } from "../components/MockModeBadge"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
 import { usePortfolio } from "../contexts/PortfolioContext"
@@ -87,6 +88,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <MockModeBadge />
       <Header 
         hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}

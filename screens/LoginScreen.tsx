@@ -10,11 +10,13 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Switch,
 } from 'react-native'
 import Svg, { Path, Circle } from 'react-native-svg'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
+import { config } from '@/lib/config'
 
 interface LoginScreenProps {
   navigation: any
@@ -65,11 +67,18 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [useMockData, setUseMockData] = useState(config.isMockMode())
 
   // Debug: verificar quando isLoading muda
   React.useEffect(() => {
     console.log('🔍 LoginScreen - isLoading:', isLoading)
   }, [isLoading])
+
+  // Atualiza o modo mock quando o toggle muda
+  const handleMockToggle = (value: boolean) => {
+    setUseMockData(value)
+    config.setMockMode(value)
+  }
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -144,6 +153,32 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     formContainer: {
       flex: 1,
       paddingHorizontal: 24,
+    },
+    mockToggleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    mockToggleInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    mockToggleLabel: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    mockToggleDescription: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '300',
     },
     inputContainer: {
       marginBottom: 16,
@@ -299,6 +334,27 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
         </View>
 
         <View style={styles.formContainer}>
+          {/* Mock Mode Toggle */}
+          <View style={styles.mockToggleContainer}>
+            <View style={styles.mockToggleInfo}>
+              <Text style={styles.mockToggleLabel}>
+                🧪 Modo de Teste (Mock)
+              </Text>
+              <Text style={styles.mockToggleDescription}>
+                {useMockData 
+                  ? 'Usando dados simulados offline' 
+                  : 'Conectando à API real'}
+              </Text>
+            </View>
+            <Switch
+              value={useMockData}
+              onValueChange={handleMockToggle}
+              trackColor={{ false: colors.border, true: '#34C759' }}
+              thumbColor={useMockData ? '#ffffff' : '#f4f3f4'}
+              ios_backgroundColor={colors.border}
+            />
+          </View>
+
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput
