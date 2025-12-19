@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:5000/api/v1"
+import { config } from "@/lib/config"
+
+const API_BASE_URL = config.apiBaseUrl
 
 export interface Strategy {
   _id?: string  // MongoDB format

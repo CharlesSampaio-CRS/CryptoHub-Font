@@ -20,6 +20,7 @@ import { useBalance } from "@/contexts/BalanceContext"
 import { strategiesService } from "@/services/strategies"
 import { apiService } from "@/services/api"
 import { LinkedExchange } from "@/types/api"
+import { config } from "@/lib/config"
 
 interface CreateStrategyModalProps {
   visible: boolean
@@ -158,7 +159,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       console.log("🪙 Loading available tokens for exchange:", selectedExchange)
       
       // 🚀 Chama endpoint de tokens disponíveis
-      const url = `http://localhost:5000/api/v1/tokens/available?exchange_id=${selectedExchange}`
+      const url = `${config.apiBaseUrl}/tokens/available?exchange_id=${selectedExchange}`
       console.log("🌐 Calling endpoint:", url)
       console.log("📡 Sending GET request to fetch available tokens...")
       

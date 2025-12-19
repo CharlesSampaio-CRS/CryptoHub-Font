@@ -105,7 +105,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
       
       console.log(`📊 Carregando detalhes do token ${symbol} na exchange ${exchangeId}...`)
       const response = await fetch(
-        `http://localhost:5000/api/v1/exchanges/${exchangeId}/token/${symbol}?user_id=${config.userId}&include_variations=true`
+        `${config.apiBaseUrl}/exchanges/${exchangeId}/token/${symbol}?user_id=${config.userId}&include_variations=true`
       )
       
       if (!response.ok) {
