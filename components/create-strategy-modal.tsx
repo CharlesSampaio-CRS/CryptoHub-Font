@@ -59,12 +59,16 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
   const [loadingExchanges, setLoadingExchanges] = useState(false)
   const [tokens, setTokens] = useState<string[]>([])
   const [loadingTokens, setLoadingTokens] = useState(false)
+  const [searchingToken, setSearchingToken] = useState(false)
+  const [tokenSearchResults, setTokenSearchResults] = useState<any[]>([])
 
   // Form state
   const [selectedTemplate, setSelectedTemplate] = useState<string>("")
   const [selectedExchange, setSelectedExchange] = useState<string>("")
   const [token, setToken] = useState<string>("")
   const [showCustomTokenInput, setShowCustomTokenInput] = useState(false)
+  
+  // Token search/filter state
   const [tokenSearchQuery, setTokenSearchQuery] = useState<string>("")
   const [showTokenDropdown, setShowTokenDropdown] = useState(false)
 
@@ -79,18 +83,47 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       setToken("")
       setTokens([])
       setShowCustomTokenInput(false)
-      setTokenSearchQuery("")
-      setShowTokenDropdown(false)
+      setTokenSearchResults([])
     }
   }, [visible])
 
   // Load tokens when reaching step 3
   useEffect(() => {
     if (step === 3 && selectedExchange) {
+      console.log("📍 Step 3 reached, loading tokens for exchange:", selectedExchange)
+      console.log("🔄 Calling loadTokens() automatically...")
       setToken("") // Clear token selection when exchange changes
+      setTokenSearchQuery("") // Clear search
       loadTokens()
     }
   }, [step, selectedExchange])
+
+  // Filtrar tokens com base na busca
+  const filteredTokens = React.useMemo(() => {
+    console.log("🔄 Recalculating filteredTokens...")
+    console.log("  - tokens.length:", tokens.length)
+    console.log("  - tokenSearchQuery:", tokenSearchQuery)
+    
+    // Garante que tokens é um array válido
+    if (!Array.isArray(tokens) || tokens.length === 0) {
+      console.log("  ❌ No tokens available")
+      return []
+    }
+    
+    // Se não há busca, retorna todos os tokens
+    if (!tokenSearchQuery.trim()) {
+      console.log("  ✅ Returning all tokens:", tokens.length)
+      return tokens
+    }
+    
+    // Filtra tokens pela busca
+    const query = tokenSearchQuery.toLowerCase()
+    const filtered = tokens.filter(tokenSymbol => 
+      tokenSymbol && typeof tokenSymbol === 'string' && tokenSymbol.toLowerCase().includes(query)
+    )
+    console.log("  ✅ Filtered tokens:", filtered.length)
+    return filtered
+  }, [tokens, tokenSearchQuery])
 
   const loadExchanges = async () => {
     try {
@@ -111,60 +144,101 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
   }
 
   const loadTokens = async () => {
+    // Validação: verifica se exchange foi selecionada
+    if (!selectedExchange) {
+      console.warn("⚠️ loadTokens: Nenhuma exchange selecionada")
+      setTokens([])
+      return
+    }
+
     try {
       setLoadingTokens(true)
       setTokens([])
       
-      console.log("🪙 Loading tokens for exchange:", selectedExchange)
+      console.log("🪙 Loading available tokens for exchange:", selectedExchange)
       
-      // ✅ OTIMIZAÇÃO: Usa dados do BalanceContext (cache) ao invés de fazer novo fetch
-      let balanceResponse = balanceData
+      // 🚀 Chama endpoint de tokens disponíveis
+      const url = `http://localhost:5000/api/v1/tokens/available?exchange_id=${selectedExchange}`
+      console.log("🌐 Calling endpoint:", url)
+      console.log("📡 Sending GET request to fetch available tokens...")
       
-      // Se não tiver dados no contexto (raro), faz fetch direto
-      if (!balanceResponse) {
-        console.log("⚠️ Balance data not in context, fetching...")
-        balanceResponse = await apiService.getBalances(userId)
-      } else {
-        console.log("✅ Using cached balance data from context")
-      }
-      
-      // Encontra a exchange selecionada nos balances
-      const selectedExchangeData = balanceResponse.exchanges.find(ex => {
-        // Compara com exchange_id
-        return ex.exchange_id === selectedExchange
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       
-      if (selectedExchangeData && selectedExchangeData.tokens) {
-        // Extrai os símbolos dos tokens (chaves do objeto tokens)
-        const tokenSymbols = Object.keys(selectedExchangeData.tokens).sort()
-        console.log("🪙 Found tokens:", tokenSymbols.length, tokenSymbols)
-        setTokens(tokenSymbols)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("❌ HTTP error:", response.status, errorText)
+        throw new Error(`Erro ao buscar tokens: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      console.log("✅ Received available tokens data:", {
+        hasTokens: !!data.tokens,
+        tokenCount: data.tokens ? data.tokens.length : 0,
+        exchangeId: data.exchange_id,
+        firstToken: data.tokens?.[0]
+      })
+      
+      if (data && Array.isArray(data.tokens)) {
+        // Se tokens são objetos, extrai o campo 'symbol'
+        const tokenSymbols = data.tokens.map((token: any) => {
+          if (typeof token === 'string') {
+            return token
+          } else if (token && typeof token === 'object' && token.symbol) {
+            return token.symbol
+          } else {
+            console.warn("⚠️ Invalid token format:", token)
+            return null
+          }
+        }).filter((symbol: any): symbol is string => symbol !== null)
+        
+        // Remove duplicatas usando Set e garante tipo string[]
+        const uniqueTokens = [...new Set<string>(tokenSymbols)].sort()
+        
+        console.log("🪙 Found available tokens:", tokenSymbols.length)
+        console.log("✨ Unique tokens after deduplication:", uniqueTokens.length)
+        console.log("📋 First 10 tokens:", uniqueTokens.slice(0, 10))
+        
+        if (uniqueTokens.length > 0) {
+          setTokens(uniqueTokens)
+        } else {
+          console.warn("⚠️ Exchange has no available tokens")
+          setTokens([])
+          Alert.alert("Aviso", "Esta exchange não possui tokens disponíveis")
+        }
       } else {
-        console.warn("⚠️ No tokens found for exchange:", selectedExchange)
+        console.warn("⚠️ Invalid response format or no tokens")
         setTokens([])
+        Alert.alert("Aviso", "Formato de resposta inválido")
       }
     } catch (error) {
-      console.error("Error loading tokens:", error)
-      Alert.alert("Erro", "Não foi possível carregar os tokens da exchange")
+      console.error("❌ Error loading available tokens:", error)
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+      Alert.alert("Erro", `Não foi possível carregar os tokens: ${errorMessage}`)
       setTokens([])
     } finally {
       setLoadingTokens(false)
     }
   }
 
+  // Busca token específico na API
   const handleCreateStrategy = async () => {
-    const finalToken = token || tokenSearchQuery
-    if (!selectedTemplate || !selectedExchange || !finalToken.trim()) {
+    if (!selectedTemplate || !selectedExchange || !token.trim()) {
       Alert.alert("Atenção", "Preencha todos os campos")
       return
     }
 
     try {
       setLoading(true)
+      
       const createdStrategy = await strategiesService.createStrategy({
         user_id: userId,
         exchange_id: selectedExchange,
-        token: finalToken.toUpperCase(),
+        token: token,
         template: selectedTemplate as "simple" | "conservative" | "aggressive",
         is_active: true,
       })
@@ -178,7 +252,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       
       // Aguarda um pouco para o modal fechar antes de recarregar
       setTimeout(() => {
-        Alert.alert("Sucesso", "Estratégia criada com sucesso!")
+        Alert.alert("Sucesso", `Estratégia criada com sucesso!\n\nToken: ${token}`)
         onSuccess(strategyId)
       }, 300)
     } catch (error: any) {
@@ -190,7 +264,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
 
   const canProceedToStep2 = selectedTemplate !== ""
   const canProceedToStep3 = selectedExchange !== ""
-  const canCreate = token.trim() !== "" || tokenSearchQuery.trim() !== ""
+  const canCreate = token.trim() !== ""
 
   const getSelectedExchangeName = () => {
     const exchange = exchanges.find(e => {
@@ -223,7 +297,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 <Text style={[styles.closeIcon, { color: colors.text }]}>✕</Text>
               </TouchableOpacity>
             </View>
-
           {/* Steps Indicator */}
           <View style={styles.stepsContainer}>
             <View style={styles.stepItem}>
@@ -292,7 +365,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
               </Text>
             </View>
           </View>
-
           {/* Content */}
           <ScrollView 
             style={styles.content}
@@ -336,7 +408,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 </View>
               </View>
             )}
-
             {/* Step 2: Exchange Selection */}
             {step === 2 && (
               <View style={styles.stepContent}>
@@ -346,7 +417,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
                   Escolha onde a estratégia será executada
                 </Text>
-
                 {loadingExchanges ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size={40} color={colors.primary} />
@@ -378,8 +448,10 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                             },
                           ]}
                           onPress={() => {
-                            console.log("🏦 Exchange selected:", exchangeId, exchange.name)
+                            console.log("🏦 Exchange selected in Step 2:", exchangeId, exchange.name)
+                            console.log("💾 Setting selectedExchange state to:", exchangeId)
                             setSelectedExchange(exchangeId)
+                            console.log("✅ Exchange selection completed, will load tokens when reaching Step 3")
                           }}
                           activeOpacity={0.7}
                         >
@@ -403,7 +475,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 )}
               </View>
             )}
-
             {/* Step 3: Token Selection */}
             {step === 3 && (
               <View style={styles.stepContent}>
@@ -432,8 +503,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                     </Text>
                   </View>
                 </View>
-
-{loadingTokens ? (
+                {loadingTokens ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size={40} color={colors.primary} />
                     <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
@@ -441,85 +511,140 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                     </Text>
                   </View>
                 ) : (
-                  <>
-                    {/* Input para digitar token */}
-                    <View style={styles.tokenInputContainer}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Token
-                      </Text>
+                  <View style={styles.customInputContainer}>
+                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                      Token
+                    </Text>
+                    <View style={{ position: "relative" }}>
                       <TextInput
                         style={[
-                          styles.input,
-                          { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
+                          styles.tokenSearchInput,
+                          {
+                            borderColor: colors.border,
+                            backgroundColor: colors.background,
+                            color: colors.text,
+                          },
                         ]}
-                        placeholder="Digite o símbolo do token (Ex: BTC, ETH, SOL)"
+                        placeholder="Buscar ou selecionar token..."
                         placeholderTextColor={colors.textSecondary}
-                        value={tokenSearchQuery}
+                        value={tokenSearchQuery || token}
                         onChangeText={(text) => {
-                          const upperText = text.toUpperCase()
-                          setTokenSearchQuery(upperText)
-                          setToken(upperText)
+                          console.log("🔍 Token search query changed:", text)
+                          setTokenSearchQuery(text)
+                          setShowTokenDropdown(true)
+                          // Se limpar, limpa a seleção
+                          if (!text) {
+                            setToken("")
+                          }
                         }}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
+                        onFocus={() => {
+                          console.log("👆 Token input focused - calling API to load available tokens")
+                          console.log("📋 Current tokens loaded:", tokens.length)
+                          console.log("🔎 Current search query:", tokenSearchQuery)
+                          console.log("🪙 Current selected token:", token)
+                          
+                          // Chama o endpoint para buscar tokens disponíveis
+                          if (selectedExchange && tokens.length === 0) {
+                            console.log("🔄 Reloading tokens from API...")
+                            loadTokens()
+                          }
+                          
+                          setShowTokenDropdown(true)
+                          // Se já tem um token selecionado, limpa para mostrar todos
+                          if (token && !tokenSearchQuery) {
+                            setTokenSearchQuery("")
+                          }
+                        }}
                       />
+                      {(() => {
+                        console.log("🎨 Rendering dropdown check:", {
+                          showTokenDropdown,
+                          filteredTokensLength: filteredTokens.length,
+                          willShowDropdown: showTokenDropdown && filteredTokens.length > 0
+                        })
+                        return null
+                      })()}
+                      {showTokenDropdown && filteredTokens.length > 0 && (
+                        <View
+                          style={[
+                            styles.dropdown,
+                            {
+                              backgroundColor: colors.surface,
+                              borderColor: colors.border,
+                            },
+                          ]}
+                        >
+                          <ScrollView
+                            style={{ maxHeight: 200 }}
+                            nestedScrollEnabled={true}
+                            keyboardShouldPersistTaps="handled"
+                          >
+                            {filteredTokens.map((tokenSymbol) => (
+                              <TouchableOpacity
+                                key={tokenSymbol}
+                                style={[
+                                  styles.dropdownItem,
+                                  {
+                                    backgroundColor:
+                                      token === tokenSymbol
+                                        ? `${colors.primary}15`
+                                        : "transparent",
+                                  },
+                                ]}
+                                onPress={() => {
+                                  setToken(tokenSymbol)
+                                  setTokenSearchQuery("")
+                                  setShowTokenDropdown(false)
+                                  console.log("🪙 Token selected:", tokenSymbol)
+                                }}
+                              >
+                                <Text
+                                  style={[
+                                    styles.dropdownItemText,
+                                    {
+                                      color:
+                                        token === tokenSymbol
+                                          ? colors.primary
+                                          : colors.text,
+                                    },
+                                  ]}
+                                >
+                                  {tokenSymbol}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )}
+                      {token && !showTokenDropdown && (
+                        <TouchableOpacity
+                          style={styles.clearButton}
+                          onPress={() => {
+                            setToken("")
+                            setTokenSearchQuery("")
+                          }}
+                        >
+                          <Text style={{ color: colors.textSecondary, fontSize: 18 }}>×</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-
-                    {/* Lista scrollable de tokens disponíveis */}
-                    <View style={styles.tokensListContainer}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 8 }]}>
-                        Ou selecione da lista:
-                      </Text>
-                      <ScrollView 
-                        style={[styles.tokensScrollView, { backgroundColor: colors.background, borderColor: colors.border }]}
-                        showsVerticalScrollIndicator={true}
+                    {token && (
+                      <View
+                        style={[
+                          styles.selectedTokenBadge,
+                          { backgroundColor: `${colors.primary}15` },
+                        ]}
                       >
-                        {tokens
-                          .filter(t => !tokenSearchQuery || t.includes(tokenSearchQuery))
-                          .map((tokenSymbol) => (
-                            <TouchableOpacity
-                              key={tokenSymbol}
-                              style={[
-                                styles.tokenListItem,
-                                { borderBottomColor: colors.border },
-                                tokenSearchQuery === tokenSymbol && { backgroundColor: 'rgba(59, 130, 246, 0.1)' }
-                              ]}
-                              onPress={() => {
-                                setToken(tokenSymbol)
-                                setTokenSearchQuery(tokenSymbol)
-                                console.log("🪙 Token selected:", tokenSymbol)
-                              }}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={[
-                                styles.tokenListItemText,
-                                { color: colors.text },
-                                tokenSearchQuery === tokenSymbol && { fontWeight: '600', color: colors.primary }
-                              ]}>
-                                {tokenSymbol}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        
-                        {/* Mensagem se a busca não encontrou resultados */}
-                        {tokenSearchQuery && tokens.filter(t => t.includes(tokenSearchQuery)).length === 0 && (
-                          <View style={styles.noResultsContainer}>
-                            <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
-                              Nenhum token encontrado
-                            </Text>
-                            <Text style={[styles.noResultsHint, { color: colors.primary }]}>
-                              Usando token personalizado: {tokenSearchQuery}
-                            </Text>
-                          </View>
-                        )}
-                      </ScrollView>
-                    </View>
-                  </>
+                        <Text style={[styles.selectedTokenText, { color: colors.primary }]}>
+                          Token selecionado: {token}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 )}
               </View>
             )}
           </ScrollView>
-
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
             {step > 1 && (
@@ -531,7 +656,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 <Text style={[styles.buttonText, { color: colors.text }]}>Voltar</Text>
               </TouchableOpacity>
             )}
-
             {step < 3 ? (
               <TouchableOpacity
                 style={[
@@ -542,7 +666,14 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                     ? { opacity: 0.5 }
                     : {},
                 ]}
-                onPress={() => setStep((prev) => (prev + 1) as 1 | 2 | 3)}
+                onPress={() => {
+                  const nextStep = (step + 1) as 1 | 2 | 3
+                  console.log(`➡️ Moving from Step ${step} to Step ${nextStep}`)
+                  if (nextStep === 3) {
+                    console.log("📍 Entering Step 3 with exchange:", selectedExchange || "NONE")
+                  }
+                  setStep(nextStep)
+                }}
                 disabled={
                   (step === 1 && !canProceedToStep2) || (step === 2 && !canProceedToStep3)
                 }
@@ -751,9 +882,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 0.5,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 16,
     fontWeight: "400",
   },
@@ -766,22 +897,149 @@ const styles = StyleSheet.create({
   tokenInputContainer: {
     marginBottom: 16,
   },
+  searchContainer: {
+    marginBottom: 8,
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingRight: 4,
+  },
+  searchInputText: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    fontWeight: "400",
+  },
+  searchIconButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+  },
+  searchIcon: {
+    fontSize: 18,
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    fontWeight: "400",
+  },
+  searchButton: {
+    width: 50,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButtonText: {
+    fontSize: 20,
+  },
+  suggestionsDropdown: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 200,
+    overflow: 'hidden',
+  },
+  suggestionsScrollView: {
+    maxHeight: 200,
+  },
+  suggestionItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+  },
+  suggestionText: {
+    fontSize: 15,
+    fontWeight: "400",
+  },
+  tokenInfoCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  tokenInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  tokenInfoTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tokenInfoClose: {
+    fontSize: 18,
+    fontWeight: '300',
+    paddingHorizontal: 4,
+  },
+  tokenInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tokenInfoLabel: {
+    fontSize: 13,
+    fontWeight: '300',
+  },
+  tokenInfoValue: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  inputHint: {
+    fontSize: 12,
+    fontWeight: '300',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  toggleListButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  toggleListText: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  tokenCount: {
+    fontSize: 12,
+    fontWeight: '300',
+  },
+  noResultsCard: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
   tokensListContainer: {
     flex: 1,
   },
   tokensScrollView: {
-    maxHeight: 250,
+    maxHeight: 200,
     borderWidth: 1,
     borderRadius: 8,
   },
   tokenListItem: {
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
   },
   tokenListItemText: {
     fontSize: 15,
-    fontWeight: "400",
+    fontWeight: "300",
   },
   noResultsContainer: {
     paddingVertical: 20,
@@ -790,33 +1048,48 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 14,
+    fontWeight: '300',
     marginBottom: 8,
   },
   noResultsHint: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "400",
   },
   selectWrapper: {
-    borderWidth: 1,
-    borderRadius: 8,
+    borderWidth: 0.5,
+    borderRadius: 12,
     overflow: "hidden",
   },
   pickerWrapper: {
-    borderWidth: 1,
-    borderRadius: 8,
+    borderWidth: 0.5,
+    borderRadius: 12,
     overflow: "hidden",
+    paddingHorizontal: Platform.OS === "web" ? 8 : 4,
+    paddingVertical: Platform.OS === "web" ? 0 : 0,
+    ...(Platform.OS === "web" && {
+      minHeight: 48,
+      justifyContent: "center",
+    }),
   },
   picker: {
-    height: Platform.OS === "ios" ? 180 : 50,
+    height: Platform.OS === "ios" ? 180 : Platform.OS === "web" ? 48 : 50,
     width: "100%",
+    fontSize: 16,
+    ...(Platform.OS === "web" && {
+      backgroundColor: "transparent",
+      borderWidth: 0,
+      outline: "none",
+    }),
   },
   customInputContainer: {
-    gap: 8,
+    gap: 12,
+    marginBottom: 8,
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "300",
-    marginBottom: 4,
+    fontWeight: "400",
+    marginBottom: 8,
+    letterSpacing: -0.2,
   },
   footer: {
     flexDirection: "row",
@@ -842,6 +1115,55 @@ const styles = StyleSheet.create({
   buttonTextPrimary: {
     color: "#ffffff",
     fontSize: 14,
+    fontWeight: "500",
+  },
+  tokenSearchInput: {
+    height: 48,
+    borderWidth: 0.5,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+  },
+  dropdown: {
+    position: "absolute",
+    top: 52,
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderRadius: 12,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: "400",
+  },
+  clearButton: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectedTokenBadge: {
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  selectedTokenText: {
+    fontSize: 13,
     fontWeight: "500",
   },
 })

@@ -13,6 +13,8 @@ const exchangeLogos: Record<string, any> = {
   "novadax": require("@/assets/novadax.png"),
   "mexc": require("@/assets/mexc.png"),
   "coinbase": require("@/assets/coinbase.png"),
+  "coinex": require("@/assets/coinex.png"),
+  "bitget": require("@/assets/bitget.png"),
   "kraken": require("@/assets/kraken.png"),
   "bybit": require("@/assets/bybit.png"),
   "gate.io": require("@/assets/gateio.png"),

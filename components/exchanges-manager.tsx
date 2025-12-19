@@ -15,6 +15,8 @@ const exchangeLogos: Record<string, any> = {
   "novadax": require("@/assets/novadax.png"),
   "mexc": require("@/assets/mexc.png"),
   "coinbase": require("@/assets/coinbase.png"),
+  "coinex": require("@/assets/coinex.png"),
+  "bitget": require("@/assets/bitget.png"),
   "kraken": require("@/assets/kraken.png"),
   "bybit": require("@/assets/bybit.png"),
   "gate.io": require("@/assets/gateio.png"),
@@ -281,6 +283,14 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     fetchExchanges()
   }, [fetchExchanges])
 
+  // Atualiza exchanges quando trocar de aba (força refresh para pegar dados atualizados do banco)
+  useEffect(() => {
+    if (activeTab === 'available') {
+      console.log('📱 Aba "Disponíveis" ativada - forçando refresh dos dados')
+      fetchExchanges(true) // força refresh sem cache
+    }
+  }, [activeTab, fetchExchanges])
+
   const handleConnect = useCallback(async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
@@ -461,6 +471,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     setApiKey('')
     setApiSecret('')
     setPassphrase('')
+    setConnecting(false) // Reset loading state
     setConnectModalVisible(true)
   }, [])
 
@@ -472,6 +483,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     setPassphrase('')
     setQrScannerVisible(false)
     setCurrentScanField(null)
+    setConnecting(false) // Reset loading state
   }, [])
 
   const handleOpenQRScanner = useCallback((field: 'apiKey' | 'apiSecret' | 'passphrase') => {
@@ -551,7 +563,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log(`🔗 Exchange "${selectedExchange.nome}" linkada com sucesso!`)
+        console.log(`✅ Exchange "${selectedExchange.nome}" linkada com sucesso!`)
         closeConnectModal()
         
         // Pequeno delay para garantir que o backend processou
@@ -567,9 +579,11 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         
         console.log('✅ Processo de link completo!')
       } else {
+        console.error('❌ Falha ao linkar exchange:', data.error)
         alert(data.error || 'Falha ao conectar exchange')
       }
     } catch (err) {
+      console.error('❌ Erro ao linkar exchange:', err)
       alert('Não foi possível conectar a exchange')
     } finally {
       setConnecting(false)
