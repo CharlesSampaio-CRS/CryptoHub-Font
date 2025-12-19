@@ -1,4 +1,15 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Alert, Modal, Pressable, Platform } from "react-native"
+import { 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  View, 
+  TouchableOpacity, 
+  Alert, 
+  Modal, 
+  Pressable, 
+  Platform,
+  KeyboardAvoidingView
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect } from "react"
 import * as Clipboard from 'expo-clipboard'
@@ -397,19 +408,32 @@ export function SettingsScreen() {
       <Modal
         visible={securityModalVisible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={true}
         onRequestClose={() => setSecurityModalVisible(false)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Segurança</Text>
-            <TouchableOpacity onPress={() => setSecurityModalVisible(false)}>
-              <Text style={[styles.modalClose, { color: colors.primary }]}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.modalSection}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.securityModalContainer, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.securityModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.securityModalTitle, { color: colors.text }]}>
+                  {t('profile.security')}
+                </Text>
+                <TouchableOpacity onPress={() => setSecurityModalVisible(false)} style={styles.modalCloseButton}>
+                  <Text style={[styles.modalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Content */}
+              <ScrollView 
+                style={styles.securityModalContent} 
+                contentContainerStyle={styles.securityModalContentContainer}
+                showsVerticalScrollIndicator={true}
+              >
+                <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Autenticação de Dois Fatores</Text>
               <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                 <View style={{ flex: 1 }}>
@@ -541,55 +565,89 @@ export function SettingsScreen() {
               </View>
             </View>
           </ScrollView>
-        </SafeAreaView>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal Sobre o App */}
       <Modal
         visible={aboutModalVisible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={true}
         onRequestClose={() => setAboutModalVisible(false)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Sobre o App</Text>
-            <TouchableOpacity onPress={() => setAboutModalVisible(false)}>
-              <Text style={[styles.modalClose, { color: colors.primary }]}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.aboutContent}>
-              <Text style={[styles.appVersion, { color: colors.textSecondary }]}>Versão 1.0.0</Text>
-              <Text style={[styles.aboutText, { color: colors.text }]}>
-                CryptoHub é um agregador de exchanges de criptomoedas que permite você gerenciar todas as suas
-                carteiras em um único lugar.
-              </Text>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.aboutModalContainer, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.aboutModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.aboutModalTitle, { color: colors.text }]}>
+                  Sobre o App
+                </Text>
+                <TouchableOpacity onPress={() => setAboutModalVisible(false)} style={styles.modalCloseButton}>
+                  <Text style={[styles.modalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Content */}
+              <ScrollView 
+                style={styles.aboutModalContent} 
+                contentContainerStyle={styles.aboutModalContentContainer}
+                showsVerticalScrollIndicator={true}
+              >
+                <View style={styles.aboutContent}>
+                  <Text style={[styles.appVersion, { color: colors.textSecondary }]}>Versão 1.0.0</Text>
+                  <Text style={[styles.aboutText, { color: colors.text }]}>
+                    CryptoHub é um agregador de exchanges de criptomoedas que permite você gerenciar todas as suas
+                    carteiras em um único lugar.
+                  </Text>
+                </View>
+              </ScrollView>
             </View>
-          </ScrollView>
-        </SafeAreaView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal Termos de Uso */}
       <Modal
         visible={termsModalVisible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={true}
         onRequestClose={() => setTermsModalVisible(false)}
       >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Termos de Uso</Text>
-            <TouchableOpacity onPress={() => setTermsModalVisible(false)}>
-              <Text style={[styles.modalClose, { color: colors.primary }]}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalContent}>
-            <Text style={[styles.termsText, { color: colors.text }]}>
-              [Conteúdo dos Termos de Uso aqui]
-            </Text>
-          </ScrollView>
-        </SafeAreaView>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.termsModalContainer, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.termsModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.termsModalTitle, { color: colors.text }]}>
+                  Termos de Uso
+                </Text>
+                <TouchableOpacity onPress={() => setTermsModalVisible(false)} style={styles.modalCloseButton}>
+                  <Text style={[styles.modalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Content */}
+              <ScrollView 
+                style={styles.termsModalContent} 
+                contentContainerStyle={styles.termsModalContentContainer}
+                showsVerticalScrollIndicator={true}
+              >
+                <Text style={[styles.termsText, { color: colors.text }]}>
+                  [Conteúdo dos Termos de Uso aqui]
+                </Text>
+              </ScrollView>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal Política de Privacidade */}
@@ -854,6 +912,106 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#ffffff",
+  },
+  // Security Modal Styles (following CreateStrategyModal pattern)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalSafeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  securityModalContainer: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
+    height: "85%",
+  },
+  securityModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  securityModalTitle: {
+    fontSize: 20,
+    fontWeight: "500",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalCloseIcon: {
+    fontSize: 24,
+    fontWeight: "300",
+  },
+  securityModalContent: {
+    flex: 1,
+  },
+  securityModalContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  // About Modal Styles (following CreateStrategyModal pattern)
+  aboutModalContainer: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
+    height: "85%",
+  },
+  aboutModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  aboutModalTitle: {
+    fontSize: 20,
+    fontWeight: "500",
+  },
+  aboutModalContent: {
+    flex: 1,
+  },
+  aboutModalContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  // Terms Modal Styles (following CreateStrategyModal pattern)
+  termsModalContainer: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
+    height: "85%",
+  },
+  termsModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  termsModalTitle: {
+    fontSize: 20,
+    fontWeight: "500",
+  },
+  termsModalContent: {
+    flex: 1,
+  },
+  termsModalContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
 })
 
