@@ -66,33 +66,34 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       onRequestClose={onClose}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={[styles.modalContent, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
-            <View>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('notifications.title')}</Text>
-              {unreadCount > 0 && (
-                <Text style={[styles.unreadText, { color: colors.textSecondary }]}>
-                  {unreadCount} {t('notifications.unread')} {unreadCount === 1 ? t('notifications.unreadSingular') : t('notifications.unreadPlural')}
-                </Text>
-              )}
-            </View>
-            <View style={styles.headerActions}>
-              {unreadCount > 0 && (
-                <TouchableOpacity onPress={handleMarkAllAsRead}>
-                  <Text style={styles.markAllButton}>{t('notifications.markAll')}</Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.safeArea}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            {/* Header */}
+            <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
+              <View style={styles.headerTitleContainer}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>{t('notifications.title')}</Text>
+                {unreadCount > 0 && (
+                  <Text style={[styles.unreadText, { color: colors.textSecondary }]}>
+                    {unreadCount} {t('notifications.unread')}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.headerActions}>
+                {unreadCount > 0 && (
+                  <TouchableOpacity onPress={handleMarkAllAsRead}>
+                    <Text style={styles.markAllButton}>{t('notifications.markAll')}</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
                 </TouchableOpacity>
-              )}
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
-              </TouchableOpacity>
+              </View>
             </View>
-          </View>
 
           {/* Notifications List */}
           <ScrollView style={styles.notificationsList} showsVerticalScrollIndicator={false}>
@@ -157,8 +158,9 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
               ))
             )}
           </ScrollView>
-        </Pressable>
-      </Pressable>
+          </View>
+        </View>
+      </View>
     </Modal>
   )
 }
@@ -167,17 +169,20 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  safeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   modalContent: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
     height: "85%",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
   },
   modalHeader: {
     flexDirection: "row",
@@ -186,15 +191,17 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
   },
+  headerTitleContainer: {
+    flex: 1,
+  },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: "300",
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: "500",
   },
   unreadText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "300",
+    marginTop: 4,
   },
   headerActions: {
     flexDirection: "row",
@@ -207,15 +214,11 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 4,
   },
   closeButtonText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "300",
-    opacity: 0.6,
   },
   notificationsList: {
     flex: 1,
@@ -247,7 +250,7 @@ const styles = StyleSheet.create({
   },
   notificationTitle: {
     fontSize: 15,
-    fontWeight: "300",
+    fontWeight: "500",
     flex: 1,
   },
   notificationTitleUnread: {

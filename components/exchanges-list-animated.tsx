@@ -1,8 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Image } from "react-native"
-import { useEffect, useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useBalance } from "@/contexts/BalanceContext"
 import { apiService } from "@/services/api"
-import { BalanceResponse } from "@/types/api"
-import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
@@ -157,27 +156,9 @@ function ExchangeItem({
 }
 
 export function ExchangesListAnimated() {
-  const [data, setData] = useState<BalanceResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // 🔥 USA O CONTEXTO ao invés de fetch próprio (evita chamadas duplicadas)
+  const { data, loading, error } = useBalance()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetchBalances()
-  }, [])
-
-  const fetchBalances = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await apiService.getBalances(config.userId)
-      setData(response)
-    } catch (err) {
-      setError("Erro ao carregar exchanges")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (

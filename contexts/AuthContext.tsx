@@ -14,6 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null
   isLoading: boolean
+  isLoadingData: boolean
   isAuthenticated: boolean
   biometricAvailable: boolean
   biometricType: string | null
@@ -27,6 +28,9 @@ interface AuthContextType {
   registerWithGoogle: () => Promise<void>
   registerWithApple: () => Promise<void>
   logout: () => Promise<void>
+  
+  // Loading control
+  setLoadingDataComplete: () => void
   
   // Biometric settings
   enableBiometric: () => Promise<boolean>
@@ -51,6 +55,7 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingData, setIsLoadingData] = useState(false)
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricType, setBiometricType] = useState<string | null>(null)
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false)
@@ -62,6 +67,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Não carrega o usuário automaticamente - sempre começa pelo login
     setIsLoading(false)
   }, [])
+
+  // Debug: monitorar mudanças no user
+  useEffect(() => {
+    console.log('👤 AuthContext - User mudou:', {
+      hasUser: !!user,
+      email: user?.email,
+      isAuthenticated: !!user
+    })
+  }, [user])
 
   const checkBiometricAvailability = async () => {
     try {
@@ -135,6 +149,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       await saveUser(mockUser)
+      
+      console.log('✅ Login bem-sucedido, ativando loading de dados')
+      
+      // Ativa o loading de dados após login bem-sucedido
+      setIsLoadingData(true)
+      console.log('🔄 isLoadingData definido como TRUE')
+      
+      // O loading será desativado pelo App.tsx quando os dados estiverem prontos
     } catch (error) {
       console.error('Login error:', error)
       throw error
@@ -145,6 +167,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const loginWithBiometric = async () => {
     try {
+      setIsLoading(true)
+      
       if (!biometricAvailable || !isBiometricEnabled) {
         throw new Error('Biometric authentication not available or not enabled')
       }
@@ -158,12 +182,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (result.success) {
         // Retrieve saved credentials and auto-login
         await loadUser()
+        
+        console.log('✅ Login biométrico bem-sucedido, ativando loading de dados')
+        
+        // Ativa o loading de dados após login bem-sucedido
+        setIsLoadingData(true)
+        console.log('🔄 isLoadingData definido como TRUE')
+        
+        // O loading será desativado pelo App.tsx quando os dados estiverem prontos
       } else {
         throw new Error('Biometric authentication failed')
       }
     } catch (error) {
       console.error('Biometric login error:', error)
       throw error
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -182,6 +216,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       await saveUser(mockUser)
+      
+      console.log('✅ Login com Google bem-sucedido, ativando loading de dados')
+      
+      // Ativa o loading de dados após login bem-sucedido
+      setIsLoadingData(true)
+      console.log('🔄 isLoadingData definido como TRUE')
+      
+      // O loading será desativado pelo App.tsx quando os dados estiverem prontos
     } catch (error) {
       console.error('Google login error:', error)
       throw error
@@ -208,6 +250,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       await saveUser(mockUser)
+      
+      console.log('✅ Login com Apple bem-sucedido, ativando loading de dados')
+      
+      // Ativa o loading de dados após login bem-sucedido
+      setIsLoadingData(true)
+      console.log('🔄 isLoadingData definido como TRUE')
+      
+      // O loading será desativado pelo App.tsx quando os dados estiverem prontos
     } catch (error) {
       console.error('Apple login error:', error)
       throw error
@@ -249,12 +299,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
+      console.log('🚪 Logout: Iniciando logout...')
+      console.log('🚪 Logout: User antes do logout:', user)
       await secureStorage.deleteItemAsync('user_data')
       await secureStorage.deleteItemAsync('biometric_enabled')
       setUser(null)
+      console.log('🚪 Logout: User setado como null')
       setIsBiometricEnabled(false)
+      setIsLoadingData(false) // Reset loading state
+      console.log('✅ Logout: Concluído')
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('❌ Logout error:', error)
       throw error
     }
   }
@@ -292,9 +347,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }
 
+  const setLoadingDataComplete = () => {
+    console.log('✅ setLoadingDataComplete: Desativando loading de dados')
+    setIsLoadingData(false)
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
+    isLoadingData,
     isAuthenticated: !!user,
     biometricAvailable,
     biometricType,
@@ -308,6 +369,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     registerWithGoogle,
     registerWithApple,
     logout,
+    
+    setLoadingDataComplete,
     
     enableBiometric,
     disableBiometric,

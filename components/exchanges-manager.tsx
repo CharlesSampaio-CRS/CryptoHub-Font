@@ -781,17 +781,13 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       <Modal
         visible={connectModalVisible}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={closeConnectModal}
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
-        >
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.safeArea}
           >
             <View style={[styles.modalContent, themedStyles.modal]}>
               {/* Header do Modal */}
@@ -949,8 +945,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
               </>
             )}
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* Modal de Confirmação de Toggle */}
@@ -960,19 +956,14 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         animationType="fade"
         onRequestClose={() => setConfirmToggleModalVisible(false)}
       >
-        <Pressable 
-          style={styles.confirmModalOverlay}
-          onPress={() => setConfirmToggleModalVisible(false)}
-        >
-          <Pressable 
-            style={[styles.confirmModalContent, themedStyles.modal]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.confirmModalHeader}>
-              <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
-                {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
-              </Text>
-            </View>
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.safeArea}>
+            <View style={[styles.confirmModalContent, themedStyles.modal]}>
+              <View style={styles.confirmModalHeader}>
+                <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
+                  {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
+                </Text>
+              </View>
 
             <View style={styles.confirmModalBody}>
               <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
@@ -999,8 +990,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 </Text>
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       {/* Modal de Confirmação (Delete/Disconnect) */}
@@ -1010,19 +1002,14 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         animationType="fade"
         onRequestClose={() => setConfirmModalVisible(false)}
       >
-        <Pressable 
-          style={styles.confirmModalOverlay}
-          onPress={() => setConfirmModalVisible(false)}
-        >
-          <Pressable 
-            style={[styles.confirmModalContent, themedStyles.modal]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.confirmModalHeader}>
-              <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
-                {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
-              </Text>
-            </View>
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.safeArea}>
+            <View style={[styles.confirmModalContent, themedStyles.modal]}>
+              <View style={styles.confirmModalHeader}>
+                <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
+                  {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
+                </Text>
+              </View>
 
             <View style={styles.confirmModalBody}>
               <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
@@ -1055,8 +1042,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 </Text>
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       {/* QR Scanner Modal */}
@@ -1429,32 +1417,39 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  safeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   modalContent: {
     backgroundColor: "#ffffff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: "90%",
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
+    height: "85%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    padding: 20,
+    borderBottomWidth: 1,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "500",
   },
   closeButton: {
-    padding: 8,
+    padding: 4,
   },
   closeButtonText: {
     fontSize: 24,
-    color: "#9ca3af",
     fontWeight: "300",
   },
   exchangeInfo: {

@@ -57,6 +57,23 @@ export function ProfileScreen() {
           <Text style={[styles.title, { color: colors.text }]}>Perfil</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Suas informações pessoais</Text>
         </View>
+        
+        {/* Botão Sair no Header */}
+        <TouchableOpacity 
+          style={[styles.headerLogoutButton, { borderColor: colors.border }]} 
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+              stroke="#ef4444"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -381,6 +398,14 @@ const styles = StyleSheet.create({
   actionArrow: {
     fontSize: 24,
     fontWeight: "300",
+  },
+  headerLogoutButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoutButton: {
     flexDirection: "row",

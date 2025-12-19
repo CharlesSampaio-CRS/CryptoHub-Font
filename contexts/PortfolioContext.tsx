@@ -7,7 +7,8 @@ interface PortfolioContextType {
   evolutionData: PortfolioEvolutionResponse | null
   loading: boolean
   error: string | null
-  refreshEvolution: () => Promise<void>
+  refreshEvolution: (days?: number) => Promise<void>
+  currentPeriod: number
 }
 
 const PortfolioContext = createContext<PortfolioContextType | undefined>(undefined)
@@ -16,24 +17,29 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPeriod, setCurrentPeriod] = useState(7)
 
-  const loadEvolutionData = useCallback(async (showLoading = true) => {
+  const loadEvolutionData = useCallback(async (days: number, showLoading = true) => {
     try {
       if (showLoading) setLoading(true)
       setError(null)
       
-      console.log(`📊 PortfolioContext: Carregando evolution (showLoading=${showLoading})...`)
+      console.log(`📊 PortfolioContext: Carregando evolution (days=${days}, showLoading=${showLoading})...`)
       const startTime = Date.now()
       
-      const data = await apiService.getPortfolioEvolution(config.userId, 7)
+      const data = await apiService.getPortfolioEvolution(config.userId, days)
       
       const duration = Date.now() - startTime
       console.log(`✅ PortfolioContext: Evolution carregado em ${duration}ms`)
       
       setEvolutionData(data)
+      setCurrentPeriod(days)
     } catch (err: any) {
       console.error('❌ Error loading evolution data:', err)
-      setError(err.message || 'Failed to load evolution data')
+      const errorMessage = err.message && err.message.includes('fetch') 
+        ? 'Erro ao consultar dados' 
+        : err.message || 'Erro ao consultar dados'
+      setError(errorMessage)
     } finally {
       if (showLoading) setLoading(false)
     }
@@ -41,21 +47,23 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
   // Load on mount
   useEffect(() => {
-    loadEvolutionData()
+    loadEvolutionData(7)
   }, [loadEvolutionData])
 
   // Refresh sem mostrar loading (usado no pull-to-refresh)
-  const refreshEvolution = useCallback(async () => {
-    console.log('🔄 PortfolioContext: Refresh evolution solicitado')
-    await loadEvolutionData(false)
-  }, [loadEvolutionData])
+  const refreshEvolution = useCallback(async (days?: number) => {
+    const daysToUse = days !== undefined ? days : currentPeriod
+    console.log(`🔄 PortfolioContext: Refresh evolution solicitado (days=${daysToUse})`)
+    await loadEvolutionData(daysToUse, false)
+  }, [loadEvolutionData, currentPeriod])
 
   const value = useMemo(() => ({
     evolutionData,
     loading,
     error,
-    refreshEvolution
-  }), [evolutionData, loading, error, refreshEvolution])
+    refreshEvolution,
+    currentPeriod
+  }), [evolutionData, loading, error, refreshEvolution, currentPeriod])
 
   return (
     <PortfolioContext.Provider value={value}>

@@ -26,7 +26,7 @@ export function QuickChart() {
   return (
     <Card className="p-4 bg-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">{t('home.performance7days')}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t('home.performance')}</h3>
         <div className="flex gap-2">
           {["1D", "7D", "1M", "3M", "1A"].map((period, i) => (
             <button

@@ -1,0 +1,744 @@
+import React, { useEffect, useState } from 'react'
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Modal, 
+  TouchableOpacity, 
+  ScrollView, 
+  ActivityIndicator,
+  Pressable 
+} from 'react-native'
+import Svg, { Path, Circle } from 'react-native-svg'
+import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { strategiesService, type Strategy } from '@/services/strategies'
+
+interface StrategyDetailsModalProps {
+  visible: boolean
+  strategyId: string | null
+  userId: string
+  onClose: () => void
+  onEdit?: (strategyId: string) => void
+  onDelete?: (strategyId: string) => void
+  onToggleActive?: (strategyId: string, currentStatus: boolean) => void
+}
+
+export function StrategyDetailsModal({
+  visible,
+  strategyId,
+  userId,
+  onClose,
+  onEdit,
+  onDelete,
+  onToggleActive
+}: StrategyDetailsModalProps) {
+  const { colors } = useTheme()
+  const { t } = useLanguage()
+  
+  const [strategy, setStrategy] = useState<Strategy | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (visible && strategyId) {
+      loadStrategyDetails()
+    } else if (!visible) {
+      // Reset when modal closes
+      setStrategy(null)
+      setError(null)
+    }
+  }, [visible, strategyId])
+
+  const loadStrategyDetails = async () => {
+    if (!strategyId) return
+
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('📊 Loading strategy details:', strategyId)
+      
+      const data = await strategiesService.getStrategy(strategyId)
+      console.log('✅ Strategy loaded:', data)
+      setStrategy(data)
+    } catch (err) {
+      console.error('❌ Error loading strategy:', err)
+      setError(err instanceof Error ? err.message : 'Erro ao carregar estratégia')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Carregando detalhes...
+          </Text>
+        </View>
+      )
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorEmoji}>⚠️</Text>
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            onPress={loadStrategyDetails}
+          >
+            <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+          </TouchableOpacity>
+        </View>
+      )
+    }
+
+    if (!strategy) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            Estratégia não encontrada
+          </Text>
+        </View>
+      )
+    }
+
+    const strategyId = strategy._id || strategy.id || ''
+    const strategyName = `${strategy.token} - ${strategy.exchange_name || 'Exchange'}`
+    const template = strategy.template || 'simple'
+    const templateNames: Record<string, string> = {
+      simple: 'Simples',
+      conservative: 'Conservador',
+      aggressive: 'Agressivo'
+    }
+
+    return (
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header com status */}
+        <View style={[styles.statusHeader, { backgroundColor: colors.surface }]}>
+          <View style={styles.statusBadge}>
+            <View 
+              style={[
+                styles.statusDot, 
+                { backgroundColor: strategy.is_active ? '#10b981' : '#6b7280' }
+              ]} 
+            />
+            <Text style={[styles.statusText, { color: colors.text }]}>
+              {strategy.is_active ? 'Ativa' : 'Inativa'}
+            </Text>
+          </View>
+
+          <View style={[styles.typeBadge, { backgroundColor: colors.surfaceSecondary }]}>
+            <Text style={[styles.typeBadgeText, { color: colors.primary }]}>
+              {templateNames[template]}
+            </Text>
+          </View>
+        </View>
+
+        {/* Nome da Estratégia */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            ESTRATÉGIA
+          </Text>
+          <Text style={[styles.strategyName, { color: colors.text }]}>
+            {strategyName}
+          </Text>
+        </View>
+
+        {/* Informações Principais */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            CONFIGURAÇÕES
+          </Text>
+          
+          <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            {/* Exchange */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoLeft}>
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"
+                    stroke={colors.textSecondary}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                  Corretora
+                </Text>
+              </View>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {strategy.exchange_name || 'N/A'}
+              </Text>
+            </View>
+
+            {/* Divider */}
+            <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
+
+            {/* Token */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoLeft}>
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <Circle cx="12" cy="12" r="10" stroke={colors.textSecondary} strokeWidth="2" />
+                  <Path d="M12 6v6l4 2" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" />
+                </Svg>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                  Par de Negociação
+                </Text>
+              </View>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {strategy.token}
+              </Text>
+            </View>
+
+            {/* Divider */}
+            <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
+
+            {/* Template */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoLeft}>
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                    stroke={colors.textSecondary}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                  Template
+                </Text>
+              </View>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {templateNames[template]}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Regras - Take Profit */}
+        {strategy.rules?.take_profit_levels && strategy.rules.take_profit_levels.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+              TAKE PROFIT
+            </Text>
+            <View style={[styles.conditionsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              {strategy.rules.take_profit_levels.map((level, index) => (
+                <View key={index}>
+                  {index > 0 && (
+                    <View style={[styles.conditionDivider, { backgroundColor: colors.border }]} />
+                  )}
+                  <View style={styles.conditionRow}>
+                    <View style={[styles.conditionBullet, { backgroundColor: '#10b981' }]} />
+                    <View style={styles.conditionContent}>
+                      <Text style={[styles.conditionText, { color: colors.text }]}>
+                        Nível {index + 1}: <Text style={{ fontWeight: '400' }}>+{level.percent}%</Text>
+                      </Text>
+                      <Text style={[styles.conditionSubtext, { color: colors.textSecondary }]}>
+                        Vender {level.sell_percent}% da posição
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Stop Loss */}
+        {strategy.rules?.stop_loss?.enabled && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+              STOP LOSS
+            </Text>
+            <View style={[styles.actionsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={styles.actionRow}>
+                <View style={[styles.actionIcon, { backgroundColor: '#ef444420' }]}>
+                  <Text style={styles.actionEmoji}>🛡️</Text>
+                </View>
+                <View style={styles.actionContent}>
+                  <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>
+                    Proteção ativada
+                  </Text>
+                  <Text style={[styles.actionValue, { color: colors.text }]}>
+                    -{strategy.rules.stop_loss.percent}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Datas */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            INFORMAÇÕES
+          </Text>
+          <View style={[styles.datesCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={styles.dateRow}>
+              <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+                Criada em
+              </Text>
+              <Text style={[styles.dateValue, { color: colors.text }]}>
+                {new Date(strategy.created_at).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </Text>
+            </View>
+            
+            <View style={[styles.dateDivider, { backgroundColor: colors.border }]} />
+            
+            <View style={styles.dateRow}>
+              <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+                Atualizada em
+              </Text>
+              <Text style={[styles.dateValue, { color: colors.text }]}>
+                {new Date(strategy.updated_at).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ height: 120 }} />
+      </ScrollView>
+    )
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable 
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View>
+              <Text style={[styles.title, { color: colors.text }]}>Detalhes da Estratégia</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                Informações completas
+              </Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={[styles.closeButton, { backgroundColor: colors.surface }]}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke={colors.text}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+
+          {/* Content */}
+          {renderContent()}
+
+          {/* Actions Footer */}
+          {!loading && !error && strategy && (
+            <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+              <TouchableOpacity
+                style={[styles.footerButton, { backgroundColor: strategy.is_active ? '#ef444420' : '#10b98120' }]}
+                onPress={() => {
+                  if (strategyId) {
+                    onToggleActive?.(strategyId, strategy.is_active)
+                    onClose()
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <Circle 
+                    cx="12" 
+                    cy="12" 
+                    r="10" 
+                    stroke={strategy.is_active ? '#ef4444' : '#10b981'} 
+                    strokeWidth="2" 
+                  />
+                  {strategy.is_active ? (
+                    <Path d="M15 9l-6 6M9 9l6 6" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                  ) : (
+                    <Path d="M9 12l2 2 4-4" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  )}
+                </Svg>
+                <Text style={[styles.footerButtonText, { color: strategy.is_active ? '#ef4444' : '#10b981' }]}>
+                  {strategy.is_active ? 'Desativar' : 'Ativar'}
+                </Text>
+              </TouchableOpacity>
+
+              {onEdit && (
+                <TouchableOpacity
+                  style={[styles.footerButton, { backgroundColor: colors.surface }]}
+                  onPress={() => {
+                    if (strategyId) {
+                      onEdit(strategyId)
+                      onClose()
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                      stroke={colors.text}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <Path
+                      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                      stroke={colors.text}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                  <Text style={[styles.footerButtonText, { color: colors.text }]}>
+                    Editar
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {onDelete && (
+                <TouchableOpacity
+                  style={[styles.footerButton, { backgroundColor: '#ef444420' }]}
+                  onPress={() => {
+                    if (strategyId) {
+                      onDelete(strategyId)
+                      onClose()
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                      stroke="#ef4444"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                  <Text style={[styles.footerButtonText, { color: '#ef4444' }]}>
+                    Excluir
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  )
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    maxHeight: '90%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 0.5,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '300',
+    letterSpacing: -0.2,
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: '300',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 13,
+    fontWeight: '300',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 14,
+    fontWeight: '300',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontWeight: '300',
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  typeBadgeText: {
+    fontSize: 11,
+    fontWeight: '400',
+    textTransform: 'uppercase',
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+  },
+  strategyName: {
+    fontSize: 18,
+    fontWeight: '300',
+    letterSpacing: -0.2,
+  },
+  infoCard: {
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  infoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  infoLabel: {
+    fontSize: 13,
+    fontWeight: '300',
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  infoDivider: {
+    height: 0.5,
+    marginVertical: 12,
+  },
+  conditionsCard: {
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 16,
+  },
+  conditionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  conditionBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 6,
+  },
+  conditionContent: {
+    flex: 1,
+  },
+  conditionText: {
+    fontSize: 13,
+    fontWeight: '300',
+    lineHeight: 20,
+  },
+  conditionSubtext: {
+    fontSize: 12,
+    fontWeight: '300',
+    marginTop: 4,
+  },
+  conditionDivider: {
+    height: 0.5,
+    marginVertical: 8,
+  },
+  actionsCard: {
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 16,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionEmoji: {
+    fontSize: 20,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontWeight: '300',
+    marginBottom: 4,
+  },
+  actionValue: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  actionDivider: {
+    height: 0.5,
+    marginVertical: 12,
+  },
+  datesCard: {
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 16,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  dateLabel: {
+    fontSize: 13,
+    fontWeight: '300',
+  },
+  dateValue: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  dateDivider: {
+    height: 0.5,
+    marginVertical: 8,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 0.5,
+  },
+  footerButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  footerButtonText: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+})

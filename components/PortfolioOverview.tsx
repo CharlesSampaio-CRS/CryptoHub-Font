@@ -32,6 +32,38 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   
   console.log(`💰 PortfolioOverview: Total USD = $${totalValue} (timestamp: ${data.timestamp})`)
   
+  // Formata o timestamp de última atualização
+  const formatLastUpdated = () => {
+    if (!data.timestamp) return ''
+    
+    // Garante que timestamp está em milissegundos
+    let timestamp: string | number = data.timestamp
+    if (typeof timestamp === 'number' && timestamp < 10000000000) {
+      // Se for menor que isso, provavelmente está em segundos
+      timestamp = timestamp * 1000
+    }
+    
+    // Cria a data e ajusta para horário local do Brasil (UTC-3)
+    const lastUpdate = new Date(timestamp)
+    
+    // Pega a hora e minuto locais (JavaScript já faz a conversão de UTC para local)
+    const hours = lastUpdate.getHours()
+    const minutes = lastUpdate.getMinutes()
+    
+    // Formata com zero à esquerda
+    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    
+    // Calcula diferença de tempo
+    const now = new Date()
+    const diffMs = now.getTime() - lastUpdate.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    // Sempre mostra "Atualizado em: HH:MM"
+    if (diffMins < 60) return `Atualizado em: ${timeStr}`
+    
+    return `Atualizado em: ${timeStr}`
+  }
+  
   // Calcula PNL baseado nos dados de evolução
   const getPNL = () => {
     if (!evolutionData?.evolution?.summary) {
@@ -77,9 +109,14 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
         </TouchableOpacity>
       </View>
 
-      <Text style={[styles.value, { color: colors.text }]}>
-        {hideValue(formattedValue)}
-      </Text>
+      <View style={styles.valueContainer}>
+        <Text style={[styles.value, { color: colors.text }]}>
+          {hideValue(formattedValue)}
+        </Text>
+        <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
+          {formatLastUpdated()}
+        </Text>
+      </View>
 
       <View style={styles.changeContainer}>
         <View style={[styles.badge, isPositive ? styles.badgePositive : styles.badgeNegative]}>
@@ -132,11 +169,21 @@ const styles = StyleSheet.create({
     fontWeight: "300",
     opacity: 0.7,
   },
+  valueContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+    marginBottom: 16,
+  },
   value: {
     fontSize: 38,
     fontWeight: "200",
     letterSpacing: -1,
-    marginBottom: 16,
+  },
+  lastUpdated: {
+    fontSize: 10,
+    fontWeight: "400",
+    opacity: 0.6,
   },
   changeContainer: {
     flexDirection: "row",

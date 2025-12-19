@@ -5,6 +5,7 @@ import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { strategiesService, type Strategy as APIStrategy, type Execution } from "../services/strategies"
 import { CreateStrategyModal } from "../components/create-strategy-modal"
+import { StrategyDetailsModal } from "@/components/StrategyDetailsModal"
 
 interface Strategy {
   id: string
@@ -48,6 +49,10 @@ export function StrategyScreen() {
   const [toggleStrategyId, setToggleStrategyId] = useState<string>("")
   const [toggleStrategyName, setToggleStrategyName] = useState<string>("")
   const [toggleStrategyNewStatus, setToggleStrategyNewStatus] = useState<boolean>(false)
+  
+  // Modal de detalhes da estratégia
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null)
   
   // Ref para rastrear IDs de estratégias recém-criadas (sem stats ainda)
   const newlyCreatedStrategyIds = useRef<Set<string>>(new Set())
@@ -408,9 +413,14 @@ export function StrategyScreen() {
           ) : (
           <View style={styles.strategiesList}>
             {strategies.map((strategy) => (
-              <View
+              <TouchableOpacity
                 key={strategy.id}
                 style={[styles.strategyCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => {
+                  setSelectedStrategyId(strategy.id)
+                  setDetailsModalVisible(true)
+                }}
+                activeOpacity={0.7}
               >
                 <View style={styles.strategyHeader}>
                   <View style={styles.strategyHeaderLeft}>
@@ -426,7 +436,10 @@ export function StrategyScreen() {
                   
                   <TouchableOpacity
                     style={[styles.toggle, strategy.isActive && styles.toggleActive]}
-                    onPress={() => toggleStrategy(strategy.id)}
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      toggleStrategy(strategy.id)
+                    }}
                     activeOpacity={0.7}
                   >
                     <View
@@ -557,13 +570,16 @@ export function StrategyScreen() {
 
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => deleteStrategy(strategy.id, strategy.name)}
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      deleteStrategy(strategy.id, strategy.name)
+                    }}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.deleteIcon}>🗑️</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
           )
@@ -769,6 +785,31 @@ export function StrategyScreen() {
         onClose={() => setCreateModalVisible(false)}
         onSuccess={handleStrategyCreated}
         userId={USER_ID}
+      />
+
+      {/* Strategy Details Modal */}
+      <StrategyDetailsModal
+        visible={detailsModalVisible}
+        strategyId={selectedStrategyId}
+        userId={USER_ID}
+        onClose={() => {
+          setDetailsModalVisible(false)
+          setSelectedStrategyId(null)
+        }}
+        onEdit={(strategyId: string) => {
+          console.log('📝 Edit strategy:', strategyId)
+          // TODO: Implement edit functionality
+        }}
+        onDelete={(strategyId: string) => {
+          // Find strategy name for confirmation
+          const strategy = strategies.find(s => s.id === strategyId)
+          if (strategy) {
+            deleteStrategy(strategyId, strategy.name)
+          }
+        }}
+        onToggleActive={(strategyId: string, currentStatus: boolean) => {
+          toggleStrategy(strategyId)
+        }}
       />
     </SafeAreaView>
   )

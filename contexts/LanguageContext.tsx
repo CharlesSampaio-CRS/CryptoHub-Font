@@ -21,8 +21,7 @@ const translations = {
     'home.subtitle': 'Seus investimentos unificados',
     'home.portfolio': 'Patrimônio Total',
     'home.last24h': 'últimas 24h',
-    'home.performance': 'Desempenho - 7 dias',
-    'home.performance7days': 'Desempenho (7 dias)',
+    'home.performance': 'Desempenho',
     'home.exchanges': 'Minhas Corretoras',
     'home.noData': 'Sem dados disponíveis',
     'home.loading': 'Carregando dados...',
@@ -121,6 +120,7 @@ const translations = {
     // Exchanges
     'exchanges.title': 'Corretoras',
     'exchanges.hideZeroTokens': 'Ocultar saldo $0',
+    'exchanges.hideZeroExchanges': 'Ocultar corretoras com saldo $0',
     'exchanges.tokensAvailable': 'Tokens Disponíveis',
     'exchanges.asset': 'ativo',
     'exchanges.assets': 'ativos',
@@ -154,6 +154,29 @@ const translations = {
     'exchanges.activateWarning': 'Ela ficará disponível para uso nas estratégias.',
     'exchanges.deactivateWarning': 'Ela não será mais utilizada pelas estratégias.',
     
+    // Token Details
+    'token.details': 'Detalhes do Token',
+    'token.currentPrice': 'Preço Atual',
+    'token.priceVariation': 'Variação de Preço',
+    'token.high24h': 'Máxima 24h',
+    'token.low24h': 'Mínima 24h',
+    'token.volume24h': 'Volume 24h',
+    'token.marketInfo': 'Informações de Mercado',
+    'token.limits': 'Limites',
+    'token.minAmount': 'Qtd. Mínima',
+    'token.maxAmount': 'Qtd. Máxima',
+    'token.minCost': 'Custo Mín.',
+    'token.maxCost': 'Custo Máx.',
+    'token.precision': 'Precisão',
+    'token.amountPrecision': 'Qtd.',
+    'token.pricePrecision': 'Preço',
+    'token.bidPrice': 'Preço de Compra',
+    'token.askPrice': 'Preço de Venda',
+    'token.spread': 'Spread',
+    'token.lastUpdate': 'Última atualização',
+    'token.pair': 'Par',
+    'token.noData': 'Dados não disponíveis',
+    
     // Common
     'common.close': 'Fechar',
     'common.cancel': 'Cancelar',
@@ -166,6 +189,21 @@ const translations = {
     'common.refresh': 'Atualizar',
     'common.yes': 'Sim',
     'common.no': 'Não',
+    
+    // Loading Progress
+    'loading.title': 'Preparando tudo para você',
+    'loading.authenticating': 'Autenticando usuário',
+    'loading.fetchingExchanges': 'Buscando corretoras conectadas',
+    'loading.loadingBalances': 'Carregando saldos',
+    'loading.calculatingPortfolio': 'Calculando portfólio',
+    'loading.almostReady': 'Quase pronto!',
+    
+    // Maintenance Screen
+    'maintenance.title': 'Estamos em Manutenção',
+    'maintenance.message': 'Nossos servidores estão temporariamente indisponíveis. Estamos trabalhando para restaurar o serviço o mais rápido possível.',
+    'maintenance.subMessage': 'Pedimos desculpas pelo inconveniente. Tente novamente em alguns instantes.',
+    'maintenance.retry': 'Tentar Novamente',
+    'maintenance.contact': 'Se o problema persistir, entre em contato com o suporte.',
   },
   'en-US': {
     // Navigation
@@ -179,8 +217,7 @@ const translations = {
     'home.subtitle': 'Your unified investments',
     'home.portfolio': 'Total Portfolio',
     'home.last24h': 'last 24h',
-    'home.performance': 'Performance - 7 days',
-    'home.performance7days': 'Performance (7 days)',
+    'home.performance': 'Performance',
     'home.exchanges': 'My Exchanges',
     'home.noData': 'No data available',
     'home.loading': 'Loading data...',
@@ -280,6 +317,7 @@ const translations = {
     'exchanges.title': 'Exchanges',
     'exchanges.hideZero': 'Hide exchanges with $0 balance',
     'exchanges.hideZeroTokens': 'Hide tokens with $0 balance',
+    'exchanges.hideZeroExchanges': 'Hide exchanges with $0 balance',
     'exchanges.tokensAvailable': 'Available Tokens',
     'exchanges.asset': 'asset',
     'exchanges.assets': 'assets',
@@ -313,6 +351,29 @@ const translations = {
     'exchanges.activateWarning': 'It will be available for use in strategies.',
     'exchanges.deactivateWarning': 'It will no longer be used by strategies.',
     
+    // Token Details
+    'token.details': 'Token Details',
+    'token.currentPrice': 'Current Price',
+    'token.priceVariation': 'Price Variation',
+    'token.high24h': '24h High',
+    'token.low24h': '24h Low',
+    'token.volume24h': '24h Volume',
+    'token.marketInfo': 'Market Information',
+    'token.limits': 'Limits',
+    'token.minAmount': 'Min Amount',
+    'token.maxAmount': 'Max Amount',
+    'token.minCost': 'Min Cost',
+    'token.maxCost': 'Max Cost',
+    'token.precision': 'Precision',
+    'token.amountPrecision': 'Amount',
+    'token.pricePrecision': 'Price',
+    'token.bidPrice': 'Bid Price',
+    'token.askPrice': 'Ask Price',
+    'token.spread': 'Spread',
+    'token.lastUpdate': 'Last update',
+    'token.pair': 'Pair',
+    'token.noData': 'Data not available',
+    
     // Common
     'common.close': 'Close',
     'common.cancel': 'Cancel',
@@ -325,6 +386,21 @@ const translations = {
     'common.refresh': 'Refresh',
     'common.yes': 'Yes',
     'common.no': 'No',
+    
+    // Loading Progress
+    'loading.title': 'Getting everything ready',
+    'loading.authenticating': 'Authenticating user',
+    'loading.fetchingExchanges': 'Fetching connected exchanges',
+    'loading.loadingBalances': 'Loading balances',
+    'loading.calculatingPortfolio': 'Calculating portfolio',
+    'loading.almostReady': 'Almost ready!',
+    
+    // Maintenance Screen
+    'maintenance.title': 'Under Maintenance',
+    'maintenance.message': 'Our servers are temporarily unavailable. We are working to restore service as quickly as possible.',
+    'maintenance.subMessage': 'We apologize for the inconvenience. Please try again in a few moments.',
+    'maintenance.retry': 'Try Again',
+    'maintenance.contact': 'If the problem persists, please contact support.',
   }
 }
 

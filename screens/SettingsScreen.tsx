@@ -1,4 +1,4 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Alert, Modal, Pressable } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Alert, Modal, Pressable, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect } from "react"
 import * as Clipboard from 'expo-clipboard'
@@ -16,7 +16,8 @@ export function SettingsScreen() {
     biometricType, 
     isBiometricEnabled,
     enableBiometric,
-    disableBiometric 
+    disableBiometric,
+    logout
   } = useAuth()
   
   // Estados dos modais
@@ -293,7 +294,7 @@ export function SettingsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginTop: 12 }]}
+            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginTop: 12, marginBottom: 12 }]}
             onPress={() => setPrivacyModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
@@ -311,6 +312,75 @@ export function SettingsScreen() {
               <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.privacyPolicy')}</Text>
             </View>
             <Text style={[styles.menuItemArrow, { color: colors.textSecondary }]}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Seção: Conta */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>CONTA</Text>
+          
+          <TouchableOpacity 
+            style={[styles.logoutButton, { backgroundColor: '#ef4444' }]}
+            onPress={async () => {
+              console.log('🔘 Botão de logout clicado')
+              
+              // Para web, usa confirm nativo
+              if (Platform.OS === 'web') {
+                const confirmed = window.confirm(t('profile.logoutConfirm'))
+                console.log('🔍 Confirmação web:', confirmed)
+                
+                if (confirmed) {
+                  try {
+                    console.log('✅ Logout confirmado, chamando logout()...')
+                    await logout()
+                    console.log('✅ Logout() retornou com sucesso')
+                  } catch (error) {
+                    console.error('❌ Erro ao fazer logout:', error)
+                    window.alert('Não foi possível realizar o logout')
+                  }
+                } else {
+                  console.log('❌ Logout cancelado')
+                }
+              } else {
+                // Para mobile, usa Alert
+                Alert.alert(
+                  t('profile.logout'),
+                  t('profile.logoutConfirm'),
+                  [
+                    { 
+                      text: t('common.cancel'), 
+                      style: 'cancel',
+                      onPress: () => console.log('❌ Logout cancelado')
+                    },
+                    {
+                      text: t('common.confirm'),
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          console.log('✅ Logout confirmado, chamando logout()...')
+                          await logout()
+                          console.log('✅ Logout() retornou com sucesso')
+                        } catch (error) {
+                          console.error('❌ Erro ao fazer logout:', error)
+                          Alert.alert(t('common.error'), 'Não foi possível realizar o logout')
+                        }
+                      }
+                    }
+                  ]
+                )
+              }
+            }}
+          >
+            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                stroke="#ffffff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+            <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -770,6 +840,20 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#ef4444",
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
   },
 })
 

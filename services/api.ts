@@ -3,8 +3,8 @@ import { config } from '@/lib/config';
 
 const API_BASE_URL = config.apiBaseUrl;
 
-// Timeout padrão para requisições (30 segundos para cold start do Render)
-const DEFAULT_TIMEOUT = 30000;
+// Timeout padrão para requisições (60 segundos para cold start do Render)
+const DEFAULT_TIMEOUT = 60000;
 const MAX_RETRIES = 2;
 
 // Helper para adicionar timeout às requisições com retry
@@ -76,7 +76,7 @@ export const apiService = {
         {
           cache: forceRefresh ? 'no-store' : 'default'
         },
-        20000 // 20s timeout para balances completos
+        120000 // 120s (2 minutos) timeout para balances completos - pode demorar quando force_refresh=true
       );
       
       if (!response.ok) {
@@ -107,7 +107,7 @@ export const apiService = {
         {
           cache: forceRefresh ? 'no-store' : 'default'
         },
-        10000 // 10s timeout para summary (mais rápido)
+        DEFAULT_TIMEOUT // 60s timeout (aumentado para cold start)
       );
       
       if (!response.ok) {
@@ -128,15 +128,20 @@ export const apiService = {
    * Chamado quando usuário expande o card da exchange
    * @param userId ID do usuário
    * @param exchangeId MongoDB _id da exchange
-   * @param includeChanges Se true, inclui variações de preço
+   * @param includeVariations Se true, inclui variações de preço
    * @returns Promise com detalhes completos da exchange
    */
-  async getExchangeDetails(userId: string, exchangeId: string, includeChanges: boolean = false): Promise<any> {
+  async getExchangeDetails(userId: string, exchangeId: string, includeVariations: boolean = false): Promise<any> {
     try {
       const timestamp = Date.now();
-      const changesParam = includeChanges ? '&include_changes=true' : '';
+      const variationsParam = includeVariations ? '&include_variations=true' : '';
+      const url = `${API_BASE_URL}/balances/exchange/${exchangeId}?user_id=${userId}${variationsParam}&_t=${timestamp}`;
+      
+      console.log(`🌐 API Call: ${url}`);
+      console.log(`📊 Include variations: ${includeVariations}, param: ${variationsParam}`);
+      
       const response = await fetchWithTimeout(
-        `${API_BASE_URL}/balances/exchange/${exchangeId}?user_id=${userId}${changesParam}&_t=${timestamp}`,
+        url,
         {
           cache: 'default'
         },
@@ -149,6 +154,23 @@ export const apiService = {
       
       const data = await response.json();
       console.log(`📊 Exchange details loaded: ${data.name} - ${Object.keys(data.tokens || {}).length} tokens`);
+      
+      // Debug: verificar se as variações estão vindo
+      if (data.tokens) {
+        const firstToken = Object.entries(data.tokens)[0];
+        if (firstToken) {
+          const [symbol, tokenData]: [string, any] = firstToken;
+          console.log(`📊 First token (${symbol}) data sample:`, {
+            has_change_1h: !!tokenData.change_1h,
+            has_change_4h: !!tokenData.change_4h,
+            has_change_24h: !!tokenData.change_24h,
+            change_1h: tokenData.change_1h,
+            change_4h: tokenData.change_4h,
+            change_24h: tokenData.change_24h
+          });
+        }
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching exchange details:', error);
@@ -299,6 +321,50 @@ export const apiService = {
     } catch (error) {
       console.error('❌ Error fetching portfolio evolution:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Busca informações de um token em uma exchange específica
+   * @param userId ID do usuário
+   * @param exchangeId ID da exchange (MongoDB _id)
+   * @param token Símbolo do token (ex: BTC, ETH, PEPE)
+   * @returns Promise com os dados do token ou erro se não encontrado
+   */
+  async searchToken(userId: string, exchangeId: string, token: string): Promise<any> {
+    try {
+      const upperToken = token.toUpperCase();
+      const url = `${API_BASE_URL}/tokens/search?user_id=${userId}&exchange_id=${exchangeId}&token=${upperToken}`;
+      console.log('🔍 Searching token:', upperToken, 'at exchange:', exchangeId);
+      
+      const response = await fetchWithTimeout(url, {
+        method: 'GET',
+        cache: 'no-store'
+      }, 10000);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        console.warn(`⚠️ Token not found: ${response.status}`, errorData);
+        return {
+          success: false,
+          message: errorData.message || 'Token não encontrado nesta exchange',
+          error: errorData.error || 'NOT_FOUND'
+        };
+      }
+      
+      const data = await response.json();
+      console.log('✅ Token found:', data);
+      return {
+        success: true,
+        ...data
+      };
+    } catch (error: any) {
+      console.error('❌ Error searching token:', error);
+      return {
+        success: false,
+        message: 'Erro ao buscar token. Tente novamente.',
+        error: error.message
+      };
     }
   }
 };

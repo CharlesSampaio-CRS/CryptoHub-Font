@@ -66,6 +66,11 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
+  // Debug: verificar quando isLoading muda
+  React.useEffect(() => {
+    console.log('🔍 LoginScreen - isLoading:', isLoading)
+  }, [isLoading])
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos')
@@ -73,8 +78,11 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     }
 
     try {
+      console.log('🔄 Iniciando login...')
       await login(email, password)
+      console.log('✅ Login concluído')
     } catch (error: any) {
+      console.error('❌ Erro no login:', error)
       Alert.alert('Erro', error.message || 'Falha ao fazer login')
     }
   }

@@ -12,5 +12,5 @@ export const config = {
   /**
    * URL base da API
    */
-  apiBaseUrl: 'https://automatic-ncpu.onrender.com/api/v1',
+  apiBaseUrl: 'http://localhost:5000/api/v1',
 } as const;

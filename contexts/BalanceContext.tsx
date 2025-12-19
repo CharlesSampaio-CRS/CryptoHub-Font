@@ -29,6 +29,8 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false, useSummary = false) => {
     try {
+      console.log('🔄 fetchBalances chamado:', { forceRefresh, emitEvent, silent, useSummary })
+      
       // Controle inteligente de loading states
       if (!silent && !data) {
         setLoading(true)
@@ -37,20 +39,21 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       }
       setError(null)
       
-      console.log(`📊 BalanceContext: Buscando ${useSummary ? 'summary' : 'balances'} (forceRefresh=${forceRefresh}, silent=${silent})`)
-      
       // Usa summary (rápido) ou balances completo (com tokens)
       const response = useSummary 
         ? await apiService.getBalancesSummary(config.userId, forceRefresh)
         : await apiService.getBalances(config.userId, forceRefresh)
       
-      console.log(`✅ BalanceContext: Recebido ${response.exchanges?.length || 0} exchanges`)
-      if (response.exchanges) {
-        response.exchanges.forEach(ex => {
-          const tokenCount = Object.keys(ex.tokens || {}).length
-          console.log(`   - ${ex.name}: ${ex.success ? '✓' : '✗'} ${tokenCount > 0 ? `(${tokenCount} tokens)` : '(summary only)'}`)
-        })
-      }
+      console.log('✅ Dados recebidos:', {
+        exchanges: response.exchanges?.length || 0,
+        totalExchanges: response.summary?.exchanges_count,
+        timestamp: response.timestamp,
+        firstExchange: response.exchanges?.[0] ? {
+          name: response.exchanges[0].name,
+          tokensCount: Object.keys(response.exchanges[0].tokens || {}).length,
+          tokens: Object.keys(response.exchanges[0].tokens || {}).slice(0, 3)
+        } : null
+      })
       
       setData(response)
       
@@ -71,7 +74,8 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   }, [data])
 
   const refresh = useCallback(async () => {
-    await fetchBalances(true, true, false)
+    console.log('🔄 BalanceContext.refresh: Carregando dados COMPLETOS (com tokens) usando CACHE')
+    await fetchBalances(false, true, false, false) // forceRefresh=FALSE (usa cache), emitEvent=true, silent=false, useSummary=FALSE
   }, [fetchBalances])
 
   // Função específica para atualizar quando exchanges mudam
@@ -82,16 +86,17 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     console.log('✅ refreshOnExchangeChange: Atualização concluída')
   }, [fetchBalances])
 
-  // Fetch inicial usando SUMMARY (rápido ~1-2s)
+  // Fetch inicial COMPLETO (balances + tokens) - USA CACHE do backend se disponível
   useEffect(() => {
-    fetchBalances(false, false, false, true) // forceRefresh=false, emitEvent=false, silent=false, useSummary=true
+    console.log('📊 BalanceContext: Carregamento inicial COMPLETO (com todos os tokens)')
+    fetchBalances(false, false, false, false) // forceRefresh=FALSE (usa cache), emitEvent=false, silent=false, useSummary=FALSE
   }, [])
 
-  // Auto-refresh a cada 5 minutos de forma silenciosa com cache: false
+  // Auto-refresh a cada 5 minutos de forma silenciosa com dados COMPLETOS
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refresh: Atualizando balances (5 minutos)')
-      fetchBalances(true, false, true) // forceRefresh=true, silent=true
+      console.log('🔄 Auto-refresh: Atualizando balances COMPLETOS (5 minutos)')
+      fetchBalances(true, false, true, false) // forceRefresh=true, silent=true, useSummary=FALSE
     }, 5 * 60 * 1000) // 5 minutos
 
     return () => clearInterval(interval)
@@ -100,7 +105,8 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   // Listener para eventos externos (como exchanges-manager)
   useEffect(() => {
     const handleBalancesUpdate = () => {
-      setTimeout(() => fetchBalances(true, false, true), 100)
+      console.log('🔔 BalanceContext: Evento externo - atualizando COMPLETO')
+      setTimeout(() => fetchBalances(true, false, true, false), 100) // useSummary=FALSE
     }
     
     // Adiciona listener ao Set
@@ -115,8 +121,7 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   // 📊 Lazy load: Busca detalhes de UMA exchange específica
   const fetchExchangeDetails = useCallback(async (exchangeId: string) => {
     try {
-      console.log(`📊 Fetching details for exchange: ${exchangeId}`)
-      const details = await apiService.getExchangeDetails(config.userId, exchangeId, false)
+      const details = await apiService.getExchangeDetails(config.userId, exchangeId, true)
       return details
     } catch (err) {
       console.error('Error fetching exchange details:', err)

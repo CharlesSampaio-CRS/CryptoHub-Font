@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableWithoutFeedback } from "react-native"
-import { memo, useState } from "react"
+import { memo, useState, useEffect } from "react"
 import { LineChart } from "react-native-chart-kit"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -12,9 +12,16 @@ const screenWidth = Dimensions.get("window").width
 export const QuickChart = memo(function QuickChart() {
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
-  const { evolutionData, loading, error } = usePortfolio()
+  const { evolutionData, loading, error, refreshEvolution } = usePortfolio()
   const { valuesHidden } = usePrivacy()
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null)
+  const [selectedPeriod, setSelectedPeriod] = useState<7 | 15 | 30>(7) // Período padrão: 7 dias
+
+  // Busca novos dados quando o período mudar
+  useEffect(() => {
+    console.log(`📊 QuickChart: Período alterado para ${selectedPeriod} dias, buscando dados...`)
+    refreshEvolution(selectedPeriod)
+  }, [selectedPeriod, refreshEvolution])
 
   // Processa dados para o gráfico
   const getChartData = () => {
@@ -27,19 +34,21 @@ export const QuickChart = memo(function QuickChart() {
 
     const { timestamps, values_usd } = evolutionData.evolution
     
-    // Pega últimos 7 dias
-    const last7Timestamps = timestamps.slice(-7)
-    const last7Values = values_usd.slice(-7)
+    // Backend já retorna os dados do período correto, não precisa fazer slice
     
     // Formata labels para mobile - mostra apenas alguns para evitar sobreposição
-    const labels = last7Timestamps.map((ts, index) => {
+    const labels = timestamps.map((ts: string | number, index: number) => {
       const date = new Date(ts)
       const day = date.getDate()
       const month = date.getMonth() + 1
       
-      // No mobile, mostra apenas primeiro, meio e último dia
+      // Define quantos labels mostrar baseado no período
+      const labelsToShow = selectedPeriod === 7 ? 4 : selectedPeriod === 15 ? 5 : 6
+      const interval = Math.floor(timestamps.length / (labelsToShow - 1))
+      
+      // No mobile, mostra labels espaçados
       if (screenWidth < 400) {
-        if (index === 0 || index === Math.floor(last7Timestamps.length / 2) || index === last7Timestamps.length - 1) {
+        if (index === 0 || index === timestamps.length - 1 || index % interval === 0) {
           return `${day}/${month}`
         }
         return '' // Label vazio para os demais
@@ -53,7 +62,7 @@ export const QuickChart = memo(function QuickChart() {
       labels,
       datasets: [
         {
-          data: last7Values,
+          data: values_usd,
           color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
           strokeWidth: 3,
         },
@@ -70,8 +79,33 @@ export const QuickChart = memo(function QuickChart() {
   return (
     <TouchableWithoutFeedback onPress={() => setSelectedPointIndex(null)}>
       <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <View style={styles.titleContainer}>
+        <View style={styles.headerContainer}>
           <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+          
+          {/* Botões de período */}
+          <View style={styles.periodButtonsContainer}>
+            {[7, 15, 30].map((period) => (
+              <TouchableWithoutFeedback 
+                key={period}
+                onPress={() => setSelectedPeriod(period as 7 | 15 | 30)}
+              >
+                <View style={[
+                  styles.periodButton,
+                  { 
+                    backgroundColor: selectedPeriod === period ? colors.primary : 'transparent',
+                    borderColor: selectedPeriod === period ? colors.primary : colors.border
+                  }
+                ]}>
+                  <Text style={[
+                    styles.periodButtonText,
+                    { color: selectedPeriod === period ? '#fff' : colors.textSecondary }
+                  ]}>
+                    {period}d
+                  </Text>
+                </View>
+              </TouchableWithoutFeedback>
+            ))}
+          </View>
         </View>
 
         {error ? (
@@ -207,11 +241,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
   },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   titleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  periodButtonsContainer: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  periodButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  periodButtonText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   title: {
     fontSize: 15,

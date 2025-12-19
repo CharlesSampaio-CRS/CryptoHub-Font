@@ -2,6 +2,9 @@ export interface Token {
   amount: string;
   price_usd: string;
   value_usd: string;
+  change_1h?: string;
+  change_4h?: string;
+  change_24h?: string;
 }
 
 export interface Exchange {
@@ -10,6 +13,7 @@ export interface Exchange {
   success: boolean;
   tokens: Record<string, Token>;
   total_usd: string;
+  token_count?: number; // Número de tokens (disponível no summary)
 }
 
 export interface BalanceResponse {
