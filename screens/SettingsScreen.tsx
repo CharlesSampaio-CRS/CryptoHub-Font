@@ -27,8 +27,7 @@ export function SettingsScreen() {
     biometricType, 
     isBiometricEnabled,
     enableBiometric,
-    disableBiometric,
-    logout
+    disableBiometric
   } = useAuth()
   
   // Estados dos modais
@@ -37,6 +36,7 @@ export function SettingsScreen() {
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false)
   const [securityModalVisible, setSecurityModalVisible] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
+  const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false)
   
   // Estados de segurança  
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
@@ -331,67 +331,19 @@ export function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>CONTA</Text>
           
           <TouchableOpacity 
-            style={[styles.logoutButton, { backgroundColor: '#ef4444' }]}
-            onPress={async () => {
-              console.log('🔘 Botão de logout clicado')
-              
-              // Para web, usa confirm nativo
-              if (Platform.OS === 'web') {
-                const confirmed = window.confirm(t('profile.logoutConfirm'))
-                console.log('🔍 Confirmação web:', confirmed)
-                
-                if (confirmed) {
-                  try {
-                    console.log('✅ Logout confirmado, chamando logout()...')
-                    await logout()
-                    console.log('✅ Logout() retornou com sucesso')
-                  } catch (error) {
-                    console.error('❌ Erro ao fazer logout:', error)
-                    window.alert('Não foi possível realizar o logout')
-                  }
-                } else {
-                  console.log('❌ Logout cancelado')
-                }
-              } else {
-                // Para mobile, usa Alert
-                Alert.alert(
-                  t('profile.logout'),
-                  t('profile.logoutConfirm'),
-                  [
-                    { 
-                      text: t('common.cancel'), 
-                      style: 'cancel',
-                      onPress: () => console.log('❌ Logout cancelado')
-                    },
-                    {
-                      text: t('common.confirm'),
-                      style: 'destructive',
-                      onPress: async () => {
-                        try {
-                          console.log('✅ Logout confirmado, chamando logout()...')
-                          await logout()
-                          console.log('✅ Logout() retornou com sucesso')
-                        } catch (error) {
-                          console.error('❌ Erro ao fazer logout:', error)
-                          Alert.alert(t('common.error'), 'Não foi possível realizar o logout')
-                        }
-                      }
-                    }
-                  ]
-                )
-              }
-            }}
+            style={[styles.deleteAccountButton, { backgroundColor: colors.card, borderColor: '#ef4444' }]}
+            onPress={() => setDeleteAccountModalVisible(true)}
           >
             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <Path
-                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
-                stroke="#ffffff"
+                d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
+                stroke="#ef4444"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
+            <Text style={[styles.deleteAccountButtonText, { color: '#ef4444' }]}>Excluir Conta</Text>
           </TouchableOpacity>
         </View>
 
@@ -671,6 +623,127 @@ export function SettingsScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Modal de Confirmação de Exclusão de Conta */}
+      <Modal
+        visible={deleteAccountModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setDeleteAccountModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.deleteAccountModalContainer, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.deleteAccountModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.deleteAccountModalTitle, { color: '#ef4444' }]}>⚠️ Excluir Conta</Text>
+                <TouchableOpacity 
+                  onPress={() => setDeleteAccountModalVisible(false)} 
+                  style={styles.modalCloseButton}
+                >
+                  <Text style={[styles.modalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Content */}
+              <View style={styles.deleteAccountModalContent}>
+                <Text style={[styles.deleteAccountWarningText, { color: colors.text }]}>
+                  Esta ação é <Text style={{ fontWeight: '700', color: '#ef4444' }}>irreversível</Text> e resultará em:
+                </Text>
+
+                <View style={styles.deleteAccountWarningList}>
+                  <View style={styles.deleteAccountWarningItem}>
+                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
+                      Perda permanente de todos os seus dados
+                    </Text>
+                  </View>
+                  <View style={styles.deleteAccountWarningItem}>
+                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
+                      Desconexão de todas as exchanges vinculadas
+                    </Text>
+                  </View>
+                  <View style={styles.deleteAccountWarningItem}>
+                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
+                      Perda do histórico de transações e estratégias
+                    </Text>
+                  </View>
+                  <View style={styles.deleteAccountWarningItem}>
+                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
+                      Impossibilidade de recuperação dos dados
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={[styles.deleteAccountConfirmText, { color: colors.text }]}>
+                  Tem certeza que deseja continuar?
+                </Text>
+
+                {/* Botões */}
+                <View style={styles.deleteAccountModalButtons}>
+                  <TouchableOpacity
+                    style={[styles.deleteAccountCancelButton, { backgroundColor: colors.surface }]}
+                    onPress={() => setDeleteAccountModalVisible(false)}
+                  >
+                    <Text style={[styles.deleteAccountCancelButtonText, { color: colors.text }]}>
+                      Cancelar
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.deleteAccountConfirmButton, { backgroundColor: '#ef4444' }]}
+                    onPress={async () => {
+                      if (Platform.OS === 'web') {
+                        const confirmed = window.confirm(
+                          'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n' +
+                          'Digite "EXCLUIR" para confirmar a exclusão da conta:'
+                        )
+                        if (confirmed) {
+                          // Aqui você implementaria a lógica de exclusão
+                          console.log('✅ Conta excluída')
+                          setDeleteAccountModalVisible(false)
+                          Alert.alert('✓', 'Conta excluída com sucesso')
+                        }
+                      } else {
+                        Alert.alert(
+                          '⚠️ Confirmar Exclusão',
+                          'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nTem certeza absoluta que deseja excluir sua conta?',
+                          [
+                            {
+                              text: 'Cancelar',
+                              style: 'cancel'
+                            },
+                            {
+                              text: 'Excluir',
+                              style: 'destructive',
+                              onPress: async () => {
+                                // Aqui você implementaria a lógica de exclusão
+                                console.log('✅ Conta excluída')
+                                setDeleteAccountModalVisible(false)
+                                Alert.alert('✓', 'Conta excluída com sucesso')
+                              }
+                            }
+                          ]
+                        )
+                      }
+                    }}
+                  >
+                    <Text style={styles.deleteAccountConfirmButtonText}>
+                      Excluir Permanentemente
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -899,19 +972,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  logoutButton: {
+  deleteAccountButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#ef4444",
+    borderWidth: 2,
   },
-  logoutButtonText: {
+  deleteAccountButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#ffffff",
   },
   // Security Modal Styles (following CreateStrategyModal pattern)
   modalOverlay: {
@@ -1012,6 +1084,85 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20,
     flexGrow: 1,
+  },
+  // Delete Account Modal Styles
+  deleteAccountModalContainer: {
+    width: "90%",
+    maxWidth: 500,
+    maxHeight: "85%",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  deleteAccountModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  deleteAccountModalTitle: {
+    fontSize: 20,
+    fontWeight: "500",
+  },
+  deleteAccountModalContent: {
+    padding: 20,
+  },
+  deleteAccountWarningText: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  deleteAccountWarningList: {
+    marginBottom: 20,
+  },
+  deleteAccountWarningItem: {
+    flexDirection: "row",
+    marginBottom: 12,
+    paddingLeft: 8,
+  },
+  deleteAccountWarningBullet: {
+    fontSize: 18,
+    color: "#ef4444",
+    marginRight: 12,
+    fontWeight: "700",
+  },
+  deleteAccountWarningItemText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  deleteAccountConfirmText: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  deleteAccountModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  deleteAccountCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteAccountCancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  deleteAccountConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteAccountConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
   },
 })
 

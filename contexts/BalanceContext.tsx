@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Platform } from 'react-native'
 import { apiService } from '@/services/api'
 import { BalanceResponse } from '@/types/api'
@@ -26,6 +26,7 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const isRefreshingRef = useRef(false) // Ref para controle imediato
 
   const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false, useSummary = false) => {
     try {
@@ -33,9 +34,12 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       
       // Controle inteligente de loading states
       if (!silent && !data) {
+        console.log('📊 setLoading(true) - primeira carga')
         setLoading(true)
       } else if (!silent && forceRefresh) {
+        console.log('🔄 setRefreshing(true) - refresh manual')
         setRefreshing(true)
+        isRefreshingRef.current = true // Marca ref imediatamente
       }
       setError(null)
       
@@ -68,14 +72,25 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       setError(err instanceof Error ? err.message : 'Failed to fetch balances')
       console.error('Error fetching balances:', err)
     } finally {
+      // Aguarda um pouco para garantir que a UI atualize antes de parar a animação
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      console.log('✅ fetchBalances finally: setLoading(false) e setRefreshing(false)')
       setLoading(false)
       setRefreshing(false)
+      isRefreshingRef.current = false // Libera ref
     }
   }, [data])
 
   const refresh = useCallback(async () => {
-    console.log('🔄 BalanceContext.refresh: Carregando dados COMPLETOS (com tokens) usando CACHE')
-    await fetchBalances(false, true, false, false) // forceRefresh=FALSE (usa cache), emitEvent=true, silent=false, useSummary=FALSE
+    // Previne múltiplas chamadas simultâneas usando ref (verificação síncrona)
+    if (isRefreshingRef.current) {
+      console.log('⏭️ BalanceContext.refresh: Já está atualizando (ref check), ignorando chamada duplicada')
+      return
+    }
+    
+    console.log('🔄 BalanceContext.refresh: Forçando atualização COMPLETA (sem cache)')
+    await fetchBalances(true, true, false, false) // forceRefresh=TRUE (sem cache), emitEvent=true, silent=false, useSummary=FALSE
   }, [fetchBalances])
 
   // Função específica para atualizar quando exchanges mudam
@@ -86,11 +101,11 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     console.log('✅ refreshOnExchangeChange: Atualização concluída')
   }, [fetchBalances])
 
-  // Fetch inicial COMPLETO (balances + tokens) - USA CACHE do backend se disponível
-  useEffect(() => {
-    console.log('📊 BalanceContext: Carregamento inicial COMPLETO (com todos os tokens)')
-    fetchBalances(false, false, false, false) // forceRefresh=FALSE (usa cache), emitEvent=false, silent=false, useSummary=FALSE
-  }, [])
+  // Fetch inicial DESABILITADO - será feito pelo DataLoader no App.tsx após login
+  // useEffect(() => {
+  //   console.log('📊 BalanceContext: Carregamento inicial COMPLETO (com todos os tokens)')
+  //   fetchBalances(false, false, false, false) // forceRefresh=FALSE (usa cache), emitEvent=false, silent=false, useSummary=FALSE
+  // }, [])
 
   // Auto-refresh a cada 5 minutos de forma silenciosa com dados COMPLETOS
   useEffect(() => {

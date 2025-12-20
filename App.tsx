@@ -37,10 +37,15 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
     if (!hasRefreshedRef.current) {
       console.log('🔄 DataLoader: Forçando refresh após login...')
       hasRefreshedRef.current = true
+      
+      const startTime = Date.now()
       Promise.all([
         refreshBalance(),
         refreshEvolution()
-      ]).catch(err => {
+      ]).then(() => {
+        const duration = Date.now() - startTime
+        console.log(`✅ DataLoader: Dados carregados em ${duration}ms`)
+      }).catch(err => {
         console.error('❌ Erro ao fazer refresh inicial:', err)
       })
     }
@@ -93,15 +98,17 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
     }
   }, [balanceLoading, portfolioLoading, balanceData, portfolioData, balanceError, portfolioError, onDataReady, isCriticalError, showMaintenance])
 
-  // Timeout de segurança: se demorar mais de 30 segundos, finaliza o loading
+  // Timeout de segurança: se demorar mais de 10 segundos, finaliza o loading
   useEffect(() => {
+    console.log('⏱️ DataLoader: Timeout de segurança iniciado (10 segundos)')
     const timeout = setTimeout(() => {
       if (!hasCalledRef.current) {
-        console.log('⏱️ DataLoader: Timeout de 30s atingido, finalizando loading de segurança...')
+        console.log('⏱️ DataLoader: Timeout de 10s atingido, finalizando loading de segurança...')
+        console.log('⚠️ Dados podem não ter carregado completamente')
         hasCalledRef.current = true
         onDataReady()
       }
-    }, 30000) // 30 segundos
+    }, 10000) // 10 segundos
 
     return () => clearTimeout(timeout)
   }, [onDataReady])

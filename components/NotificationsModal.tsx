@@ -66,7 +66,7 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType="slide"
       transparent={true}
       onRequestClose={onClose}
     >

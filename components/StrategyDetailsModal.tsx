@@ -7,7 +7,9 @@ import {
   TouchableOpacity, 
   ScrollView, 
   ActivityIndicator,
-  Pressable 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native'
 import Svg, { Path, Circle } from 'react-native-svg'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -324,45 +326,31 @@ export function StrategyDetailsModal({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      transparent={true}
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable 
-          style={[styles.modalContainer, { backgroundColor: colors.background }]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View>
-              <Text style={[styles.title, { color: colors.text }]}>Detalhes da Estratégia</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                Informações completas
+      <KeyboardAvoidingView 
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.title, { color: colors.text }]}>
+                Detalhes da Estratégia
               </Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={[styles.closeIcon, { color: colors.text }]}>✕</Text>
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              style={[styles.closeButton, { backgroundColor: colors.surface }]}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M18 6L6 18M6 6l12 12"
-                  stroke={colors.text}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </Svg>
-            </TouchableOpacity>
-          </View>
 
           {/* Content */}
           {renderContent()}
 
           {/* Actions Footer */}
           {!loading && !error && strategy && (
-            <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+            <View style={[styles.footer, { borderTopColor: colors.border }]}>
               <TouchableOpacity
                 style={[styles.footerButton, { backgroundColor: strategy.is_active ? '#ef444420' : '#10b98120' }]}
                 onPress={() => {
@@ -452,8 +440,9 @@ export function StrategyDetailsModal({
               )}
             </View>
           )}
-        </Pressable>
-      </Pressable>
+        </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -462,12 +451,20 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  safeArea: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
   },
   modalContainer: {
-    maxHeight: '90%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 20,
+    width: '90%',
+    maxHeight: '85%',
+    height: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.25,
@@ -478,26 +475,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderBottomWidth: 0.5,
+    padding: 20,
+    borderBottomWidth: 1,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '300',
-    letterSpacing: -0.2,
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
-    fontWeight: '300',
+    fontSize: 20,
+    fontWeight: '500',
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  closeIcon: {
+    fontSize: 24,
+    fontWeight: '300',
   },
   scrollView: {
     flex: 1,

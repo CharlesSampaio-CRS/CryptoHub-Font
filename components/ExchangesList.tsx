@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native"
 import { useState, useCallback, useMemo, memo } from "react"
+import { LinearGradient } from "expo-linear-gradient"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
@@ -88,6 +89,11 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
     tokenItem: { borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : colors.border }, // Borda mais suave no dark mode
     logoContainer: { backgroundColor: '#ffffff', borderColor: colors.border }, // Fundo branco em ambos os modos para os ícones
   }), [colors, isDark])
+
+  // Cores do gradiente para os cards - mesmo do gráfico (suave)
+  const cardGradientColors: readonly [string, string, ...string[]] = isDark 
+    ? ['rgba(30, 58, 95, 0.4)', 'rgba(45, 90, 138, 0.5)', 'rgba(30, 58, 95, 0.4)']  // Dark mode - 40-50% opacidade
+    : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
 
   if (loading) {
     return (
@@ -181,42 +187,54 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
               <TouchableOpacity
-                style={[styles.card, themedStyles.card]}
+                style={styles.cardWrapper}
                 activeOpacity={0.7}
                 onPress={() => toggleExpandExchange(exchange.exchange_id)}
               >
-                <View style={styles.cardContent}>
-                  <View style={styles.leftSection}>
-                    <View style={[styles.logoContainer, themedStyles.logoContainer]}>
-                      {logoSource ? (
-                        <Image 
-                          source={logoSource} 
-                          style={styles.logoImage}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <Text style={styles.logoFallback}>💰</Text>
-                      )}
+                <LinearGradient
+                  colors={cardGradientColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.card, { borderColor: colors.border }]}
+                >
+                  <View style={styles.cardContent}>
+                    <View style={styles.leftSection}>
+                      <View style={[styles.logoContainer, themedStyles.logoContainer]}>
+                        {logoSource ? (
+                          <Image 
+                            source={logoSource} 
+                            style={styles.logoImage}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={styles.logoFallback}>💰</Text>
+                        )}
+                      </View>
+                      <View>
+                        <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
+                        <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>
+                          {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
+                        </Text>
+                      </View>
                     </View>
-                    <View>
-                      <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
-                      <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>
-                        {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
-                      </Text>
-                    </View>
-                  </View>
 
-                  <View style={styles.rightSection}>
-                    <Text style={[styles.balance, { color: colors.text }]}>
-                      {hideValue(apiService.formatUSD(balance))}
-                    </Text>
-                    <Text style={[styles.expandIcon, { color: colors.textSecondary }]}>{isExpanded ? '▲' : '▼'}</Text>
+                    <View style={styles.rightSection}>
+                      <Text style={[styles.balance, { color: colors.text }]}>
+                        {hideValue(apiService.formatUSD(balance))}
+                      </Text>
+                      <Text style={[styles.expandIcon, { color: colors.textSecondary }]}>{isExpanded ? '▲' : '▼'}</Text>
+                    </View>
                   </View>
-                </View>
+                </LinearGradient>
               </TouchableOpacity>
 
               {isExpanded && (
-                <View style={[styles.tokensContainer, themedStyles.tokensContainer]}>
+                <LinearGradient
+                  colors={cardGradientColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.tokensContainer, { borderColor: colors.border }]}
+                >
                   <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>{t('exchanges.tokensAvailable')}:</Text>
                   {tokens.length === 0 ? (
                     <Text style={[styles.noTokensText, { color: colors.textSecondary }]}>{t('home.noData')}</Text>
@@ -257,7 +275,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                       )
                     })
                   )}
-                </View>
+                </LinearGradient>
               )}
             </View>
           )
@@ -348,6 +366,9 @@ const styles = StyleSheet.create({
   list: {
     gap: 12,
   },
+  cardWrapper: {
+    borderRadius: 16,
+  },
   card: {
     borderRadius: 16,
     padding: 16,
@@ -385,7 +406,7 @@ const styles = StyleSheet.create({
   },
   exchangeName: {
     fontSize: 14,
-    fontWeight: "400",
+    fontWeight: "600",
     marginBottom: 2,
   },
   assetsCount: {
@@ -396,7 +417,7 @@ const styles = StyleSheet.create({
   },
   balance: {
     fontSize: 14,
-    fontWeight: "400",
+    fontWeight: "600",
     marginBottom: 2,
   },
   change: {

@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableWithoutFeedback } from "react-native"
 import { memo, useState, useEffect } from "react"
 import { LineChart } from "react-native-chart-kit"
+import { LinearGradient } from "expo-linear-gradient"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
@@ -72,15 +73,26 @@ export const QuickChart = memo(function QuickChart() {
 
   const chartData = getChartData()
   
+  // Cores do gradiente baseado no tema - mais suaves
+  const gradientColors: readonly [string, string, ...string[]] = isDark 
+    ? ['rgba(30, 58, 95, 0.4)', 'rgba(45, 90, 138, 0.5)', 'rgba(30, 58, 95, 0.4)']  // Dark mode - 40-50% opacidade
+    : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
+  
   if (loading) {
     return <SkeletonChart />
   }
   
   return (
     <TouchableWithoutFeedback onPress={() => setSelectedPointIndex(null)}>
-      <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <View style={styles.headerContainer}>
-          <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+      <View style={styles.containerWrapper}>
+        <LinearGradient
+          colors={gradientColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.container, { borderColor: colors.cardBorder }]}
+        >
+          <View style={styles.headerContainer}>
+            <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
           
           {/* Botões de período */}
           <View style={styles.periodButtonsContainer}>
@@ -98,7 +110,7 @@ export const QuickChart = memo(function QuickChart() {
                 ]}>
                   <Text style={[
                     styles.periodButtonText,
-                    { color: selectedPeriod === period ? '#fff' : colors.textSecondary }
+                    { color: selectedPeriod === period ? '#ffffff' : colors.textSecondary }
                   ]}>
                     {period}d
                   </Text>
@@ -120,28 +132,28 @@ export const QuickChart = memo(function QuickChart() {
           width={screenWidth - 64}
           height={240}
           chartConfig={{
-            backgroundColor: isDark ? "#1e293b" : "#ffffff",
-            backgroundGradientFrom: isDark ? "#1e293b" : "#ffffff",
-            backgroundGradientTo: isDark ? "#1e293b" : "#ffffff",
+            backgroundColor: "transparent",
+            backgroundGradientFrom: "transparent",
+            backgroundGradientTo: "transparent",
             decimalPlaces: 0,
             color: (opacity = 1) => isDark 
-              ? `rgba(226, 232, 240, ${opacity})` // Slate 200 - cinza bem clarinho
-              : `rgba(59, 130, 246, ${opacity})`, // Blue 500
+              ? `rgba(96, 165, 250, ${opacity})` // Azul claro vibrante no dark mode
+              : `rgba(37, 99, 235, ${opacity})`, // Azul mais escuro no light mode
             labelColor: (opacity = 1) => isDark
-              ? `rgba(203, 213, 225, ${opacity})` // Slate 300
-              : `rgba(100, 116, 139, ${opacity})`, // Slate 500
+              ? `rgba(203, 213, 225, ${opacity * 0.9})` // Labels claros no dark
+              : `rgba(71, 85, 105, ${opacity * 0.9})`, // Labels escuros no light
             style: {
               borderRadius: 16,
             },
             propsForDots: {
               r: "5",
               strokeWidth: "2",
-              stroke: isDark ? "#ffffff" : "#3b82f6",
-              fill: isDark ? "#ffffff" : "#3b82f6",
+              stroke: isDark ? "#60a5fa" : "#2563eb",
+              fill: isDark ? "#60a5fa" : "#2563eb",
             },
             propsForBackgroundLines: {
               strokeDasharray: "",
-              stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "#e3f2fd",
+              stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "rgba(203, 213, 225, 0.4)",
               strokeWidth: 1,
             },
             propsForLabels: {
@@ -229,16 +241,19 @@ export const QuickChart = memo(function QuickChart() {
           }}
         />
       )}
+        </LinearGradient>
       </View>
     </TouchableWithoutFeedback>
   )
 })
 
 const styles = StyleSheet.create({
+  containerWrapper: {
+    marginBottom: 16,
+  },
   container: {
     borderRadius: 16,
     padding: 20,
-    marginBottom: 16,
     borderWidth: 1,
   },
   headerContainer: {
@@ -272,7 +287,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 15,
-    fontWeight: "400",
+    fontWeight: "600",
   },
   hint: {
     fontSize: 11,

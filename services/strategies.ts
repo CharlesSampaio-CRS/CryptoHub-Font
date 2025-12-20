@@ -101,6 +101,10 @@ class StrategiesService {
    * Cria uma nova estratégia usando template (RECOMENDADO)
    */
   async createStrategy(data: CreateStrategyRequest): Promise<Strategy> {
+    console.log("🌐 strategiesService.createStrategy: Iniciando requisição")
+    console.log("📦 Dados que serão enviados:", JSON.stringify(data, null, 2))
+    console.log("🎯 Template sendo enviado:", data.template)
+    
     const response = await fetch(`${API_BASE_URL}/strategies`, {
       method: "POST",
       headers: {
@@ -111,10 +115,13 @@ class StrategiesService {
 
     if (!response.ok) {
       const error = await response.json()
+      console.error("❌ Erro na resposta da API:", error)
       throw new Error(error.error || "Failed to create strategy")
     }
 
     const result = await response.json()
+    console.log("✅ Estratégia criada - Resposta da API:", JSON.stringify(result, null, 2))
+    console.log("📋 Template retornado pela API:", result.strategy?.template)
     return result.strategy
   }
 

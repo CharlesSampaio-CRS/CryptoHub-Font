@@ -236,13 +236,20 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
     try {
       setLoading(true)
       
-      const createdStrategy = await strategiesService.createStrategy({
+      const strategyData = {
         user_id: userId,
         exchange_id: selectedExchange,
         token: token,
         template: selectedTemplate as "simple" | "conservative" | "aggressive",
         is_active: true,
-      })
+      }
+      
+      console.log("🚀 Criando estratégia com dados:", strategyData)
+      console.log("📋 Template selecionado:", selectedTemplate)
+      console.log("🏦 Exchange selecionada:", selectedExchange)
+      console.log("🪙 Token:", token)
+      
+      const createdStrategy = await strategiesService.createStrategy(strategyData)
 
       // Fecha o modal e limpa o loading antes de chamar onSuccess
       setLoading(false)
@@ -394,7 +401,10 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                           borderWidth: 2,
                         },
                       ]}
-                      onPress={() => setSelectedTemplate(template.id)}
+                      onPress={() => {
+                        console.log("🎯 Template selecionado:", template.id, "-", t(template.nameKey))
+                        setSelectedTemplate(template.id)
+                      }}
                       activeOpacity={0.7}
                     >
                       <Text style={styles.templateIcon}>{template.icon}</Text>
@@ -670,8 +680,11 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 onPress={() => {
                   const nextStep = (step + 1) as 1 | 2 | 3
                   console.log(`➡️ Moving from Step ${step} to Step ${nextStep}`)
+                  console.log(`📋 Template atual: "${selectedTemplate}"`)
+                  console.log(`🏦 Exchange atual: "${selectedExchange}"`)
                   if (nextStep === 3) {
                     console.log("📍 Entering Step 3 with exchange:", selectedExchange || "NONE")
+                    console.log("📍 Template sendo levado para Step 3:", selectedTemplate)
                   }
                   setStep(nextStep)
                 }}

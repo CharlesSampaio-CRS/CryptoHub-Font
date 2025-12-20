@@ -720,7 +720,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       <Modal
         visible={!!openMenuId}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setOpenMenuId(null)}
       >
         <Pressable 
@@ -781,7 +781,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       <Modal
         visible={connectModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={closeConnectModal}
       >
         <View style={styles.modalOverlay}>
@@ -953,7 +953,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       <Modal
         visible={confirmToggleModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmToggleModalVisible(false)}
       >
         <View style={styles.confirmModalOverlay}>
@@ -999,7 +999,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       <Modal
         visible={confirmModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmModalVisible(false)}
       >
         <View style={styles.confirmModalOverlay}>

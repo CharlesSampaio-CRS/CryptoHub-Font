@@ -192,7 +192,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType="slide"
       transparent={true}
       onRequestClose={onClose}
     >

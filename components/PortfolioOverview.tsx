@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
 import { memo } from "react"
+import { LinearGradient } from "expo-linear-gradient"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
@@ -9,11 +10,11 @@ import { apiService } from "@/services/api"
 import { SkeletonPortfolioOverview } from "./SkeletonLoaders"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error, refreshing, refresh } = useBalance()
   const { hideValue } = usePrivacy()
-  const { evolutionData } = usePortfolio()
+  const { evolutionData, currentPeriod } = usePortfolio()
 
   if (loading) {
     return <SkeletonPortfolioOverview />
@@ -89,57 +90,78 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const change24h = pnl.changePercent
   const isPositive = pnl.isPositive
 
+  // Define cores do gradiente baseado no tema - mesmo do gráfico (suave)
+  const gradientColors: readonly [string, string, ...string[]] = isDark 
+    ? ['rgba(30, 58, 95, 0.4)', 'rgba(45, 90, 138, 0.5)', 'rgba(30, 58, 95, 0.4)']  // Dark mode - 40-50% opacidade
+    : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={styles.header}>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('home.portfolio')}</Text>
-        <TouchableOpacity 
-          style={styles.refreshButton}
-          onPress={refresh}
-          disabled={refreshing}
-          activeOpacity={0.7}
-        >
-          {refreshing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <View style={styles.refreshIconContainer}>
-              <Text style={[styles.refreshIcon, { color: colors.primary }]}>↻</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+    <View style={styles.containerWrapper}>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.container, { borderColor: colors.border }]}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.label, { color: colors.text }]}>{t('home.portfolio')}</Text>
+          <TouchableOpacity 
+            style={[styles.refreshButton, refreshing && styles.refreshButtonDisabled]}
+            onPress={() => {
+              console.log('🔄 PortfolioOverview: Botão refresh clicado! refreshing atual:', refreshing)
+              refresh()
+            }}
+            disabled={refreshing}
+            activeOpacity={refreshing ? 1 : 0.7}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={[styles.refreshIcon, { color: colors.text }]}>↻</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.valueContainer}>
-        <Text style={[styles.value, { color: colors.text }]}>
-          {hideValue(formattedValue)}
-        </Text>
-        <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
-          {formatLastUpdated()}
-        </Text>
-      </View>
-
-      <View style={styles.changeContainer}>
-        <View style={[styles.badge, isPositive ? styles.badgePositive : styles.badgeNegative]}>
-          <Text style={[styles.badgeText, isPositive ? styles.textPositive : styles.textNegative]}>
-            {isPositive ? "↑" : "↓"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
+        <View style={styles.valueContainer}>
+          <Text style={[styles.value, { color: colors.text }]}>
+            {hideValue(formattedValue)}
+          </Text>
+          <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
+            {formatLastUpdated()}
           </Text>
         </View>
 
-        <Text style={[styles.changeValue, isPositive ? styles.textPositive : styles.textNegative]}>
-          {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
-        </Text>
+        <View style={styles.changeContainer}>
+          <Text style={[
+            styles.badgeText, 
+            isPositive ? styles.textPositive : styles.textNegative
+          ]}>
+            {isPositive ? "↑" : "↓"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
+          </Text>
 
-        <Text style={styles.timeframe}>Últimos 7 dias</Text>
-      </View>
+          <Text style={[
+            styles.changeValue,
+            isPositive ? styles.textPositive : styles.textNegative
+          ]}>
+            {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
+          </Text>
+
+          <Text style={[styles.timeframe, { color: colors.textSecondary }]}>
+            Últimos {currentPeriod} dias
+          </Text>
+        </View>
+      </LinearGradient>
     </View>
   )
 })
 
 const styles = StyleSheet.create({
+  containerWrapper: {
+    marginBottom: 20,
+  },
   container: {
     borderRadius: 20,
     padding: 24,
-    marginBottom: 20,
     borderWidth: 1,
   },
   header: {
@@ -190,34 +212,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  badgePositive: {
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-  },
-  badgeNegative: {
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
-  },
   badgeText: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: 14,
+    fontWeight: "700",
   },
   textPositive: {
-    color: "#3b82f6",
+    color: "#10b981", // Verde destacado
   },
   textNegative: {
-    color: "#ef4444",
+    color: "#ef4444", // Vermelho destacado
   },
   changeValue: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: 14,
+    fontWeight: "600",
   },
   timeframe: {
     fontSize: 12,
-    color: "#6b7280",
+    fontWeight: "500",
   },
   errorText: {
     fontSize: 14,
@@ -227,5 +238,8 @@ const styles = StyleSheet.create({
   exchangesCount: {
     fontSize: 12,
     color: "#6b7280",
+  },
+  refreshButtonDisabled: {
+    opacity: 0.5,
   },
 })

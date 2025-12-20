@@ -45,16 +45,16 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Load on mount
-  useEffect(() => {
-    loadEvolutionData(7)
-  }, [loadEvolutionData])
+  // Load on mount DESABILITADO - será feito pelo DataLoader no App.tsx após login
+  // useEffect(() => {
+  //   loadEvolutionData(7)
+  // }, [loadEvolutionData])
 
   // Refresh sem mostrar loading (usado no pull-to-refresh)
-  const refreshEvolution = useCallback(async (days?: number) => {
+  const refreshEvolution = useCallback(async (days?: number, showLoadingState = true) => {
     const daysToUse = days !== undefined ? days : currentPeriod
-    console.log(`🔄 PortfolioContext: Refresh evolution solicitado (days=${daysToUse})`)
-    await loadEvolutionData(daysToUse, false)
+    console.log(`🔄 PortfolioContext: Refresh evolution solicitado (days=${daysToUse}, showLoading=${showLoadingState})`)
+    await loadEvolutionData(daysToUse, showLoadingState)
   }, [loadEvolutionData, currentPeriod])
 
   const value = useMemo(() => ({
