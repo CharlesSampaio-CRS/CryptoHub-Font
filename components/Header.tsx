@@ -4,6 +4,7 @@ import Svg, { Path, Circle } from "react-native-svg"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { usePrivacy } from "../contexts/PrivacyContext"
+import { LogoIcon } from "./LogoIcon"
 
 // Eye Icon (valores visíveis)
 const EyeIcon = ({ color }: { color: string }) => (
@@ -97,9 +98,12 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
   
   return (
     <View style={[styles.header, { backgroundColor: colors.background }]}>
-      <View>
-        <Text style={[styles.title, { color: colors.text }]}>CryptoHub</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
+      <View style={styles.headerContent}>
+        <LogoIcon size={24} />
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { color: colors.text }]}>MultExchanges</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
+        </View>
       </View>
 
       <Animated.View 
@@ -152,6 +156,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
+  },
   title: {
     fontSize: 18,
     fontWeight: "300",
@@ -190,7 +202,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: "#ffffff",
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: "500",
     textAlign: "center",
     includeFontPadding: false,
   },

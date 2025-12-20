@@ -6,6 +6,7 @@ import { useLanguage } from "../contexts/LanguageContext"
 import { strategiesService, type Strategy as APIStrategy, type Execution } from "../services/strategies"
 import { CreateStrategyModal } from "../components/create-strategy-modal"
 import { StrategyDetailsModal } from "@/components/StrategyDetailsModal"
+import { LogoIcon } from "../components/LogoIcon"
 
 interface Strategy {
   id: string
@@ -310,14 +311,17 @@ export function StrategyScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>{t('strategy.title')}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {activeTab === "strategies"
-              ? `${strategiesCount} ${strategiesCount === 1 ? t('strategy.strategy') : t('strategy.strategies')}`
-              : `${executionsCount} ${executionsCount === 1 ? t('strategy.execution') : t('strategy.executions')}`
-            }
-          </Text>
+        <View style={styles.headerContent}>
+          <LogoIcon size={24} />
+          <View style={styles.headerText}>
+            <Text style={[styles.title, { color: colors.text }]}>{t('strategy.title')}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {activeTab === "strategies"
+                ? `${strategiesCount} ${strategiesCount === 1 ? t('strategy.strategy') : t('strategy.strategies')}`
+                : `${executionsCount} ${executionsCount === 1 ? t('strategy.execution') : t('strategy.executions')}`
+              }
+            </Text>
+          </View>
         </View>
         
         {activeTab === "strategies" && hasStrategies && (
@@ -825,6 +829,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
   },
   title: {
     fontSize: 18,

@@ -92,7 +92,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
 
   // Cores do gradiente para os cards - mesmo do gráfico (suave)
   const cardGradientColors: readonly [string, string, ...string[]] = isDark 
-    ? ['rgba(30, 58, 95, 0.4)', 'rgba(45, 90, 138, 0.5)', 'rgba(30, 58, 95, 0.4)']  // Dark mode - 40-50% opacidade
+    ? ['rgba(30, 30, 35, 0.4)', 'rgba(40, 40, 45, 0.5)', 'rgba(30, 30, 35, 0.4)']  // Dark mode - cinza escuro neutro
     : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
 
   if (loading) {
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   },
   exchangeName: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "500",
     marginBottom: 2,
   },
   assetsCount: {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   balance: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
     marginBottom: 2,
   },
   change: {
@@ -494,12 +494,12 @@ const styles = StyleSheet.create({
   },
   tokenPrice: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "400",
     marginBottom: 4,
   },
   tokenValue: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   tokenValueZero: {
     // Applied via inline style

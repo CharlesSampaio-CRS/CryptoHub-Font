@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "500",
     color: "#111827",
   },
   changeInlineBadge: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   },
   changeInlineText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   price: {
     fontSize: 12,

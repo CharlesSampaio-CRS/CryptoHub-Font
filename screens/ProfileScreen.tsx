@@ -4,6 +4,7 @@ import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
 import { useNavigation } from "@react-navigation/native"
+import { LogoIcon } from "../components/LogoIcon"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function ProfileScreen() {
@@ -53,9 +54,12 @@ export function ProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>Perfil</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Suas informações pessoais</Text>
+        <View style={styles.headerContent}>
+          <LogoIcon size={24} />
+          <View style={styles.headerText}>
+            <Text style={[styles.title, { color: colors.text }]}>Perfil</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Suas informações pessoais</Text>
+          </View>
         </View>
         
         {/* Botão Sair no Header */}
@@ -239,6 +243,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
   },
   title: {
     fontSize: 18,

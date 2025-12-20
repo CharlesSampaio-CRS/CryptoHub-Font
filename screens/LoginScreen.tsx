@@ -11,7 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native'
-import Svg, { Path, Circle } from 'react-native-svg'
+import Svg, { Path, Circle, Line, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode } from 'react-native-svg'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -19,6 +19,56 @@ import { LinearGradient } from 'expo-linear-gradient'
 interface LoginScreenProps {
   navigation: any
 }
+
+// MultExchanges Logo
+const LogoIcon = () => (
+  <Svg width="80" height="80" viewBox="0 0 1024 1024" fill="none">
+    <Defs>
+      <Filter id="glow">
+        <FeGaussianBlur stdDeviation="10" result="coloredBlur"/>
+        <FeMerge>
+          <FeMergeNode in="coloredBlur"/>
+          <FeMergeNode in="SourceGraphic"/>
+        </FeMerge>
+      </Filter>
+    </Defs>
+    
+    {/* Central Hub Circle */}
+    <Circle cx="512" cy="512" r="140" fill="#3B82F6" filter="url(#glow)"/>
+    <Circle cx="512" cy="512" r="100" fill="#1E40AF"/>
+    
+    {/* Connection lines */}
+    <Line x1="512" y1="412" x2="512" y2="220" stroke="#60A5FA" strokeWidth="12" opacity="0.6"/>
+    <Line x1="612" y1="512" x2="804" y2="512" stroke="#60A5FA" strokeWidth="12" opacity="0.6"/>
+    <Line x1="512" y1="612" x2="512" y2="804" stroke="#60A5FA" strokeWidth="12" opacity="0.6"/>
+    <Line x1="412" y1="512" x2="220" y2="512" stroke="#60A5FA" strokeWidth="12" opacity="0.6"/>
+    
+    {/* Diagonal connections */}
+    <Line x1="598" y1="426" x2="738" y2="286" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
+    <Line x1="598" y1="598" x2="738" y2="738" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
+    <Line x1="426" y1="598" x2="286" y2="738" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
+    <Line x1="426" y1="426" x2="286" y2="286" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
+    
+    {/* Satellite Nodes */}
+    <Circle cx="512" cy="200" r="70" fill="#FFC107" filter="url(#glow)"/>
+    <Circle cx="512" cy="200" r="50" fill="#F59E0B"/>
+    
+    <Circle cx="824" cy="512" r="70" fill="#FFC107" filter="url(#glow)"/>
+    <Circle cx="824" cy="512" r="50" fill="#F59E0B"/>
+    
+    <Circle cx="512" cy="824" r="70" fill="#FFC107" filter="url(#glow)"/>
+    <Circle cx="512" cy="824" r="50" fill="#F59E0B"/>
+    
+    <Circle cx="200" cy="512" r="70" fill="#FFC107" filter="url(#glow)"/>
+    <Circle cx="200" cy="512" r="50" fill="#F59E0B"/>
+    
+    {/* Corner nodes */}
+    <Circle cx="268" cy="268" r="50" fill="#3B82F6" opacity="0.8"/>
+    <Circle cx="756" cy="268" r="50" fill="#3B82F6" opacity="0.8"/>
+    <Circle cx="756" cy="756" r="50" fill="#3B82F6" opacity="0.8"/>
+    <Circle cx="268" cy="756" r="50" fill="#3B82F6" opacity="0.8"/>
+  </Svg>
+)
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -121,6 +171,10 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       paddingBottom: 40,
       paddingHorizontal: 24,
       backgroundColor: colors.background,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 16,
     },
     logo: {
       fontSize: 48,
@@ -293,7 +347,9 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
       >
         <View style={styles.header}>
-          <Text style={styles.logo}>🔐</Text>
+          <View style={styles.logoContainer}>
+            <LogoIcon />
+          </View>
           <Text style={styles.title}>Bem vindo!</Text>
           <Text style={styles.subtitle}>Acesse sua conta para continuar</Text>
         </View>

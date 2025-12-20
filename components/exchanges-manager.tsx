@@ -7,6 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { QRScanner } from "./QRScanner"
+import { LogoIcon } from "./LogoIcon"
 import Svg, { Path } from "react-native-svg"
 
 // Mapeamento dos logos locais das exchanges
@@ -627,14 +628,17 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     <View style={[styles.container, themedStyles.container]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {activeTab === 'linked' 
-              ? `${linkedExchanges.length} ${linkedExchanges.length === 1 ? t('exchanges.connectedSingular') : t('exchanges.connectedPlural')}`
-              : `${availableExchanges.length} ${availableExchanges.length === 1 ? t('exchanges.availableSingular') : t('exchanges.availablePlural')}`
-            }
-          </Text>
+        <View style={styles.headerContent}>
+          <LogoIcon size={24} />
+          <View style={styles.headerText}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {activeTab === 'linked' 
+                ? `${linkedExchanges.length} ${linkedExchanges.length === 1 ? t('exchanges.connectedSingular') : t('exchanges.connectedPlural')}`
+                : `${availableExchanges.length} ${availableExchanges.length === 1 ? t('exchanges.availableSingular') : t('exchanges.availablePlural')}`
+              }
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -1144,6 +1148,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 20,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
   },
   headerTitle: {
     fontSize: 18,

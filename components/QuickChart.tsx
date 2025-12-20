@@ -75,7 +75,7 @@ export const QuickChart = memo(function QuickChart() {
   
   // Cores do gradiente baseado no tema - mais suaves
   const gradientColors: readonly [string, string, ...string[]] = isDark 
-    ? ['rgba(30, 58, 95, 0.4)', 'rgba(45, 90, 138, 0.5)', 'rgba(30, 58, 95, 0.4)']  // Dark mode - 40-50% opacidade
+    ? ['rgba(30, 30, 35, 0.4)', 'rgba(40, 40, 45, 0.5)', 'rgba(30, 30, 35, 0.4)']  // Dark mode - cinza escuro neutro
     : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
   
   if (loading) {
@@ -283,11 +283,11 @@ const styles = StyleSheet.create({
   },
   periodButtonText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   title: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   hint: {
     fontSize: 11,

@@ -92,7 +92,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
   // Define cores do gradiente baseado no tema - mesmo do gráfico (suave)
   const gradientColors: readonly [string, string, ...string[]] = isDark 
-    ? ['rgba(30, 58, 95, 0.4)', 'rgba(45, 90, 138, 0.5)', 'rgba(30, 58, 95, 0.4)']  // Dark mode - 40-50% opacidade
+    ? ['rgba(30, 30, 35, 0.4)', 'rgba(40, 40, 45, 0.5)', 'rgba(30, 30, 35, 0.4)']  // Dark mode - cinza escuro neutro
     : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
 
   return (
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   textPositive: {
     color: "#10b981", // Verde destacado
@@ -224,11 +224,11 @@ const styles = StyleSheet.create({
   },
   changeValue: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   timeframe: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "400",
   },
   errorText: {
     fontSize: 14,

@@ -17,6 +17,7 @@ import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
 import { NotificationsModal } from "../components/NotificationsModal"
+import { LogoIcon } from "../components/LogoIcon"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function SettingsScreen() {
@@ -87,9 +88,12 @@ export function SettingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>{t('settings.title')}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.subtitle')}</Text>
+        <View style={styles.headerContent}>
+          <LogoIcon size={24} />
+          <View style={styles.headerText}>
+            <Text style={[styles.title, { color: colors.text }]}>{t('settings.title')}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.subtitle')}</Text>
+          </View>
         </View>
       </View>
 
@@ -758,6 +762,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
   },
   title: {
     fontSize: 18,
