@@ -15,6 +15,7 @@ import Svg, { Path, Circle, Line, Defs, Filter, FeGaussianBlur, FeMerge, FeMerge
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
+import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
 
 interface LoginScreenProps {
   navigation: any
@@ -405,7 +406,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
           disabled={isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator color="#ffffff" />
+            <AnimatedLogoIcon size={24} />
           ) : (
             <Text style={styles.loginButtonText}>Entrar</Text>
           )}

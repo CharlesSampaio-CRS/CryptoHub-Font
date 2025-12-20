@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  SafeAreaView,
   Platform,
 } from "react-native"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -169,6 +168,10 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
     return numPercent >= 0 ? '#10b981' : '#ef4444'
   }
 
+  const getBidAskColor = (type: 'bid' | 'ask') => {
+    return type === 'bid' ? '#10b981' : '#ef4444'
+  }
+
   const formatDateTime = (timestamp: number) => {
     const date = new Date(timestamp)
     return date.toLocaleString('pt-BR', {
@@ -196,16 +199,16 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.safeArea}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             {/* Header */}
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.title, { color: colors.text }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {tokenData ? `${symbol} - ${tokenData.exchange.name}` : t('token.details')}
               </Text>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={[styles.closeIcon, { color: colors.text }]}>✕</Text>
+                <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
               </TouchableOpacity>
             </View>
 
@@ -244,7 +247,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                 </View>
 
                 {/* Variações de Preço */}
-                <View style={[styles.section, { borderBottomColor: colors.border }]}>
+                <View style={[styles.section, { borderBottomColor: colors.cardBorder }]}>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>
                     {t('token.priceVariation')}
                   </Text>
@@ -292,7 +295,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                 </View>
 
                 {/* Máxima e Mínima 24h */}
-                <View style={[styles.section, { borderBottomColor: colors.border }]}>
+                <View style={[styles.section, { borderBottomColor: colors.cardBorder }]}>
                   <View style={styles.row}>
                     <View style={styles.halfColumn}>
                       <Text style={[styles.label, { color: colors.textSecondary }]}>
@@ -314,7 +317,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                 </View>
 
                 {/* Volume 24h */}
-                <View style={[styles.section, { borderBottomColor: colors.border }]}>
+                <View style={[styles.section, { borderBottomColor: colors.cardBorder }]}>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>
                     {t('token.volume24h')}
                   </Text>
@@ -339,13 +342,13 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                 </View>
 
                 {/* Preços Bid/Ask */}
-                <View style={[styles.section, { borderBottomColor: colors.border }]}>
+                <View style={[styles.section, { borderBottomColor: colors.cardBorder }]}>
                   <View style={styles.row}>
                     <View style={styles.halfColumn}>
                       <Text style={[styles.label, { color: colors.textSecondary }]}>
                         {t('token.bidPrice')}
                       </Text>
-                      <Text style={[styles.value, { color: '#10b981' }]}>
+                      <Text style={[styles.value, { color: getBidAskColor('bid') }]}>
                         {formatPrice(tokenData.price.bid)}
                       </Text>
                     </View>
@@ -353,7 +356,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                       <Text style={[styles.label, { color: colors.textSecondary }]}>
                         {t('token.askPrice')}
                       </Text>
-                      <Text style={[styles.value, { color: '#ef4444' }]}>
+                      <Text style={[styles.value, { color: getBidAskColor('ask') }]}>
                         {formatPrice(tokenData.price.ask)}
                       </Text>
                     </View>
@@ -369,7 +372,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                 </View>
 
                 {/* Informações de Mercado */}
-                <View style={[styles.section, { borderBottomColor: colors.border }]}>
+                <View style={[styles.section, { borderBottomColor: colors.cardBorder }]}>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>
                     {t('token.marketInfo')}
                   </Text>
@@ -454,46 +457,46 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
               </ScrollView>
             ) : null}
           </View>
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   safeArea: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
+  modalContent: {
     borderRadius: 20,
     width: '90%',
     maxHeight: '85%',
     height: '85%',
   },
-  header: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
   },
-  title: {
+  modalTitle: {
     fontSize: 20,
     fontWeight: '500',
   },
   closeButton: {
     padding: 4,
   },
-  closeIcon: {
+  closeButtonText: {
     fontSize: 24,
     fontWeight: '300',
   },
@@ -535,18 +538,18 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '400',
     marginBottom: 12,
   },
   subsectionTitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '400',
     marginTop: 16,
     marginBottom: 8,
   },
   priceValue: {
-    fontSize: 32,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '500',
     marginBottom: 4,
   },
   pairText: {
@@ -563,7 +566,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   changeLabel: {
     fontSize: 12,
@@ -571,8 +573,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   changeValue: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '500',
   },
   row: {
     flexDirection: 'row',
@@ -587,8 +589,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   value: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '400',
   },
   spreadRow: {
     flexDirection: 'row',
@@ -615,7 +617,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   lastUpdate: {
     fontSize: 12,
