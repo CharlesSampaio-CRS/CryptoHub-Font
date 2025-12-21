@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableWithoutFeedback } from "react-native"
-import { memo, useState, useEffect } from "react"
+import { memo, useState, useEffect, useMemo } from "react"
 import { LineChart } from "react-native-chart-kit"
 import { LinearGradient } from "expo-linear-gradient"
 import { useLanguage } from "@/contexts/LanguageContext"
@@ -23,6 +23,29 @@ export const QuickChart = memo(function QuickChart() {
     console.log(`📊 QuickChart: Período alterado para ${selectedPeriod} dias, buscando dados...`)
     refreshEvolution(selectedPeriod)
   }, [selectedPeriod, refreshEvolution])
+
+  // Calcula estatísticas do período
+  const stats = useMemo(() => {
+    if (!evolutionData?.evolution?.values_usd || evolutionData.evolution.values_usd.length === 0) {
+      return { change: 0, changePercent: 0, highest: 0, lowest: 0, isPositive: true }
+    }
+
+    const values = evolutionData.evolution.values_usd
+    const firstValue = values[0]
+    const lastValue = values[values.length - 1]
+    const change = lastValue - firstValue
+    const changePercent = firstValue > 0 ? (change / firstValue) * 100 : 0
+    const highest = Math.max(...values)
+    const lowest = Math.min(...values)
+
+    return {
+      change,
+      changePercent,
+      highest,
+      lowest,
+      isPositive: change >= 0,
+    }
+  }, [evolutionData])
 
   // Processa dados para o gráfico
   const getChartData = () => {
@@ -64,7 +87,10 @@ export const QuickChart = memo(function QuickChart() {
       datasets: [
         {
           data: values_usd,
-          color: (opacity = 1) => colors.primary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
+          color: (opacity = 1) => {
+            const color = stats.isPositive ? '#10b981' : '#ef4444' // Verde ou vermelho
+            return color + Math.round(opacity * 255).toString(16).padStart(2, '0')
+          },
           strokeWidth: 3,
         },
       ],
@@ -78,6 +104,19 @@ export const QuickChart = memo(function QuickChart() {
     ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza
     : ['rgba(248, 249, 250, 0.95)', 'rgba(255, 255, 255, 0.95)', 'rgba(248, 249, 250, 0.95)']  // Light mode - cinza claro neutro
   
+  // Formata valores para exibição
+  const formatValue = (val: number) => {
+    if (valuesHidden) {
+      return '••••••'
+    }
+    if (val >= 1000000) {
+      return `$${(val / 1000000).toFixed(2)}M`
+    } else if (val >= 1000) {
+      return `$${(val / 1000).toFixed(2)}K`
+    }
+    return `$${val.toFixed(2)}`
+  }
+
   if (loading) {
     return <SkeletonChart />
   }
@@ -92,151 +131,178 @@ export const QuickChart = memo(function QuickChart() {
           style={[styles.container, { borderColor: colors.cardBorder }]}
         >
           <View style={styles.headerContainer}>
-            <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+            <View style={styles.titleSection}>
+              <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+            </View>
           
-          {/* Botões de período */}
-          <View style={styles.periodButtonsContainer}>
-            {[7, 15, 30].map((period) => (
-              <TouchableWithoutFeedback 
-                key={period}
-                onPress={() => setSelectedPeriod(period as 7 | 15 | 30)}
-              >
-                <View style={[
-                  styles.periodButton,
-                  { 
-                    backgroundColor: selectedPeriod === period ? colors.primary : 'transparent',
-                    borderColor: selectedPeriod === period ? colors.primary : colors.border
-                  }
-                ]}>
-                  <Text style={[
-                    styles.periodButtonText,
-                    { color: selectedPeriod === period ? colors.primaryText : colors.textSecondary }
-                  ]}>
-                    {period}d
-                  </Text>
-                </View>
-              </TouchableWithoutFeedback>
-            ))}
-          </View>
-        </View>
-
-        {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-            {error}
-          </Text>
-        </View>
-      ) : (
-        <LineChart
-          data={chartData}
-          width={screenWidth - 64}
-          height={240}
-          chartConfig={{
-            backgroundColor: "transparent",
-            backgroundGradientFrom: "transparent",
-            backgroundGradientTo: "transparent",
-            decimalPlaces: 0,
-            color: (opacity = 1) => colors.primary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
-            labelColor: (opacity = 1) => colors.textSecondary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: "5",
-              strokeWidth: "2",
-              stroke: colors.primary,
-              fill: colors.primary,
-            },
-            propsForBackgroundLines: {
-              strokeDasharray: "",
-              stroke: colors.borderLight,
-              strokeWidth: 1,
-            },
-            propsForLabels: {
-              fontSize: 10,
-              fontFamily: 'System',
-            },
-          }}
-          bezier
-          style={styles.chart}
-          withInnerLines={true}
-          withOuterLines={false}
-          withVerticalLabels={true}
-          withHorizontalLabels={true}
-          withDots={true}
-          withShadow={false}
-          segments={4}
-          formatYLabel={(value) => {
-            if (valuesHidden) {
-              return '••••'
-            }
-            const num = parseFloat(value)
-            if (num >= 1000000) {
-              return `$${(num / 1000000).toFixed(1)}M`
-            } else if (num >= 1000) {
-              return `$${(num / 1000).toFixed(1)}K`
-            }
-            return `$${Math.round(num)}`
-          }}
-          onDataPointClick={(data) => {
-            const { index } = data
-            // Toggle: se clicar no mesmo ponto, esconde. Se clicar em outro, mostra
-            setSelectedPointIndex(selectedPointIndex === index ? null : index)
-          }}
-          decorator={() => {
-            if (selectedPointIndex === null) return null
-            
-            const value = chartData.datasets[0].data[selectedPointIndex]
-            const index = selectedPointIndex
-            const x = (index * ((screenWidth - 64 - 32) / (chartData.datasets[0].data.length - 1))) + 16
-            const maxValue = Math.max(...chartData.datasets[0].data)
-            const minValue = Math.min(...chartData.datasets[0].data)
-            const range = maxValue - minValue || 1
-            const percentage = (value - minValue) / range
-            const y = 240 - 45 - (percentage * (240 - 85)) // Ajustado para altura 240
-            
-            // Formata valor do tooltip
-            const formatValue = (val: number) => {
-              if (valuesHidden) {
-                return '••••••'
-              }
-              if (val >= 1000000) {
-                return `$${(val / 1000000).toFixed(2)}M`
-              } else if (val >= 1000) {
-                return `$${(val / 1000).toFixed(2)}K`
-              }
-              return `$${val.toFixed(2)}`
-            }
-            
-            return (
-              <View key={index}>
-                <Text
-                  style={{
-                    position: 'absolute',
-                    left: x - 30,
-                    top: y - 35,
-                    fontSize: 11,
-                    fontWeight: '400',
-                    color: colors.primaryText,
-                    backgroundColor: colors.primary,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 6,
-                    overflow: 'hidden',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                    elevation: 6,
-                  }}
+            {/* Botões de período */}
+            <View style={styles.periodButtonsContainer}>
+              {[7, 15, 30].map((period) => (
+                <TouchableWithoutFeedback 
+                  key={period}
+                  onPress={() => setSelectedPeriod(period as 7 | 15 | 30)}
                 >
-                  {formatValue(value)}
-                </Text>
-              </View>
-            )
-          }}
-        />
-      )}
+                  <View style={[
+                    styles.periodButton,
+                    { 
+                      backgroundColor: selectedPeriod === period ? colors.primary : 'transparent',
+                      borderColor: selectedPeriod === period ? colors.primary : colors.border
+                    }
+                  ]}>
+                    <Text style={[
+                      styles.periodButtonText,
+                      { color: selectedPeriod === period ? colors.primaryText : colors.textSecondary }
+                    ]}>
+                      {period}d
+                    </Text>
+                  </View>
+                </TouchableWithoutFeedback>
+              ))}
+            </View>
+          </View>
+
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+                {error}
+              </Text>
+            </View>
+          ) : (
+            <LineChart
+              data={chartData}
+              width={screenWidth - 64}
+              height={240}
+              chartConfig={{
+                backgroundColor: "transparent",
+                backgroundGradientFrom: "transparent",
+                backgroundGradientTo: "transparent",
+                backgroundGradientFromOpacity: 0,
+                backgroundGradientToOpacity: 0,
+                fillShadowGradient: stats.isPositive ? '#10b981' : '#ef4444',
+                fillShadowGradientOpacity: 0.2,
+                fillShadowGradientTo: stats.isPositive ? '#10b98105' : '#ef444405',
+                fillShadowGradientToOpacity: 0.05,
+                decimalPlaces: 0,
+                color: (opacity = 1) => {
+                  const baseColor = stats.isPositive ? '#10b981' : '#ef4444'
+                  return baseColor + Math.round(opacity * 255).toString(16).padStart(2, '0')
+                },
+                labelColor: (opacity = 1) => colors.textSecondary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "4",
+                  strokeWidth: "2",
+                  stroke: stats.isPositive ? '#10b981' : '#ef4444',
+                  fill: isDark ? colors.background : '#ffffff',
+                },
+                propsForBackgroundLines: {
+                  strokeDasharray: "5,5",
+                  stroke: colors.border,
+                  strokeWidth: 0.5,
+                  strokeOpacity: 0.3,
+                },
+                propsForLabels: {
+                  fontSize: 10,
+                  fontFamily: 'System',
+                },
+              }}
+              bezier
+              style={styles.chart}
+              withInnerLines={true}
+              withOuterLines={false}
+              withVerticalLabels={true}
+              withHorizontalLabels={true}
+              withDots={true}
+              withShadow={false}
+              withVerticalLines={false}
+              withHorizontalLines={true}
+              segments={4}
+              formatYLabel={(value) => {
+                if (valuesHidden) {
+                  return '••••'
+                }
+                const num = parseFloat(value)
+                if (num >= 1000000) {
+                  return `$${(num / 1000000).toFixed(1)}M`
+                } else if (num >= 1000) {
+                  return `$${(num / 1000).toFixed(1)}K`
+                }
+                return `$${Math.round(num)}`
+              }}
+              onDataPointClick={(data) => {
+                const { index } = data
+                // Toggle: se clicar no mesmo ponto, esconde. Se clicar em outro, mostra
+                setSelectedPointIndex(selectedPointIndex === index ? null : index)
+              }}
+              decorator={() => {
+                if (selectedPointIndex === null) return null
+                
+                const value = chartData.datasets[0].data[selectedPointIndex]
+                const index = selectedPointIndex
+                const x = (index * ((screenWidth - 64 - 32) / (chartData.datasets[0].data.length - 1))) + 16
+                const maxValue = Math.max(...chartData.datasets[0].data)
+                const minValue = Math.min(...chartData.datasets[0].data)
+                const range = maxValue - minValue || 1
+                const percentage = (value - minValue) / range
+                const y = 240 - 45 - (percentage * (240 - 85)) // Ajustado para altura 240
+                
+                // Pega a data do ponto selecionado
+                const timestamp = evolutionData?.evolution?.timestamps[selectedPointIndex]
+                const date = timestamp ? new Date(timestamp) : null
+                const dateStr = date 
+                  ? `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+                  : ''
+                
+                return (
+                  <View key={index}>
+                    <View
+                      style={{
+                        position: 'absolute',
+                        left: x - 50,
+                        top: y - 50,
+                        backgroundColor: stats.isPositive ? '#10b981' : '#ef4444',
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 8,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 8,
+                        minWidth: 100,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: '600',
+                          color: '#ffffff',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {formatValue(value)}
+                      </Text>
+                      {dateStr && (
+                        <Text
+                          style={{
+                            fontSize: 9,
+                            color: '#ffffff',
+                            opacity: 0.8,
+                            marginTop: 2,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {dateStr}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                )
+              }}
+            />
+          )}
         </LinearGradient>
       </View>
     </TouchableWithoutFeedback>
@@ -263,8 +329,12 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  titleSection: {
+    flex: 1,
+    gap: 8,
   },
   titleContainer: {
     flexDirection: "row",
@@ -293,6 +363,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "400",
     letterSpacing: 0.2,
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+  },
+  changeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  changeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  changeValue: {
+    fontSize: 11,
+    fontWeight: "500",
   },
   hint: {
     fontSize: 11,

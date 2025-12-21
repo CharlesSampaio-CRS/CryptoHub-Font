@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Dimensions, Image } from 'react-native'
-import { memo, useMemo } from 'react'
+import { View, Text, StyleSheet, Dimensions, Image, TouchableOpacity } from 'react-native'
+import { memo, useMemo, useState } from 'react'
 import Svg, { G, Circle, Path } from 'react-native-svg'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useBalance } from '../contexts/BalanceContext'
+import { usePrivacy } from '../contexts/PrivacyContext'
 
 const { width } = Dimensions.get('window')
 const CHART_SIZE = Math.min(width - 80, 220)
@@ -50,6 +51,8 @@ export const ExchangesPieChart = memo(function ExchangesPieChart() {
   const { colors } = useTheme()
   const { t } = useLanguage()
   const { data } = useBalance()
+  const { valuesHidden } = usePrivacy()
+  const [selectedExchange, setSelectedExchange] = useState<string | null>(null)
 
   const chartData = useMemo(() => {
     if (!data || !data.exchanges) return []
@@ -78,6 +81,28 @@ export const ExchangesPieChart = memo(function ExchangesPieChart() {
     // Ordenar por valor decrescente
     return chartDataItems.sort((a, b) => b.value - a.value)
   }, [data])
+
+  // Dados da exchange selecionada
+  const selectedData = useMemo(() => {
+    if (!selectedExchange) return null
+    return chartData.find(item => item.name === selectedExchange)
+  }, [selectedExchange, chartData])
+
+  // Formatar valor USD
+  const formatValue = (value: number) => {
+    if (valuesHidden) return '••••••'
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(2)}M`
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(2)}K`
+    }
+    return `$${value.toFixed(2)}`
+  }
+
+  // Toggle seleção de exchange
+  const toggleExchange = (exchangeName: string) => {
+    setSelectedExchange(prev => prev === exchangeName ? null : exchangeName)
+  }
 
   const pieSegments = useMemo(() => {
     if (chartData.length === 0) return []
@@ -143,16 +168,24 @@ export const ExchangesPieChart = memo(function ExchangesPieChart() {
           {/* Gráfico de Pizza */}
           <Svg width={CHART_SIZE} height={CHART_SIZE} viewBox={`${-RADIUS} ${-RADIUS} ${CHART_SIZE} ${CHART_SIZE}`}>
             <G>
-              {pieSegments.map((segment, index) => (
-                <Path
-                  key={index}
-                  d={createArc(segment.startAngle, segment.endAngle, RADIUS - STROKE_WIDTH / 2)}
-                  fill="none"
-                  stroke={segment.color}
-                  strokeWidth={STROKE_WIDTH}
-                  strokeLinecap="round"
-                />
-              ))}
+              {pieSegments.map((segment, index) => {
+                const isSelected = selectedExchange === segment.name
+                const strokeWidth = isSelected ? STROKE_WIDTH + 4 : STROKE_WIDTH
+                const opacity = selectedExchange && !isSelected ? 0.3 : 1
+                
+                return (
+                  <Path
+                    key={index}
+                    d={createArc(segment.startAngle, segment.endAngle, RADIUS - strokeWidth / 2)}
+                    fill="none"
+                    stroke={segment.color}
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    opacity={opacity}
+                    onPress={() => toggleExchange(segment.name)}
+                  />
+                )
+              })}
               {/* Círculo interno para criar efeito de donut */}
               <Circle
                 r={RADIUS - STROKE_WIDTH - 4}
@@ -163,41 +196,73 @@ export const ExchangesPieChart = memo(function ExchangesPieChart() {
 
           {/* Centro com texto */}
           <View style={styles.centerText}>
-            <Text style={[styles.centerLabel, { color: colors.textSecondary }]}>
-              {chartData.length}
-            </Text>
-            <Text style={[styles.centerValue, { color: colors.text }]}>
-              {chartData.length === 1 ? 'Exchange' : 'Exchanges'}
-            </Text>
+            {selectedData ? (
+              <>
+                <Text style={[styles.centerLabel, { color: colors.text }]} numberOfLines={1}>
+                  {selectedData.name}
+                </Text>
+                <Text style={[styles.centerValue, { color: colors.primary }]}>
+                  {formatValue(selectedData.value)}
+                </Text>
+                <Text style={[styles.centerPercentage, { color: colors.textSecondary }]}>
+                  {selectedData.percentage.toFixed(1)}%
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={[styles.centerLabel, { color: colors.textSecondary }]}>
+                  {chartData.length}
+                </Text>
+                <Text style={[styles.centerValue, { color: colors.text }]}>
+                  {chartData.length === 1 ? 'Exchange' : 'Exchanges'}
+                </Text>
+              </>
+            )}
           </View>
         </View>
 
         {/* Legenda */}
         <View style={styles.legend}>
-          {chartData.map((item, index) => (
-            <View key={index} style={styles.legendItem}>
-              {/* Ícone da Exchange */}
-              {EXCHANGE_ICONS[item.name] ? (
-                <View style={styles.exchangeIconContainer}>
-                  <Image 
-                    source={EXCHANGE_ICONS[item.name]} 
-                    style={styles.exchangeIcon}
-                    resizeMode="contain"
-                  />
+          {chartData.map((item, index) => {
+            const isSelected = selectedExchange === item.name
+            const opacity = selectedExchange && !isSelected ? 0.4 : 1
+            
+            return (
+              <TouchableOpacity 
+                key={index} 
+                style={[
+                  styles.legendItem,
+                  isSelected && { backgroundColor: colors.surfaceSecondary, borderRadius: 8, padding: 8, marginHorizontal: -8 }
+                ]}
+                onPress={() => toggleExchange(item.name)}
+                activeOpacity={0.7}
+              >
+                {/* Ícone da Exchange */}
+                {EXCHANGE_ICONS[item.name] ? (
+                  <View style={[styles.exchangeIconContainer, { opacity }]}>
+                    <Image 
+                      source={EXCHANGE_ICONS[item.name]} 
+                      style={styles.exchangeIcon}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ) : (
+                  <View style={[styles.legendColor, { backgroundColor: item.color, opacity }]} />
+                )}
+                <View style={styles.legendTextContainer}>
+                  <Text style={[styles.legendName, { color: colors.text, opacity }]} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.legendPercentage, { color: colors.textSecondary, opacity }]}>
+                    {item.percentage.toFixed(1)}%
+                  </Text>
                 </View>
-              ) : (
-                <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-              )}
-              <View style={styles.legendTextContainer}>
-                <Text style={[styles.legendName, { color: colors.text }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.legendPercentage, { color: colors.textSecondary }]}>
-                  {item.percentage.toFixed(1)}%
-                </Text>
-              </View>
-            </View>
-          ))}
+                {isSelected && (
+                  <View style={[styles.selectedIndicator, { backgroundColor: item.color }]} />
+                )}
+              </TouchableOpacity>
+            )
+          })}
         </View>
       </View>
     </View>
@@ -243,6 +308,11 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 4,
   },
+  centerPercentage: {
+    fontSize: 11,
+    fontWeight: '400',
+    marginTop: 2,
+  },
   legend: {
     gap: 12,
   },
@@ -283,6 +353,11 @@ const styles = StyleSheet.create({
   legendPercentage: {
     fontSize: 14,
     fontWeight: '400',
+  },
+  selectedIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   emptyState: {
     paddingVertical: 40,

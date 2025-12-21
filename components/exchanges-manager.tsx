@@ -36,7 +36,8 @@ const LinkedExchangeCard = memo(({
   colors, 
   t, 
   onToggle, 
-  onDelete 
+  onDelete,
+  onPress
 }: { 
   linkedExchange: any
   index: number
@@ -44,6 +45,7 @@ const LinkedExchangeCard = memo(({
   t: any
   onToggle: (id: string, status: string, name: string) => void
   onDelete: (id: string, name: string) => void
+  onPress: () => void
 }) => {
   const exchangeNameLower = linkedExchange.name.toLowerCase()
   const localIcon = exchangeLogos[exchangeNameLower]
@@ -76,7 +78,12 @@ const LinkedExchangeCard = memo(({
   }), [colors])
 
   return (
-    <View key={exchangeId + '_' + index} style={[styles.card, themedStyles.card]}>
+    <TouchableOpacity 
+      key={exchangeId + '_' + index} 
+      style={[styles.card, themedStyles.card]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.cardHeader}>
         <View style={styles.cardLeft}>
           <View style={styles.iconContainer}>
@@ -108,7 +115,10 @@ const LinkedExchangeCard = memo(({
             themedToggleStyles.toggleButton,
             isActive && themedToggleStyles.toggleButtonActive
           ]}
-          onPress={() => onToggle(exchangeId, linkedExchange.status, linkedExchange.name)}
+          onPress={(e) => {
+            e.stopPropagation()
+            onToggle(exchangeId, linkedExchange.status, linkedExchange.name)
+          }}
           activeOpacity={0.7}
         >
           <View style={[
@@ -141,7 +151,7 @@ const LinkedExchangeCard = memo(({
           ]} />
           <Text style={[
             styles.statusText,
-            isActive ? styles.statusTextActive : styles.statusTextInactive
+            { color: colors.text }
           ]}>
             {isActive ? t('strategy.active') : t('strategy.inactive')}
           </Text>
@@ -149,13 +159,16 @@ const LinkedExchangeCard = memo(({
         
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => onDelete(exchangeId, linkedExchange.name)}
+          onPress={(e) => {
+            e.stopPropagation()
+            onDelete(exchangeId, linkedExchange.name)
+          }}
           activeOpacity={0.7}
         >
           <Text style={styles.deleteIcon}>🗑️</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   )
 })
 
@@ -167,13 +180,15 @@ const AvailableExchangeCard = memo(({
   isLinked, 
   colors, 
   t, 
-  onConnect 
+  onConnect,
+  onPress
 }: { 
   exchange: any
   isLinked: boolean
   colors: any
   t: any
   onConnect: (exchange: any) => void
+  onPress: () => void
 }) => {
   const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
   
@@ -185,7 +200,12 @@ const AvailableExchangeCard = memo(({
   }), [colors])
 
   return (
-    <View key={exchange._id} style={[styles.card, themedStyles.card]}>
+    <TouchableOpacity 
+      key={exchange._id} 
+      style={[styles.card, themedStyles.card]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.cardHeader}>
         <View style={styles.cardLeft}>
           <View style={styles.iconContainer}>
@@ -216,7 +236,10 @@ const AvailableExchangeCard = memo(({
         ) : (
           <TouchableOpacity 
             style={[styles.connectButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
-            onPress={() => onConnect(exchange)}
+            onPress={(e) => {
+              e.stopPropagation()
+              onConnect(exchange)
+            }}
           >
             <Text style={[styles.connectButtonText, { color: colors.primary }]}>{t('exchanges.connect')}</Text>
           </TouchableOpacity>
@@ -227,7 +250,7 @@ const AvailableExchangeCard = memo(({
           <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   )
 })
 
@@ -236,7 +259,7 @@ AvailableExchangeCard.displayName = 'AvailableExchangeCard'
 export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
-  const { refreshOnExchangeChange } = useBalance()
+  const { refreshOnExchangeChange, data: balanceData } = useBalance()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
   const [loading, setLoading] = useState(true)
@@ -265,6 +288,13 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const [toggleExchangeId, setToggleExchangeId] = useState<string>('')
   const [toggleExchangeName, setToggleExchangeName] = useState<string>('')
   const [toggleExchangeNewStatus, setToggleExchangeNewStatus] = useState<string>('')
+  
+  // Modal de detalhes da exchange
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
+  const [detailsExchange, setDetailsExchange] = useState<any>(null)
+  const [detailsType, setDetailsType] = useState<'linked' | 'available'>('linked')
+  const [detailsFullData, setDetailsFullData] = useState<any>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   const fetchExchanges = useCallback(async (forceRefresh: boolean = false) => {
     try {
@@ -500,6 +530,39 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     setConnecting(false) // Reset loading state
   }, [])
 
+  // Funções para modal de detalhes
+  const openDetailsModal = useCallback(async (exchange: any, type: 'linked' | 'available') => {
+    setDetailsExchange(exchange)
+    setDetailsType(type)
+    setDetailsModalVisible(true)
+    setLoadingDetails(true)
+    setDetailsFullData(null)
+    
+    try {
+      // Busca detalhes completos da exchange
+      const exchangeId = type === 'linked' ? exchange.exchange_id : exchange._id
+      console.log('🔍 Fetching full details for exchange:', exchangeId)
+      const fullData = await apiService.getExchangeFullDetails(exchangeId, true, true)
+      console.log('✅ Full details loaded:', fullData)
+      console.log('📊 Fees data:', fullData?.fees)
+      console.log('📈 Markets count:', fullData?.markets ? Object.keys(fullData.markets).length : 0)
+      console.log('✨ Has capabilities:', fullData?.has ? Object.keys(fullData.has).length : 0)
+      setDetailsFullData(fullData)
+    } catch (error) {
+      console.error('❌ Error loading exchange details:', error)
+      // Continua mostrando o modal com os dados básicos
+    } finally {
+      setLoadingDetails(false)
+    }
+  }, [])
+
+  const closeDetailsModal = useCallback(() => {
+    setDetailsModalVisible(false)
+    setDetailsExchange(null)
+    setDetailsFullData(null)
+    setLoadingDetails(false)
+  }, [])
+
   const handleOpenQRScanner = useCallback((field: 'apiKey' | 'apiSecret' | 'passphrase') => {
     setCurrentScanField(field)
     setQrScannerVisible(true)
@@ -625,9 +688,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     tabActive: { backgroundColor: colors.tabActive, borderColor: colors.tabActive },
     tabText: { color: colors.tabText },
     tabTextActive: { color: colors.tabTextActive },
-    
-    // Icon Container
-    iconContainer: { backgroundColor: colors.surface },
     
     // Status
     statusTextActive: { color: colors.primary },
@@ -791,6 +851,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                   t={t}
                   onToggle={toggleExchange}
                   onDelete={handleDelete}
+                  onPress={() => openDetailsModal(linkedExchange, 'linked')}
                 />
               ))}
             </>
@@ -810,6 +871,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                   colors={colors}
                   t={t}
                   onConnect={openConnectModal}
+                  onPress={() => openDetailsModal(exchange, 'available')}
                 />
               )
             })}
@@ -1177,6 +1239,510 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Modal de Detalhes da Exchange */}
+      <Modal
+        visible={detailsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeDetailsModal}
+      >
+        <KeyboardAvoidingView 
+          style={styles.confirmModalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.detailsModalContent, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
+                  {detailsType === 'linked' ? '🔗 Exchange Conectada' : '🌐 Detalhes da Exchange'}
+                </Text>
+                <TouchableOpacity onPress={closeDetailsModal} style={styles.confirmModalCloseButton}>
+                  <Text style={[styles.confirmModalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Body */}
+              <ScrollView style={styles.detailsModalScroll} showsVerticalScrollIndicator={true}>
+                {detailsExchange && (
+                  <View style={styles.detailsModalBody}>
+                    {/* Ícone e Nome da Exchange */}
+                    <View style={[styles.detailsHeader, { backgroundColor: colors.surfaceSecondary }]}>
+                      <View style={styles.detailsIconContainer}>
+                        {(() => {
+                          const exchangeName = detailsType === 'linked' 
+                            ? detailsExchange.name?.toLowerCase() 
+                            : detailsExchange.nome?.toLowerCase()
+                          const localIcon = exchangeLogos[exchangeName]
+                          const iconUrl = detailsType === 'linked' 
+                            ? detailsExchange.icon 
+                            : detailsExchange.icon
+                          
+                          if (localIcon) {
+                            return (
+                              <Image 
+                                source={localIcon} 
+                                style={styles.detailsExchangeIcon}
+                                resizeMode="contain"
+                              />
+                            )
+                          } else if (iconUrl) {
+                            return (
+                              <Image 
+                                source={{ uri: iconUrl }} 
+                                style={styles.detailsExchangeIcon}
+                                resizeMode="contain"
+                              />
+                            )
+                          }
+                          return <Text style={styles.detailsIconText}>🔗</Text>
+                        })()}
+                      </View>
+                      <View style={styles.detailsHeaderText}>
+                        <Text style={[styles.detailsExchangeName, { color: colors.text }]}>
+                          {detailsType === 'linked' ? detailsExchange.name : detailsExchange.nome}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Informações */}
+                    <View style={styles.detailsSection}>
+                      <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                         Informações Gerais
+                      </Text>
+                      
+                      {loadingDetails ? (
+                        <View style={styles.detailsLoadingContainer}>
+                          <ActivityIndicator size="small" color={colors.primary} />
+                          <Text style={[styles.detailsLoadingText, { color: colors.textSecondary }]}>
+                            Carregando detalhes...
+                          </Text>
+                        </View>
+                      ) : (
+                        <>
+                          {detailsType === 'linked' ? (
+                            <>
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Nome:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {detailsExchange.name}
+                                </Text>
+                              </View>
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Exchange ID:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]} numberOfLines={1}>
+                                  {detailsExchange.exchange_id}
+                                </Text>
+                              </View>
+                              
+                              {detailsFullData?.ccxt_id && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    CCXT ID:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsFullData.ccxt_id}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {(detailsExchange.country || detailsFullData?.pais_de_origem) && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    País:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsExchange.country || detailsFullData?.pais_de_origem || 'N/A'}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {(detailsExchange.url || detailsFullData?.url) && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Website:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.primary }]} numberOfLines={1}>
+                                    {detailsExchange.url || detailsFullData?.url}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Conectada em:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {new Date(detailsExchange.linked_at).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </Text>
+                              </View>
+                              
+                              {detailsExchange.updated_at && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Última atualização:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {new Date(detailsExchange.updated_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.reconnected_at && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Reconectada em:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.success }]}>
+                                    {new Date(detailsExchange.reconnected_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.disconnected_at && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Desconectada em:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.danger }]}>
+                                    {new Date(detailsExchange.disconnected_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Status:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {detailsExchange.status === 'active' ? 'Ativa ✓' : 'Inativa ✗'}
+                                </Text>
+                              </View>
+                            </>
+                          ) : (
+                            <>
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Nome:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {detailsExchange.nome}
+                                </Text>
+                              </View>
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Exchange ID:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]} numberOfLines={1}>
+                                  {detailsExchange._id}
+                                </Text>
+                              </View>
+                              
+                              {detailsFullData?.ccxt_id && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    CCXT ID:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsFullData.ccxt_id}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.pais_de_origem && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    País de Origem:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsExchange.pais_de_origem}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.url && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Website:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.primary }]} numberOfLines={1}>
+                                    {detailsExchange.url}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Requer Passphrase:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: detailsExchange.requires_passphrase ? colors.primary : colors.textSecondary }]}>
+                                  {detailsExchange.requires_passphrase ? 'Sim ✓' : 'Não'}
+                                </Text>
+                              </View>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </View>
+
+                    {/* Recursos (se disponível) */}
+                    {detailsType === 'available' && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          ⚡ Recursos
+                        </Text>
+                        <View style={[styles.detailsFeatureBox, { backgroundColor: colors.surfaceSecondary }]}>
+                          <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                            • Trading de criptomoedas
+                          </Text>
+                          <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                            • API para integração
+                          </Text>
+                          <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                            • Suporte a múltiplas moedas
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Taxas (Fees) */}
+                    {detailsFullData?.fees && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          💰 Taxas
+                        </Text>
+                        
+                        {detailsFullData.fees.trading && (
+                          <View style={[styles.detailsFeesBox, { backgroundColor: colors.surfaceSecondary }]}>
+                            <Text style={[styles.detailsFeesTitle, { color: colors.text }]}>Trading:</Text>
+                            
+                            {detailsFullData.fees.trading.maker !== undefined && detailsFullData.fees.trading.maker !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Maker:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.trading.maker === 'number'
+                                    ? `${(detailsFullData.fees.trading.maker * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.trading.maker)}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.trading.taker !== undefined && detailsFullData.fees.trading.taker !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Taker:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.trading.taker === 'number'
+                                    ? `${(detailsFullData.fees.trading.taker * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.trading.taker)}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.trading.percentage !== undefined && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Tipo:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {detailsFullData.fees.trading.percentage ? 'Percentual' : 'Fixo'}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.trading.tierBased !== undefined && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Por nível:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {detailsFullData.fees.trading.tierBased ? 'Sim' : 'Não'}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                        
+                        {detailsFullData.fees.funding && (
+                          <View style={[styles.detailsFeesBox, { backgroundColor: colors.surfaceSecondary, marginTop: 12 }]}>
+                            <Text style={[styles.detailsFeesTitle, { color: colors.text }]}>Funding:</Text>
+                            
+                            {detailsFullData.fees.funding.withdraw !== undefined && detailsFullData.fees.funding.withdraw !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Retirada:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.funding.withdraw === 'object' 
+                                    ? 'Varia por moeda'
+                                    : typeof detailsFullData.fees.funding.withdraw === 'number'
+                                    ? `${(detailsFullData.fees.funding.withdraw * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.funding.withdraw)}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.funding.deposit !== undefined && detailsFullData.fees.funding.deposit !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Depósito:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.funding.deposit === 'object' 
+                                    ? 'Varia por moeda'
+                                    : typeof detailsFullData.fees.funding.deposit === 'number'
+                                    ? `${(detailsFullData.fees.funding.deposit * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.funding.deposit)}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                        
+                        {/* Mostra estrutura completa se houver mais dados */}
+                        {detailsFullData.fees && !detailsFullData.fees.trading && !detailsFullData.fees.funding && (
+                          <View style={[styles.detailsFeesBox, { backgroundColor: colors.surfaceSecondary }]}>
+                            <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                              Estrutura de taxas disponível na exchange
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Mercados (Markets) */}
+                    {detailsFullData?.markets && Object.keys(detailsFullData.markets).length > 0 && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          📈 Mercados Disponíveis
+                        </Text>
+                        <View style={[styles.detailsMarketsBox, { backgroundColor: colors.surfaceSecondary }]}>
+                          <Text style={[styles.detailsMarketsCount, { color: colors.text }]}>
+                            {Object.keys(detailsFullData.markets).length} pares de trading disponíveis
+                          </Text>
+                          <View style={styles.detailsMarketsSample}>
+                            {Object.keys(detailsFullData.markets).slice(0, 5).map((market, index) => (
+                              <View key={index} style={[styles.detailsMarketChip, { backgroundColor: colors.primary + '20', borderColor: colors.primary + '40' }]}>
+                                <Text style={[styles.detailsMarketText, { color: colors.primary }]}>
+                                  {market}
+                                </Text>
+                              </View>
+                            ))}
+                            {Object.keys(detailsFullData.markets).length > 5 && (
+                              <Text style={[styles.detailsMarketsMore, { color: colors.textSecondary }]}>
+                                +{Object.keys(detailsFullData.markets).length - 5} mais
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Capacidades (Has) */}
+                    {detailsFullData?.has && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          ✨ Capacidades da API
+                        </Text>
+                        <View style={[styles.detailsCapabilitiesBox, { backgroundColor: colors.surfaceSecondary }]}>
+                          {Object.entries(detailsFullData.has)
+                            .filter(([key, value]) => value === true)
+                            .slice(0, 10)
+                            .map(([key, value], index) => (
+                              <View key={index} style={styles.detailsCapabilityRow}>
+                                <Text style={[styles.detailsCapabilityText, { color: colors.text }]}>
+                                  ✓ {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </Text>
+                              </View>
+                            ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Informações de Segurança */}
+                    <View style={styles.detailsSection}>
+                      <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                        🔒 Segurança
+                      </Text>
+                      <View style={[styles.detailsSecurityBox, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
+                        <Text style={[styles.detailsSecurityText, { color: colors.text }]}>
+                          {detailsType === 'linked' 
+                            ? '✓ Suas credenciais estão criptografadas e seguras'
+                            : 'ℹ️ Ao conectar, suas API Keys serão criptografadas'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* Footer Actions */}
+              <View style={[styles.detailsModalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.surface }]}
+                  onPress={closeDetailsModal}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: colors.text }]}>
+                    Fechar
+                  </Text>
+                </TouchableOpacity>
+                
+                {detailsType === 'available' && !linkedExchanges.some(
+                  linked => linked.exchange_id === detailsExchange?._id
+                ) && (
+                  <TouchableOpacity
+                    style={[styles.confirmModalButton, { backgroundColor: colors.primary }]}
+                    onPress={() => {
+                      closeDetailsModal()
+                      openConnectModal(detailsExchange)
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.confirmModalButtonText, { color: '#ffffff' }]}>
+                      Conectar
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* QR Scanner Modal */}
       <QRScanner
         visible={qrScannerVisible}
@@ -1334,6 +1900,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
+    backgroundColor: '#ffffff',
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -1701,5 +2268,203 @@ const styles = StyleSheet.create({
   confirmModalButtonText: {
     fontSize: 15,
     fontWeight: '400',
+  },
+  // Details Modal Styles
+  detailsModalContent: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  detailsModalScroll: {
+    maxHeight: 500,
+  },
+  detailsModalBody: {
+    padding: 20,
+  },
+  detailsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  detailsIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  detailsExchangeIcon: {
+    width: 48,
+    height: 48,
+  },
+  detailsIconText: {
+    fontSize: 28,
+  },
+  detailsHeaderText: {
+    flex: 1,
+    gap: 8,
+  },
+  detailsExchangeName: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  detailsStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  detailsStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  detailsStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  detailsSection: {
+    marginBottom: 24,
+  },
+  detailsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  detailsInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  detailsInfoLabel: {
+    fontSize: 14,
+    fontWeight: '400',
+    flex: 1,
+  },
+  detailsInfoValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1.5,
+    textAlign: 'right',
+  },
+  detailsFeatureBox: {
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  detailsFeatureText: {
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 22,
+  },
+  detailsSecurityBox: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  detailsSecurityText: {
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 20,
+  },
+  detailsModalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 0.5,
+  },
+  detailsLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 20,
+    justifyContent: 'center',
+  },
+  detailsLoadingText: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  detailsFeesBox: {
+    padding: 12,
+    borderRadius: 8,
+  },
+  detailsFeesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  detailsFeeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  detailsFeeLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  detailsFeeValue: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  detailsMarketsBox: {
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  detailsMarketsCount: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  detailsMarketsSample: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  detailsMarketChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  detailsMarketText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  detailsMarketsMore: {
+    fontSize: 12,
+    fontWeight: '400',
+    paddingVertical: 6,
+  },
+  detailsCapabilitiesBox: {
+    padding: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  detailsCapabilityRow: {
+    paddingVertical: 4,
+  },
+  detailsCapabilityText: {
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 20,
   },
 })

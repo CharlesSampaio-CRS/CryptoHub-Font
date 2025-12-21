@@ -59,6 +59,15 @@ interface CacheEntry {
 const portfolioEvolutionCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 300000; // 5 minutos (aumentado de 30s)
 
+// Cache para detalhes completos das exchanges (fees, markets, etc)
+interface ExchangeDetailsCacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const exchangeDetailsCache = new Map<string, ExchangeDetailsCacheEntry>();
+const EXCHANGE_DETAILS_CACHE_TTL = 3600000; // 1 hora (dados de fees e markets mudam raramente)
+
 export const apiService = {
   /**
    * Busca os balances de todas as exchanges para um usuário
@@ -366,5 +375,103 @@ export const apiService = {
         error: error.message
       };
     }
+  },
+
+  /**
+   * Busca detalhes completos de uma exchange (fees, markets, etc)
+   * @param exchangeId MongoDB _id da exchange
+   * @param includeFees Se deve incluir informações de taxas
+   * @param includeMarkets Se deve incluir informações de mercados
+   * @param forceRefresh Se true, ignora o cache e busca dados frescos
+   * @returns Promise com todos os detalhes da exchange
+   */
+  async getExchangeFullDetails(
+    exchangeId: string, 
+    includeFees: boolean = true, 
+    includeMarkets: boolean = true,
+    forceRefresh: boolean = false
+  ): Promise<any> {
+    const cacheKey = `${exchangeId}-${includeFees}-${includeMarkets}`;
+    const now = Date.now();
+
+    // Verifica se existe cache válido (somente se não forçar refresh)
+    if (!forceRefresh) {
+      const cached = exchangeDetailsCache.get(cacheKey);
+      if (cached && (now - cached.timestamp) < EXCHANGE_DETAILS_CACHE_TTL) {
+        console.log('📦 Using cached exchange details for:', exchangeId);
+        return cached.data;
+      }
+    }
+
+    try {
+      const feesParam = includeFees ? 'include_fees=true' : '';
+      const marketsParam = includeMarkets ? 'include_markets=true' : '';
+      const params = [feesParam, marketsParam].filter(p => p).join('&');
+      const url = `${API_BASE_URL}/exchanges/${exchangeId}${params ? '?' + params : ''}`;
+      
+      console.log('🔍 Fetching full exchange details:', url);
+      
+      const response = await fetchWithTimeout(url, {
+        method: 'GET',
+        cache: forceRefresh ? 'no-store' : 'default'
+      }, 15000); // 15s timeout
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Exchange full details loaded:', data);
+      
+      // Armazena no cache
+      exchangeDetailsCache.set(cacheKey, {
+        data,
+        timestamp: now
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('❌ Error fetching exchange full details:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Limpa o cache de detalhes de uma exchange específica ou de todas
+   * @param exchangeId ID da exchange (opcional). Se não fornecido, limpa todo o cache
+   */
+  clearExchangeDetailsCache(exchangeId?: string) {
+    if (exchangeId) {
+      // Limpa apenas o cache da exchange específica
+      const keysToDelete: string[] = [];
+      exchangeDetailsCache.forEach((_, key) => {
+        if (key.startsWith(exchangeId)) {
+          keysToDelete.push(key);
+        }
+      });
+      keysToDelete.forEach(key => exchangeDetailsCache.delete(key));
+      console.log(`🗑️ Cache cleared for exchange: ${exchangeId}`);
+    } else {
+      // Limpa todo o cache
+      exchangeDetailsCache.clear();
+      console.log('🗑️ All exchange details cache cleared');
+    }
+  },
+
+  /**
+   * Retorna informações sobre o cache atual
+   */
+  getCacheInfo() {
+    return {
+      portfolioEvolution: {
+        size: portfolioEvolutionCache.size,
+        ttl: CACHE_TTL,
+      },
+      exchangeDetails: {
+        size: exchangeDetailsCache.size,
+        ttl: EXCHANGE_DETAILS_CACHE_TTL,
+        entries: Array.from(exchangeDetailsCache.keys())
+      }
+    };
   }
 };
