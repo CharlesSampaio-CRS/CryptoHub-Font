@@ -30,7 +30,6 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false, useSummary = false) => {
     try {
-      
       // Controle inteligente de loading states
       if (!silent && !data) {
         setLoading(true)
@@ -73,7 +72,8 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       return
     }
     
-    await fetchBalances(true, true, false, false) // forceRefresh=TRUE (sem cache), emitEvent=true, silent=false, useSummary=FALSE
+    // NÃO emite evento no refresh manual para evitar loop circular
+    await fetchBalances(true, false, false, false) // forceRefresh=TRUE, emitEvent=FALSE, silent=false, useSummary=FALSE
   }, [fetchBalances])
 
   // Função específica para atualizar quando exchanges mudam
@@ -88,12 +88,25 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   // }, [])
 
   // Auto-refresh a cada 5 minutos de forma silenciosa com dados COMPLETOS
+  // IMPORTANTE: Só inicia APÓS os primeiros 5 minutos, não imediatamente
   useEffect(() => {
-    const interval = setInterval(() => {
+    let interval: NodeJS.Timeout | null = null
+    
+    // Aguarda 5 minutos antes de iniciar o auto-refresh
+    const timeout = setTimeout(() => {
+      // Primeira chamada após 5 minutos
       fetchBalances(true, false, true, false) // forceRefresh=true, silent=true, useSummary=FALSE
-    }, 5 * 60 * 1000) // 5 minutos
+      
+      // Depois configura o intervalo de 5 em 5 minutos
+      interval = setInterval(() => {
+        fetchBalances(true, false, true, false) // forceRefresh=true, silent=true, useSummary=FALSE
+      }, 5 * 60 * 1000) // 5 minutos
+    }, 5 * 60 * 1000) // Primeiro timeout de 5 minutos
 
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(timeout)
+      if (interval) clearInterval(interval)
+    }
   }, [fetchBalances])
 
   // Listener para eventos externos (como exchanges-manager)

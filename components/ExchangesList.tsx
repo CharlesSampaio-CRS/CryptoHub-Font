@@ -9,21 +9,7 @@ import { usePrivacy } from "@/contexts/PrivacyContext"
 import { SkeletonExchangeItem } from "./SkeletonLoaders"
 import { TokenDetailsModal } from "./token-details-modal"
 import { config } from "@/lib/config"
-
-// Mapeamento dos nomes das exchanges para os arquivos de imagem
-const exchangeLogos: Record<string, any> = {
-  "binance": require("@/assets/binance.png"),
-  "novadax": require("@/assets/novadax.png"),
-  "mexc": require("@/assets/mexc.png"),
-  "coinbase": require("@/assets/coinbase.png"),
-  "coinex": require("@/assets/coinex.png"),
-  "bitget": require("@/assets/bitget.png"),
-  "kraken": require("@/assets/kraken.png"),
-  "bybit": require("@/assets/bybit.png"),
-  "gate.io": require("@/assets/gateio.png"),
-  "kucoin": require("@/assets/kucoin.png"),
-  "okx": require("@/assets/okx.png"),
-}
+import { getExchangeLogo } from "@/lib/exchange-logos"
 
 interface ExchangesListProps {
   onAddExchange?: () => void
@@ -164,13 +150,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           // Usar token_count do summary se disponível, caso contrário contar os tokens carregados
           const tokenCount = exchange.token_count !== undefined ? exchange.token_count : tokens.length
           const balance = parseFloat(exchange.total_usd)
-          const exchangeNameLower = exchange.name.toLowerCase()
-          const logoSource = exchangeLogos[exchangeNameLower]
+          const logoSource = getExchangeLogo(exchange.name)
           const isExpanded = expandedExchangeId === exchange.exchange_id
-          
-          // Debug log
-          if (!logoSource) {
-          }
 
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
@@ -193,6 +174,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                             source={logoSource} 
                             style={styles.logoImage}
                             resizeMode="contain"
+                            fadeDuration={0}
+                            defaultSource={logoSource}
                           />
                         ) : (
                           <Text style={styles.logoFallback}>💰</Text>
