@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { AnimatedLogoIcon } from './AnimatedLogoIcon'
 
 interface LoadingProgressProps {
   visible: boolean
@@ -23,19 +24,11 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
   // Animações
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
-  const spinValue = useRef(new Animated.Value(0)).current
-  const spinnerPulse = useRef(new Animated.Value(1)).current
   const textFadeAnim = useRef(new Animated.Value(1)).current
   const textShimmer = useRef(new Animated.Value(0)).current
   const dotsAnimations = useRef(
     steps.map(() => new Animated.Value(0))
   ).current
-  // Partículas flutuantes ao redor do spinner
-  const particles = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current
 
   console.log('🔄 LoadingProgress - visible:', visible, 'currentStep:', currentStep)
 
@@ -59,46 +52,6 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
       fadeAnim.setValue(0)
       scaleAnim.setValue(0.9)
       setCurrentStep(0)
-    }
-  }, [visible])
-
-  // Animação de rotação contínua
-  useEffect(() => {
-    if (visible) {
-      Animated.loop(
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      ).start()
-    } else {
-      spinValue.setValue(0)
-    }
-  }, [visible])
-
-  // Animação de pulso no spinner (respira)
-  useEffect(() => {
-    if (visible) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(spinnerPulse, {
-            toValue: 1.1,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(spinnerPulse, {
-            toValue: 1,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start()
-    } else {
-      spinnerPulse.setValue(1)
     }
   }, [visible])
 
@@ -134,30 +87,6 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
       ).start()
     } else {
       textShimmer.setValue(0)
-    }
-  }, [visible])
-
-  // Animação de partículas flutuantes
-  useEffect(() => {
-    if (visible) {
-      particles.forEach((particle, index) => {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(particle, {
-              toValue: 1,
-              duration: 2000 + index * 500, // Diferentes velocidades
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(particle, {
-              toValue: 0,
-              duration: 2000 + index * 500,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ])
-        ).start()
-      })
     }
   }, [visible])
 
@@ -226,11 +155,6 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
 
   if (!visible) return null
 
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  })
-
   const currentStepText = currentStep < steps.length ? t(steps[currentStep].key) : t('loading.almostReady')
 
   // Interpolação do shimmer para criar efeito de brilho
@@ -257,51 +181,7 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
       >
         {/* Logo/Spinner customizado com rotação e pulso */}
         <View style={styles.spinnerWrapper}>
-          <Animated.View 
-            style={[
-              styles.spinnerContainer, 
-              { 
-                transform: [
-                  { rotate: spin },
-                  { scale: spinnerPulse }
-                ] 
-              }
-            ]}
-          >
-            <View style={[styles.spinner, { borderColor: colors.primary }]} />
-          </Animated.View>
-
-          {/* Partículas flutuantes */}
-          {particles.map((particle, index) => {
-            const translateY = particle.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -20],
-            })
-            const opacity = particle.interpolate({
-              inputRange: [0, 0.5, 1],
-              outputRange: [0.3, 0.8, 0.3],
-            })
-            const positions = [
-              { top: 10, left: -30 },
-              { top: 40, right: -30 },
-              { bottom: 15, left: -25 },
-            ]
-
-            return (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.particle,
-                  {
-                    backgroundColor: colors.primary,
-                    ...positions[index],
-                    opacity,
-                    transform: [{ translateY }],
-                  },
-                ]}
-              />
-            )
-          })}
+          <AnimatedLogoIcon size={80} />
         </View>
 
         {/* Texto do step atual com animação de fade e shimmer */}

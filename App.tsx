@@ -251,16 +251,16 @@ function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {!isAuthenticated ? (
+      {!isAuthenticated || isLoadingData ? (
+        // Mantém AuthStack visível durante o loading inicial
         <AuthStack />
       ) : (
-        <>
-          <DataLoader onDataReady={setLoadingDataComplete}>
-            <MainTabs />
-          </DataLoader>
-          <LoadingProgress visible={isLoadingData} />
-        </>
+        <DataLoader onDataReady={setLoadingDataComplete}>
+          <MainTabs />
+        </DataLoader>
       )}
+      {/* LoadingProgress aparece sobre qualquer tela quando isLoadingData = true */}
+      <LoadingProgress visible={isLoadingData} />
     </NavigationContainer>
   )
 }

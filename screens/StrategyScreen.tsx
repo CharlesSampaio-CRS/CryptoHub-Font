@@ -1,4 +1,4 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl, KeyboardAvoidingView, Platform } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Modal, Pressable, RefreshControl, KeyboardAvoidingView, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
@@ -7,6 +7,7 @@ import { strategiesService, type Strategy as APIStrategy, type Execution } from 
 import { CreateStrategyModal } from "../components/create-strategy-modal"
 import { StrategyDetailsModal } from "@/components/StrategyDetailsModal"
 import { LogoIcon } from "../components/LogoIcon"
+import { AnimatedLogoIcon } from "../components/AnimatedLogoIcon"
 
 interface Strategy {
   id: string
@@ -394,7 +395,7 @@ export function StrategyScreen() {
       >
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size={40} color={colors.primary} />
+            <AnimatedLogoIcon size={48} />
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
               {t('common.loading')}
             </Text>
@@ -1026,9 +1027,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 60,
+    gap: 12,
   },
   loadingText: {
-    marginTop: 12,
     fontSize: 14,
   },
   // Create Button

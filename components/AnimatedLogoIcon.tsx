@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { Animated, Easing } from "react-native"
+import { Animated, Easing, Platform } from "react-native"
 import Svg, { Circle, Line, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode } from "react-native-svg"
 
 interface AnimatedLogoIconProps {
@@ -17,15 +17,22 @@ export const AnimatedLogoIcon = ({ size = 40 }: AnimatedLogoIconProps) => {
   const cornerPulse = useRef(new Animated.Value(1)).current
 
   useEffect(() => {
-    // Rotação contínua
-    const rotation = Animated.loop(
+    console.log('🎨 AnimatedLogoIcon mounted, starting animations...', {
+      platform: Platform.OS,
+      size
+    })
+    
+    // Rotação contínua - sempre loop infinito
+    Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
         duration: 3000,
         easing: Easing.linear,
         useNativeDriver: false,
       })
-    )
+    ).start()
+    
+    console.log('✅ Rotation animation started!')
     
     // Pulso dos satélites principais em sequência
     const createPulse = (anim: Animated.Value, delay: number) => {
@@ -49,7 +56,7 @@ export const AnimatedLogoIcon = ({ size = 40 }: AnimatedLogoIconProps) => {
     }
     
     // Pulso dos nós de canto
-    const cornerPulseAnim = Animated.loop(
+    Animated.loop(
       Animated.sequence([
         Animated.timing(cornerPulse, {
           toValue: 1.2,
@@ -64,19 +71,17 @@ export const AnimatedLogoIcon = ({ size = 40 }: AnimatedLogoIconProps) => {
           useNativeDriver: false,
         }),
       ])
-    )
+    ).start()
     
-    rotation.start()
     createPulse(pulse1, 0).start()
     createPulse(pulse2, 200).start()
     createPulse(pulse3, 400).start()
     createPulse(pulse4, 600).start()
-    cornerPulseAnim.start()
     
-    return () => {
-      rotation.stop()
-    }
-  }, [rotateAnim, pulse1, pulse2, pulse3, pulse4, cornerPulse])
+    console.log('✅ All AnimatedLogoIcon animations started successfully!')
+    
+    // Não precisa de cleanup porque loop roda infinitamente
+  }, []) // Dependências vazias para rodar só uma vez
 
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],

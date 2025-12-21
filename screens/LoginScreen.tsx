@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from 'react-native'
 import Svg, { Path, Circle, Line, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode } from 'react-native-svg'
 import { useAuth } from '@/contexts/AuthContext'
@@ -111,16 +110,30 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     biometricType,
     isBiometricEnabled,
     isLoading,
+    isLoadingData,
   } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
+  // Combina os dois estados de loading: botão continua rodando até completar tudo
+  const isFullLoading = isLoading || isLoadingData
+
   // Debug: verificar quando isLoading muda
   React.useEffect(() => {
-    console.log('🔍 LoginScreen - isLoading:', isLoading)
-  }, [isLoading])
+    console.log('🔍 LoginScreen - Estados:', {
+      isLoading,
+      isLoadingData,
+      isFullLoading,
+      timestamp: new Date().toLocaleTimeString()
+    })
+    if (isFullLoading) {
+      console.log('✨ AnimatedLogoIcon DEVE estar visível agora!')
+    } else {
+      console.log('⚪ AnimatedLogoIcon está OCULTO')
+    }
+  }, [isLoading, isLoadingData, isFullLoading])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -129,9 +142,9 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     }
 
     try {
-      console.log('🔄 Iniciando login...')
+      console.log('🔄 Iniciando login... isLoading atual:', isLoading)
       await login(email, password)
-      console.log('✅ Login concluído')
+      console.log('✅ Login concluído, isLoadingData ativo, aguardando dados...')
     } catch (error: any) {
       console.error('❌ Erro no login:', error)
       Alert.alert('Erro', error.message || 'Falha ao fazer login')
@@ -253,6 +266,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       borderWidth: 2,
       padding: 16,
       alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: 16,
     },
     loginButtonDisabled: {
@@ -367,7 +381,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            editable={!isLoading}
+            editable={!isFullLoading}
           />
         </View>
 
@@ -383,7 +397,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
-              editable={!isLoading}
+              editable={!isFullLoading}
             />
             <TouchableOpacity
               style={styles.showPasswordButton}
@@ -404,12 +418,12 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
           style={[
             styles.loginButton, 
             { backgroundColor: colors.surface, borderColor: '#3b82f6' },
-            isLoading && styles.loginButtonDisabled
+            isFullLoading && styles.loginButtonDisabled
           ]}
           onPress={handleLogin}
-          disabled={isLoading}
+          disabled={isFullLoading}
         >
-          {isLoading ? (
+          {isFullLoading ? (
             <AnimatedLogoIcon size={24} />
           ) : (
             <Text style={styles.loginButtonText}>Entrar</Text>
@@ -427,7 +441,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             <TouchableOpacity
               style={styles.biometricButton}
               onPress={handleBiometricLogin}
-              disabled={isLoading}
+              disabled={isFullLoading}
             >
               <Text style={styles.biometricIcon}>
                 {biometricType === 'Face ID' ? '👤' : '👆'}
@@ -449,7 +463,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
           <TouchableOpacity
             style={styles.socialButton}
             onPress={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={isFullLoading}
           >
             <GoogleIcon />
             <Text style={styles.socialButtonText}>Google</Text>
@@ -459,7 +473,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             <TouchableOpacity
               style={[styles.socialButton, { backgroundColor: isDark ? '#ffffff' : '#000000' }]}
               onPress={handleAppleLogin}
-              disabled={isLoading}
+              disabled={isFullLoading}
             >
               <AppleIcon color={isDark ? '#000000' : '#ffffff'} />
               <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>

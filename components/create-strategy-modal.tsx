@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  ActivityIndicator,
   Alert,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -18,6 +17,7 @@ import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { strategiesService } from "@/services/strategies"
+import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 import { apiService } from "@/services/api"
 import { LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
@@ -430,7 +430,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 </Text>
                 {loadingExchanges ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size={40} color={colors.primary} />
+                    <AnimatedLogoIcon size={48} />
                   </View>
                 ) : exchanges.length === 0 ? (
                   <View style={styles.emptyState}>
@@ -516,7 +516,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 </View>
                 {loadingTokens ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size={40} color={colors.primary} />
+                    <AnimatedLogoIcon size={48} />
                     <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                       Carregando tokens...
                     </Text>
@@ -706,7 +706,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 disabled={!canCreate || loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <AnimatedLogoIcon size={24} />
                 ) : (
                   <Text style={styles.buttonTextPrimary}>Criar Estratégia</Text>
                 )}
@@ -840,6 +840,8 @@ const styles = StyleSheet.create({
   loadingContainer: {
     paddingVertical: 40,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
   },
   emptyState: {
     alignItems: "center",

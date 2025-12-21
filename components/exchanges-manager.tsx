@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard, SafeAreaView } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard, SafeAreaView } from "react-native"
 import { useEffect, useState, useMemo, useCallback, memo } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { QRScanner } from "./QRScanner"
 import { LogoIcon } from "./LogoIcon"
+import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 import Svg, { Path } from "react-native-svg"
 
 // Mapeamento dos logos locais das exchanges
@@ -763,7 +764,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     return (
       <View style={[styles.container, themedStyles.container]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <AnimatedLogoIcon size={48} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Carregando exchanges...</Text>
         </View>
       </View>
@@ -1099,7 +1100,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                     disabled={connecting}
                   >
                     {connecting ? (
-                      <ActivityIndicator size="small" color={colors.textInverse} />
+                      <AnimatedLogoIcon size={20} />
                     ) : (
                       <Text style={styles.submitButtonText}>{t('exchanges.connect')}</Text>
                     )}
@@ -1313,7 +1314,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                       
                       {loadingDetails ? (
                         <View style={styles.detailsLoadingContainer}>
-                          <ActivityIndicator size="small" color={colors.primary} />
+                          <AnimatedLogoIcon size={32} />
                           <Text style={[styles.detailsLoadingText, { color: colors.textSecondary }]}>
                             Carregando detalhes...
                           </Text>
@@ -1828,9 +1829,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerContent: {
     flexDirection: "row",
@@ -1841,18 +1841,18 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: 18,
+    fontWeight: "300",
     letterSpacing: -0.2,
   },
   headerSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
     fontWeight: "300",
   },
   tabs: {
     flexDirection: "row",
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     gap: 8,
     marginBottom: 12,
   },
@@ -1876,7 +1876,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   list: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 100, // Espaço extra no final para o scroll
   },
   card: {

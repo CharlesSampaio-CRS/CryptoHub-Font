@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableWithoutFeedback } from "react-native"
+import { View, Text, StyleSheet, Dimensions, TouchableWithoutFeedback } from "react-native"
 import { memo, useState, useEffect, useMemo } from "react"
 import { LineChart } from "react-native-chart-kit"
 import { LinearGradient } from "expo-linear-gradient"
@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
 import { usePrivacy } from "@/contexts/PrivacyContext"
 import { SkeletonChart } from "./SkeletonLoaders"
+import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 
 const screenWidth = Dimensions.get("window").width
 
@@ -17,12 +18,24 @@ export const QuickChart = memo(function QuickChart() {
   const { valuesHidden } = usePrivacy()
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<7 | 15 | 30>(7) // Período padrão: 7 dias
+  const [isChangingPeriod, setIsChangingPeriod] = useState(false)
+  const [previousData, setPreviousData] = useState<any>(null)
 
   // Busca novos dados quando o período mudar
   useEffect(() => {
     console.log(`📊 QuickChart: Período alterado para ${selectedPeriod} dias, buscando dados...`)
-    refreshEvolution(selectedPeriod)
+    setIsChangingPeriod(true)
+    refreshEvolution(selectedPeriod).finally(() => {
+      setIsChangingPeriod(false)
+    })
   }, [selectedPeriod, refreshEvolution])
+
+  // Salva dados anteriores quando novos dados chegam
+  useEffect(() => {
+    if (evolutionData && !isChangingPeriod) {
+      setPreviousData(evolutionData)
+    }
+  }, [evolutionData, isChangingPeriod])
 
   // Calcula estatísticas do período
   const stats = useMemo(() => {
@@ -49,14 +62,17 @@ export const QuickChart = memo(function QuickChart() {
 
   // Processa dados para o gráfico
   const getChartData = () => {
-    if (!evolutionData?.evolution) {
+    // Durante o carregamento, usa dados anteriores se disponíveis
+    const dataToUse = (isChangingPeriod && previousData) ? previousData : evolutionData
+    
+    if (!dataToUse?.evolution) {
       return {
         labels: [""],
         datasets: [{ data: [0] }],
       }
     }
 
-    const { timestamps, values_usd } = evolutionData.evolution
+    const { timestamps, values_usd } = dataToUse.evolution
     
     // Backend já retorna os dados do período correto, não precisa fazer slice
     
@@ -91,7 +107,7 @@ export const QuickChart = memo(function QuickChart() {
             const color = stats.isPositive ? '#10b981' : '#ef4444' // Verde ou vermelho
             return color + Math.round(opacity * 255).toString(16).padStart(2, '0')
           },
-          strokeWidth: 3,
+          strokeWidth: 3.5,
         },
       ],
     }
@@ -168,7 +184,8 @@ export const QuickChart = memo(function QuickChart() {
               </Text>
             </View>
           ) : (
-            <LineChart
+            <View style={styles.chartWrapper}>
+              <LineChart
               data={chartData}
               width={screenWidth - 64}
               height={240}
@@ -179,9 +196,9 @@ export const QuickChart = memo(function QuickChart() {
                 backgroundGradientFromOpacity: 0,
                 backgroundGradientToOpacity: 0,
                 fillShadowGradient: stats.isPositive ? '#10b981' : '#ef4444',
-                fillShadowGradientOpacity: 0.2,
-                fillShadowGradientTo: stats.isPositive ? '#10b98105' : '#ef444405',
-                fillShadowGradientToOpacity: 0.05,
+                fillShadowGradientOpacity: 0.25,
+                fillShadowGradientTo: stats.isPositive ? '#10b98110' : '#ef444410',
+                fillShadowGradientToOpacity: 0.08,
                 decimalPlaces: 0,
                 color: (opacity = 1) => {
                   const baseColor = stats.isPositive ? '#10b981' : '#ef4444'
@@ -192,16 +209,15 @@ export const QuickChart = memo(function QuickChart() {
                   borderRadius: 16,
                 },
                 propsForDots: {
-                  r: "4",
-                  strokeWidth: "2",
-                  stroke: stats.isPositive ? '#10b981' : '#ef4444',
-                  fill: isDark ? colors.background : '#ffffff',
+                  r: "5",
+                  strokeWidth: "0",
+                  fill: stats.isPositive ? '#10b981' : '#ef4444',
                 },
                 propsForBackgroundLines: {
                   strokeDasharray: "5,5",
                   stroke: colors.border,
-                  strokeWidth: 0.5,
-                  strokeOpacity: 0.3,
+                  strokeWidth: 0.8,
+                  strokeOpacity: 0.4,
                 },
                 propsForLabels: {
                   fontSize: 10,
@@ -216,7 +232,7 @@ export const QuickChart = memo(function QuickChart() {
               withHorizontalLabels={true}
               withDots={true}
               withShadow={false}
-              withVerticalLines={false}
+              withVerticalLines={true}
               withHorizontalLines={true}
               segments={4}
               formatYLabel={(value) => {
@@ -302,6 +318,17 @@ export const QuickChart = memo(function QuickChart() {
                 )
               }}
             />
+            
+            {/* Overlay de loading durante troca de período */}
+            {isChangingPeriod && (
+              <View style={styles.loadingOverlay}>
+                <AnimatedLogoIcon size={48} />
+                <Text style={[styles.loadingText, { color: '#ffffff' }]}>
+                  Carregando dados...
+                </Text>
+              </View>
+            )}
+          </View>
           )}
         </LinearGradient>
       </View>
@@ -392,10 +419,29 @@ const styles = StyleSheet.create({
     marginLeft: -16,
     borderRadius: 16,
   },
-  loadingContainer: {
-    height: 200,
+  chartWrapper: {
+    position: "relative",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 16,
+    gap: 12,
+  },
+  loadingContainer: {
+    height: 240,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 14,
+    marginTop: 12,
   },
   errorContainer: {
     height: 200,

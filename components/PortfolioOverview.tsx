@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
 import { memo } from "react"
 import { LinearGradient } from "expo-linear-gradient"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -8,6 +8,7 @@ import { usePrivacy } from "@/contexts/PrivacyContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
 import { apiService } from "@/services/api"
 import { SkeletonPortfolioOverview } from "./SkeletonLoaders"
+import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors, isDark } = useTheme()
@@ -115,7 +116,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             activeOpacity={refreshing ? 1 : 0.7}
           >
             {refreshing ? (
-              <ActivityIndicator size="small" color={colors.primary} />
+              <AnimatedLogoIcon size={20} />
             ) : (
               <Text style={[styles.refreshIcon, { color: colors.primary }]}>↻</Text>
             )}
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
   valueContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 12,
+    gap: 8,
     marginBottom: 20,
   },
   value: {
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
   changeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
     paddingTop: 16,
     borderTopWidth: 1,
   },
@@ -230,11 +231,11 @@ const styles = StyleSheet.create({
   changeValue: {
     fontSize: 15,
     fontWeight: "400",
+    flex: 1,
   },
   timeframe: {
     fontSize: 13,
     fontWeight: "400",
-    marginLeft: "auto",
   },
   errorText: {
     fontSize: 14,

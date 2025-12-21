@@ -9,11 +9,11 @@ import {
   Platform,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
 
 interface SignUpScreenProps {
   navigation: any
@@ -198,6 +198,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       borderWidth: 2,
       padding: 16,
       alignItems: 'center',
+      justifyContent: 'center',
       marginTop: 8,
       marginBottom: 16,
     },
@@ -398,7 +399,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
           disabled={isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator color="#ffffff" />
+            <AnimatedLogoIcon size={24} />
           ) : (
             <Text style={styles.registerButtonText}>Criar Conta</Text>
           )}

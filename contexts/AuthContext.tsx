@@ -161,7 +161,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Login error:', error)
       throw error
     } finally {
+      // Desativa isLoading imediatamente
       setIsLoading(false)
+      console.log('🔄 isLoading definido como FALSE, mas isLoadingData continua TRUE')
     }
   }
 
@@ -198,6 +200,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw error
     } finally {
       setIsLoading(false)
+      console.log('🔄 isLoading definido como FALSE (biométrico)')
     }
   }
 
@@ -229,6 +232,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw error
     } finally {
       setIsLoading(false)
+      console.log('🔄 isLoading definido como FALSE (Google)')
     }
   }
 
@@ -257,12 +261,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoadingData(true)
       console.log('🔄 isLoadingData definido como TRUE')
       
+      // Aguarda um tick para garantir que isLoadingData seja propagado
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
       // O loading será desativado pelo App.tsx quando os dados estiverem prontos
     } catch (error) {
       console.error('Apple login error:', error)
       throw error
     } finally {
       setIsLoading(false)
+      console.log('🔄 isLoading definido como FALSE (Apple)')
     }
   }
 
