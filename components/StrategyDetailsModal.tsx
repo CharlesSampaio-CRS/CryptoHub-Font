@@ -126,11 +126,16 @@ export function StrategyDetailsModal({
       >
         {/* Header com status */}
         <View style={[styles.statusHeader, { backgroundColor: colors.surface }]}>
-          <View style={styles.statusBadge}>
+          <View style={[
+            styles.statusBadge,
+            strategy.is_active 
+              ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)', borderWidth: 1 }
+              : { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1 }
+          ]}>
             <View 
               style={[
                 styles.statusDot, 
-                { backgroundColor: strategy.is_active ? '#10b981' : '#6b7280' }
+                { backgroundColor: strategy.is_active ? colors.primary : colors.danger }
               ]} 
             />
             <Text style={[styles.statusText, { color: colors.text }]}>
@@ -558,12 +563,16 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
     fontSize: 13,

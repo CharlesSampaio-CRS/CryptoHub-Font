@@ -6,9 +6,23 @@ import { useLanguage } from "../contexts/LanguageContext"
 import { usePrivacy } from "../contexts/PrivacyContext"
 import { LogoIcon } from "./LogoIcon"
 
+// Globe Icon (idioma)
+const GlobeIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path
+      d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
 // Eye Icon (valores visíveis)
 const EyeIcon = ({ color }: { color: string }) => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <Path
       d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5z"
       stroke={color}
@@ -22,7 +36,7 @@ const EyeIcon = ({ color }: { color: string }) => (
 
 // Eye Off Icon (valores ocultos)
 const EyeOffIcon = ({ color }: { color: string }) => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <Path
       d="M3 3l18 18M10.5 10.677a2.5 2.5 0 0 0 3.323 3.323"
       stroke={color}
@@ -42,7 +56,7 @@ const EyeOffIcon = ({ color }: { color: string }) => (
 
 // Bell Icon (notificações)
 const BellIcon = ({ color }: { color: string }) => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <Path
       d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
       stroke={color}
@@ -62,7 +76,7 @@ interface HeaderProps {
 
 // User Icon (perfil)
 const UserIcon = ({ color }: { color: string }) => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <Path
       d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
       stroke={color}
@@ -76,7 +90,7 @@ const UserIcon = ({ color }: { color: string }) => (
 
 export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, onProfilePress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
-  const { t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const { valuesHidden, toggleValuesVisibility } = usePrivacy()
   const iconOpacity = useRef(new Animated.Value(1)).current
   const iconScale = useRef(new Animated.Value(1)).current
@@ -116,6 +130,19 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
         ]}
         pointerEvents={hideIcons ? "none" : "auto"}
       >
+        {/* Language Toggle - Globe + Flag */}
+        <TouchableOpacity
+          style={[
+            styles.languageToggle,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          onPress={() => setLanguage(language === 'pt-BR' ? 'en-US' : 'pt-BR')}
+          activeOpacity={0.7}
+        >
+          <GlobeIcon color={colors.text} />
+          <Text style={styles.flagEmoji}>{language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity 
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={toggleValuesVisibility}
@@ -174,16 +201,29 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "300",
   },
+  flagEmoji: {
+    fontSize: 12,
+  },
   actions: {
     flexDirection: "row",
     gap: 6,
   },
+  languageToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 0.5,
+  },
   iconButton: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 7,
+    borderRadius: 16,
     borderWidth: 0.5,
     position: "relative",
   },

@@ -163,9 +163,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 24,
     minWidth: 180,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: "#3b82f6",
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: '#3b82f6',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',

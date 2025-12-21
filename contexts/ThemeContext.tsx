@@ -3,19 +3,56 @@ import React, { createContext, useContext, useState, useMemo, useCallback } from
 type Theme = 'light' | 'dark'
 
 interface ThemeColors {
+  // Backgrounds
   background: string
   surface: string
   surfaceSecondary: string
+  surfaceHover: string  // Para hover states
+  
+  // Borders
   border: string
+  borderLight: string
+  
+  // Text
   text: string
   textSecondary: string
+  textTertiary: string
+  textInverse: string  // Texto em fundos escuros (sempre branco)
+  
+  // Primary Colors
   primary: string
   primaryDark: string
+  primaryLight: string
+  primaryText: string  // Texto sobre fundo azul
+  
+  // Semantic Colors
   success: string
+  successLight: string
   danger: string
+  dangerLight: string
   warning: string
+  warningLight: string
+  info: string
+  infoLight: string
+  
+  // Component Specific
   card: string
   cardBorder: string
+  input: string
+  inputBorder: string
+  badge: string
+  badgeBorder: string
+  
+  // Toggle/Switch
+  toggleInactive: string
+  toggleActive: string
+  toggleThumb: string
+  
+  // Tab
+  tabInactive: string
+  tabActive: string
+  tabText: string
+  tabTextActive: string
 }
 
 interface ThemeContextType {
@@ -26,35 +63,109 @@ interface ThemeContextType {
 }
 
 const lightColors: ThemeColors = {
-  background: '#f0f7ff',
+  // Backgrounds
+  background: '#f5f5f5',
   surface: '#ffffff',
-  surfaceSecondary: '#e3f2fd',
-  border: '#bbdefb',
-  text: '#1e3a5f',
-  textSecondary: '#64748b',
+  surfaceSecondary: '#f9fafb',
+  surfaceHover: '#f3f4f6',
+  
+  // Borders  
+  border: '#e5e7eb',
+  borderLight: '#f3f4f6',
+  
+  // Text
+  text: '#111827',
+  textSecondary: '#6b7280',
+  textTertiary: '#9ca3af',
+  textInverse: '#ffffff',
+  
+  // Primary Colors
   primary: '#3b82f6',
   primaryDark: '#2563eb',
+  primaryLight: '#60a5fa',
+  primaryText: '#ffffff',
+  
+  // Semantic Colors
   success: '#10b981',
+  successLight: '#d1fae5',
   danger: '#ef4444',
+  dangerLight: '#fee2e2',
   warning: '#f59e0b',
+  warningLight: '#fef3c7',
+  info: '#3b82f6',
+  infoLight: '#dbeafe',
+  
+  // Component Specific
   card: '#ffffff',
-  cardBorder: '#e0f2fe',
+  cardBorder: '#e5e7eb',
+  input: '#f9fafb',
+  inputBorder: '#d1d5db',
+  badge: '#f3f4f6',
+  badgeBorder: '#d1d5db',
+  
+  // Toggle/Switch
+  toggleInactive: '#e5e7eb',
+  toggleActive: '#3b82f6',
+  toggleThumb: '#ffffff',
+  
+  // Tab
+  tabInactive: '#f3f4f6',
+  tabActive: '#3b82f6',
+  tabText: '#6b7280',
+  tabTextActive: '#ffffff',
 }
 
 const darkColors: ThemeColors = {
-  background: '#0f172a',      // Slate 900 - fundo escuro mas sofisticado
-  surface: '#1e293b',         // Slate 800 - superfícies mais escuras
-  surfaceSecondary: '#334155', // Slate 700 - elementos secundários
-  border: '#475569',          // Slate 600 - bordas sutis e elegantes
-  text: '#f1f5f9',            // Slate 100 - texto super claro
-  textSecondary: '#cbd5e1',   // Slate 300 - secundário bem visível
-  primary: '#60a5fa',         // Blue 400 - primário vibrante
-  primaryDark: '#3b82f6',     // Blue 500
-  success: '#34d399',         // Green 400 - verde claro
-  danger: '#f87171',          // Red 400 - vermelho suave
-  warning: '#fbbf24',         // Amber 400 - amarelo claro
-  card: '#1e293b',            // Slate 800 - cards escuros elegantes
-  cardBorder: '#334155',      // Slate 700 - bordas dos cards sutis
+  // Backgrounds
+  background: '#0a0a0a',
+  surface: '#1f1f1f',
+  surfaceSecondary: '#2a2a2a',
+  surfaceHover: '#2a2a2a',
+  
+  // Borders
+  border: '#525252',
+  borderLight: '#404040',
+  
+  // Text
+  text: '#fafafa',
+  textSecondary: '#c4c4c4',
+  textTertiary: '#9ca3af',
+  textInverse: '#ffffff',
+  
+  // Primary Colors
+  primary: '#3b82f6',
+  primaryDark: '#2563eb',
+  primaryLight: '#60a5fa',
+  primaryText: '#ffffff',
+  
+  // Semantic Colors
+  success: '#10b981',
+  successLight: '#065f46',
+  danger: '#ef4444',
+  dangerLight: '#7f1d1d',
+  warning: '#f59e0b',
+  warningLight: '#78350f',
+  info: '#3b82f6',
+  infoLight: '#1e3a8a',
+  
+  // Component Specific
+  card: '#1f1f1f',
+  cardBorder: '#525252',
+  input: '#2a2a2a',
+  inputBorder: '#6b7280',
+  badge: '#2a2a2a',
+  badgeBorder: '#525252',
+  
+  // Toggle/Switch
+  toggleInactive: '#404040',
+  toggleActive: '#3b82f6',
+  toggleThumb: '#ffffff',
+  
+  // Tab
+  tabInactive: '#2a2a2a',
+  tabActive: '#3b82f6',
+  tabText: '#c4c4c4',
+  tabTextActive: '#ffffff',
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)

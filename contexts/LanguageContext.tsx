@@ -25,6 +25,8 @@ const translations = {
     'home.exchanges': 'Minhas Corretoras',
     'home.noData': 'Sem dados disponíveis',
     'home.loading': 'Carregando dados...',
+    'home.distribution': 'Por Exchange',
+    'home.noExchangesConnected': 'Nenhuma exchange conectada',
     
     // Profile Screen
     'profile.title': 'Perfil',
@@ -221,6 +223,8 @@ const translations = {
     'home.exchanges': 'My Exchanges',
     'home.noData': 'No data available',
     'home.loading': 'Loading data...',
+    'home.distribution': 'By Exchange',
+    'home.noExchangesConnected': 'No exchanges connected',
     
     // Profile Screen
     'profile.title': 'Profile',

@@ -9,6 +9,7 @@ import { useBalance } from "../contexts/BalanceContext"
 import { usePortfolio } from "../contexts/PortfolioContext"
 import { mockNotifications } from "../types/notifications"
 import { QuickChart } from "../components/QuickChart"
+import { ExchangesPieChart } from "../components/ExchangesPieChart"
 import { apiService } from "../services/api"
 import { config } from "../lib/config"
 
@@ -112,6 +113,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
       >
         <PortfolioOverview />
         <QuickChart />
+        <ExchangesPieChart />
         <ExchangesList 
           onAddExchange={onAddExchange}
           availableExchangesCount={availableExchangesCount}
@@ -134,7 +136,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 50,
+    padding: 16,
+    paddingBottom: 100,
+    gap: 16,
   },
 })

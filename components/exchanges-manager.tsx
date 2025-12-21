@@ -49,6 +49,13 @@ const LinkedExchangeCard = memo(({
   const localIcon = exchangeLogos[exchangeNameLower]
   const exchangeId = linkedExchange.exchange_id
   const isActive = linkedExchange.status === 'active'
+
+  // Themed styles for toggle
+  const themedToggleStyles = useMemo(() => ({
+    toggleButton: { backgroundColor: colors.toggleInactive },
+    toggleButtonActive: { backgroundColor: colors.toggleActive },
+    toggleThumb: { backgroundColor: colors.toggleThumb },
+  }), [colors])
   
   // Memoizar a formatação da data
   const formattedDate = useMemo(() => {
@@ -64,7 +71,7 @@ const LinkedExchangeCard = memo(({
       backgroundColor: colors.primary,
     },
     statusDotInactive: {
-      backgroundColor: colors.error,
+      backgroundColor: colors.danger,
     },
   }), [colors])
 
@@ -96,11 +103,19 @@ const LinkedExchangeCard = memo(({
           </View>
         </View>
         <TouchableOpacity 
-          style={[styles.toggleButton, isActive && styles.toggleButtonActive]}
+          style={[
+            styles.toggleButton, 
+            themedToggleStyles.toggleButton,
+            isActive && themedToggleStyles.toggleButtonActive
+          ]}
           onPress={() => onToggle(exchangeId, linkedExchange.status, linkedExchange.name)}
           activeOpacity={0.7}
         >
-          <View style={[styles.toggleThumb, isActive && styles.toggleThumbActive]} />
+          <View style={[
+            styles.toggleThumb, 
+            themedToggleStyles.toggleThumb,
+            isActive && styles.toggleThumbActive
+          ]} />
         </TouchableOpacity>
       </View>
       
@@ -119,6 +134,7 @@ const LinkedExchangeCard = memo(({
           styles.statusBadge,
           isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
         ]}>
+          
           <View style={[
             styles.statusDot,
             isActive ? themedStyles.statusDotActive : themedStyles.statusDotInactive
@@ -166,9 +182,6 @@ const AvailableExchangeCard = memo(({
       backgroundColor: colors.surface,
       borderColor: colors.border,
     },
-    button: {
-      backgroundColor: colors.primary,
-    },
   }), [colors])
 
   return (
@@ -202,10 +215,10 @@ const AvailableExchangeCard = memo(({
           </View>
         ) : (
           <TouchableOpacity 
-            style={[styles.connectButton, themedStyles.button]}
+            style={[styles.connectButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
             onPress={() => onConnect(exchange)}
           >
-            <Text style={styles.connectButtonText}>{t('exchanges.connect')}</Text>
+            <Text style={[styles.connectButtonText, { color: colors.primary }]}>{t('exchanges.connect')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -222,7 +235,7 @@ AvailableExchangeCard.displayName = 'AvailableExchangeCard'
 
 export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const { refreshOnExchangeChange } = useBalance()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
@@ -594,12 +607,96 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
     container: { backgroundColor: colors.background },
-    card: { backgroundColor: colors.surface, borderColor: colors.border },
+    card: { backgroundColor: colors.card, borderColor: colors.cardBorder },
     modal: { backgroundColor: colors.surface },
-    input: { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
-    button: { backgroundColor: colors.primary },
-    tabActive: { backgroundColor: colors.primary },
-    tabInactive: { backgroundColor: colors.surfaceSecondary },
+    modalContent: { backgroundColor: colors.surface },
+    menuModal: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+    menuDivider: { backgroundColor: colors.border },
+    
+    // Text colors
+    menuItemDanger: { color: colors.danger },
+    loadingText: { color: colors.textSecondary },
+    errorText: { color: colors.danger },
+    retryButtonText: { color: colors.textInverse },
+    
+    // Tabs
+    tab: { backgroundColor: colors.tabInactive, borderColor: colors.border },
+    tabInactive: { backgroundColor: colors.tabInactive, borderColor: colors.border },
+    tabActive: { backgroundColor: colors.tabActive, borderColor: colors.tabActive },
+    tabText: { color: colors.tabText },
+    tabTextActive: { color: colors.tabTextActive },
+    
+    // Icon Container
+    iconContainer: { backgroundColor: colors.surface },
+    
+    // Status
+    statusTextActive: { color: colors.primary },
+    statusTextInactive: { color: colors.danger },
+    statusActive: { color: colors.primary },
+    statusInactive: { color: colors.danger },
+    exchangeCountry: { color: colors.textSecondary },
+    
+    // Toggle
+    toggleButton: { backgroundColor: colors.toggleInactive },
+    toggleButtonActive: { backgroundColor: colors.toggleActive },
+    toggleThumb: { backgroundColor: colors.toggleThumb },
+    
+    // Details
+    detailLabel: { color: colors.textSecondary },
+    
+    // Connected Badge
+    connectedBadge: { 
+      backgroundColor: colors.primaryLight + '20',
+      borderColor: colors.primary 
+    },
+    
+    // Connect Button
+    connectButtonText: { color: colors.primary },
+    
+    // Info Box
+    infoBox: { 
+      backgroundColor: colors.infoLight,
+      borderColor: colors.primary + '40'
+    },
+    infoText: { color: colors.primary },
+    
+    // Empty State
+    emptyText: { color: colors.textSecondary },
+    
+    // Primary Button
+    primaryButtonText: { color: colors.primary },
+    
+    // Exchange Info
+    exchangeInfo: { backgroundColor: colors.surfaceSecondary },
+    
+    // Modal Exchange Country
+    modalExchangeCountry: { color: colors.textSecondary },
+    
+    // Input
+    input: { 
+      backgroundColor: colors.input,
+      borderColor: colors.inputBorder,
+      color: colors.text 
+    },
+    inputWithIcons: { 
+      backgroundColor: colors.input,
+      borderColor: colors.inputBorder,
+      color: colors.text 
+    },
+    inputHint: { color: colors.primaryLight },
+    
+    // Cancel Button
+    cancelButton: { 
+      backgroundColor: colors.surfaceSecondary,
+      borderColor: colors.border 
+    },
+    cancelButtonText: { color: colors.textSecondary },
+    
+    // Submit Button
+    submitButtonText: { color: colors.primary },
+    
+    // Confirm Modal
+    confirmModalContent: { backgroundColor: colors.surface },
   }), [colors])
 
   if (loading) {
@@ -617,7 +714,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     return (
       <View style={[styles.container, themedStyles.container]}>
         <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
-        <TouchableOpacity style={[styles.retryButton, themedStyles.button]} onPress={() => fetchExchanges(true)}>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={() => fetchExchanges(true)}>
           <Text style={styles.retryButtonText}>Tentar Novamente</Text>
         </TouchableOpacity>
       </View>
@@ -648,7 +745,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           style={[styles.tab, activeTab === 'linked' ? themedStyles.tabActive : themedStyles.tabInactive]}
           onPress={() => setActiveTab('linked')}
         >
-          <Text style={[styles.tabText, activeTab === 'linked' && { color: '#ffffff' }, activeTab !== 'linked' && { color: colors.textSecondary }]}>
+          <Text style={[styles.tabText, activeTab === 'linked' ? themedStyles.tabTextActive : themedStyles.tabText]}>
             {t('exchanges.connected')}
           </Text>
         </TouchableOpacity>
@@ -656,7 +753,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           style={[styles.tab, activeTab === 'available' ? themedStyles.tabActive : themedStyles.tabInactive]}
           onPress={() => setActiveTab('available')}
         >
-          <Text style={[styles.tabText, activeTab === 'available' && { color: '#ffffff' }, activeTab !== 'available' && { color: colors.textSecondary }]}>
+          <Text style={[styles.tabText, activeTab === 'available' ? themedStyles.tabTextActive : themedStyles.tabText]}>
             {t('exchanges.available')}
           </Text>
         </TouchableOpacity>
@@ -677,7 +774,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 {t('exchanges.connectModal')}
               </Text>
               <TouchableOpacity
-                style={[styles.primaryButton, themedStyles.button]}
+                style={[styles.primaryButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
                 onPress={() => setActiveTab('available')}
               >
                 <Text style={styles.primaryButtonText}>{t('exchanges.viewAvailable')}</Text>
@@ -862,8 +959,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                           onPress={() => handleOpenQRScanner('apiKey')}
                         >
                           <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill="#ffffff"/>
+                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke={colors.textInverse} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill={colors.textInverse}/>
                           </Svg>
                         </TouchableOpacity>
                       </View>
@@ -897,8 +994,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                           onPress={() => handleOpenQRScanner('apiSecret')}
                         >
                           <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill="#ffffff"/>
+                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke={colors.textInverse} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill={colors.textInverse}/>
                           </Svg>
                         </TouchableOpacity>
                       </View>
@@ -935,12 +1032,12 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                     <Text style={[styles.cancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.submitButton, themedStyles.button, connecting && styles.submitButtonDisabled]}
+                    style={[styles.submitButton, { backgroundColor: colors.surface, borderColor: colors.primary }, connecting && styles.submitButtonDisabled]}
                     onPress={handleLinkExchange}
                     disabled={connecting}
                   >
                     {connecting ? (
-                      <ActivityIndicator size="small" color="#ffffff" />
+                      <ActivityIndicator size="small" color={colors.textInverse} />
                     ) : (
                       <Text style={styles.submitButtonText}>{t('exchanges.connect')}</Text>
                     )}
@@ -986,7 +1083,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmSubmitButton, themedStyles.button]}
+                style={[styles.confirmSubmitButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
                 onPress={confirmToggle}
               >
                 <Text style={styles.confirmSubmitButtonText}>
@@ -1008,8 +1105,8 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       >
         <View style={styles.confirmModalOverlay}>
           <View style={styles.safeArea}>
-            <View style={[styles.confirmModalContent, themedStyles.modal]}>
-              <View style={styles.confirmModalHeader}>
+            <View style={[styles.confirmModalContent, themedStyles.modal, { shadowColor: colors.text }]}>
+              <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
                   {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
                 </Text>
@@ -1024,15 +1121,20 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
               </Text>
             </View>
 
-            <View style={styles.confirmModalActions}>
+            <View style={[styles.confirmModalActions, { borderTopColor: colors.border }]}>
               <TouchableOpacity
-                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary }]}
+                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary, borderRightColor: colors.border }]}
                 onPress={() => setConfirmModalVisible(false)}
               >
                 <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmSubmitButton, confirmAction === 'delete' ? { backgroundColor: colors.danger } : themedStyles.button]}
+                style={[
+                  styles.confirmSubmitButton, 
+                  confirmAction === 'delete' 
+                    ? { backgroundColor: colors.surface, borderColor: colors.danger } 
+                    : { backgroundColor: colors.surface, borderColor: colors.primary }
+                ]}
                 onPress={() => {
                   if (confirmAction === 'delete') {
                     confirmDelete()
@@ -1041,7 +1143,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                   }
                 }}
               >
-                <Text style={styles.confirmSubmitButtonText}>
+                <Text style={[
+                  styles.confirmSubmitButtonText,
+                  { color: confirmAction === 'delete' ? colors.danger : colors.primary }
+                ]}>
                   {confirmAction === 'delete' ? t('exchanges.delete') : t('exchanges.disconnect')}
                 </Text>
               </TouchableOpacity>
@@ -1074,7 +1179,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f7ff",
   },
   // Menu Modal Styles
   menuModalOverlay: {
@@ -1084,10 +1188,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuModal: {
-    backgroundColor: "#e3f2fd",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#bbdefb",
     minWidth: 200,
     overflow: "hidden",
   },
@@ -1106,11 +1208,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   menuItemDanger: {
-    color: "#ef4444",
   },
   menuDivider: {
     height: 1,
-    backgroundColor: "#bbdefb",
   },
   loadingContainer: {
     flex: 1,
@@ -1120,16 +1220,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: "#9ca3af",
   },
   errorText: {
     fontSize: 14,
-    color: "#ef4444",
     textAlign: "center",
     padding: 20,
   },
   retryButton: {
-    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1139,15 +1236,14 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#ffffff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   headerContent: {
     flexDirection: "row",
@@ -1158,56 +1254,48 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: 16,
+    fontWeight: "400",
     letterSpacing: -0.2,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
     fontWeight: "300",
   },
   tabs: {
     flexDirection: "row",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: "#ffffff",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e3f2fd",
   },
   tabActive: {
-    backgroundColor: "#3b82f6",
-    borderColor: "#3b82f6",
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "400",
-    color: "#9ca3af",
   },
   tabTextActive: {
-    color: "#ffffff",
   },
   content: {
     flex: 1,
   },
   list: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 100, // Espaço extra no final para o scroll
   },
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e3f2fd",
     marginBottom: 12,
   },
   cardHeader: {
@@ -1222,35 +1310,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#ffffff",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   iconText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   exchangeIcon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
   },
   exchangeNameContainer: {
     flex: 1,
   },
   exchangeName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "400",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
     alignSelf: "flex-start",
   },
@@ -1280,42 +1367,34 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   statusTextActive: {
-    color: "#3b82f6",
   },
   statusTextInactive: {
-    color: "#ef4444",
   },
   exchangeStatus: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11,
+    fontWeight: "400",
   },
   statusActive: {
-    color: "#3b82f6",
   },
   statusInactive: {
-    color: "#ef4444",
   },
   exchangeCountry: {
     fontSize: 12,
-    color: "#6b7280",
   },
   // Toggle Button
   toggleButton: {
     width: 46,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#d4d4d4",
     padding: 2,
     justifyContent: "center",
   },
   toggleButtonActive: {
-    backgroundColor: "#3b82f6",
   },
   toggleThumb: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#ffffff",
   },
   toggleThumbActive: {
     alignSelf: "flex-end",
@@ -1326,71 +1405,58 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
   },
   deleteButton: {
-    padding: 6,
+    padding: 4,
   },
   deleteIcon: {
-    fontSize: 18,
+    fontSize: 16,
   },
   cardDetails: {
     marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e3f2fd",
     gap: 8,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 4,
   },
   detailLabel: {
     fontSize: 12,
-    color: "#6b7280",
   },
   detailValue: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "400",
   },
   connectedBadge: {
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#3b82f6",
   },
   connectedBadgeText: {
     fontSize: 12,
     fontWeight: "400",
-    color: "#3b82f6",
   },
   connectButton: {
-    backgroundColor: "#3b82f6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 2,
   },
   connectButtonText: {
     fontSize: 13,
-    fontWeight: "400",
-    color: "#ffffff",
+    fontWeight: "600",
   },
   infoBox: {
     marginTop: 12,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.2)",
   },
   infoText: {
     fontSize: 12,
-    color: "#60a5fa",
   },
   emptyState: {
     alignItems: "center",
@@ -1399,31 +1465,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 48,
+    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "400",
     marginBottom: 8,
     textAlign: "center",
   },
   emptyText: {
     fontSize: 14,
-    color: "#9ca3af",
     textAlign: "center",
     marginBottom: 24,
   },
   primaryButton: {
-    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
+    borderWidth: 2,
   },
   primaryButtonText: {
     fontSize: 14,
-    fontWeight: "400",
-    color: "#ffffff",
+    fontWeight: "600",
   },
 
   // Modal styles
@@ -1440,7 +1504,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalContent: {
-    backgroundColor: "#ffffff",
     borderRadius: 20,
     width: "90%",
     maxHeight: "85%",
@@ -1454,14 +1517,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "400",
   },
   closeButton: {
     padding: 4,
   },
   closeButtonText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "300",
   },
   exchangeInfo: {
@@ -1469,17 +1532,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 16,
-    backgroundColor: "#e3f2fd",
     borderRadius: 12,
     marginBottom: 24,
   },
   modalExchangeName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "400",
   },
   modalExchangeCountry: {
-    fontSize: 14,
-    color: "#9ca3af",
+    fontSize: 13,
     marginTop: 2,
   },
   form: {
@@ -1494,24 +1555,20 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   input: {
-    backgroundColor: "#e3f2fd",
     borderRadius: 8,
-    padding: 14,
-    fontSize: 15,
+    padding: 12,
+    fontSize: 14,
     borderWidth: 1,
-    borderColor: "#bbdefb",
   },
   inputWithButtons: {
     position: 'relative',
   },
   inputWithIcons: {
-    backgroundColor: "#e3f2fd",
     borderRadius: 8,
-    padding: 14,
+    padding: 12,
     paddingRight: 96,
-    fontSize: 15,
+    fontSize: 14,
     borderWidth: 1,
-    borderColor: "#bbdefb",
   },
   inputActions: {
     position: 'absolute',
@@ -1530,7 +1587,6 @@ const styles = StyleSheet.create({
   },
   inputHint: {
     fontSize: 12,
-    color: "#60a5fa",
     marginTop: 4,
   },
   modalActions: {
@@ -1541,30 +1597,26 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: "#e3f2fd",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#bbdefb",
   },
   cancelButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "400",
-    color: "#9ca3af",
   },
   submitButton: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: "#3b82f6",
+    borderWidth: 2,
     alignItems: "center",
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
-    fontSize: 15,
-    fontWeight: "400",
-    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   // Confirm Modal (centralizado)
   confirmModalOverlay: {
@@ -1574,12 +1626,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   confirmModalContent: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     width: "90%",
     maxWidth: 400,
     overflow: "hidden",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1588,28 +1638,24 @@ const styles = StyleSheet.create({
   confirmModalHeader: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
   },
   confirmModalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "400",
     textAlign: "center",
-    color: "#111827",
   },
   confirmModalBody: {
     padding: 24,
   },
   confirmModalMessage: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "300",
-    lineHeight: 22,
+    lineHeight: 20,
     textAlign: "center",
-    color: "#374151",
   },
   confirmModalActions: {
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
   },
   confirmCancelButton: {
     flex: 1,
@@ -1617,26 +1663,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRightWidth: 1,
-    borderRightColor: "#e5e7eb",
   },
   confirmCancelButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "400",
-    color: "#6b7280",
   },
   confirmSubmitButton: {
     flex: 1,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f59e0b",
+    borderWidth: 2,
   },
   confirmDeleteButton: {
-    backgroundColor: "#ef4444",
   },
   confirmSubmitButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
   },
 })

@@ -318,7 +318,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 <Text
                   style={[
                     styles.stepNumber,
-                    { color: step >= 1 ? "#ffffff" : colors.primary },
+                    { color: step >= 1 ? colors.primaryText : colors.primary },
                   ]}
                 >
                   1
@@ -340,7 +340,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 <Text
                   style={[
                     styles.stepNumber,
-                    { color: step >= 2 ? "#ffffff" : colors.textSecondary },
+                    { color: step >= 2 ? colors.primaryText : colors.textSecondary },
                   ]}
                 >
                   2
@@ -362,7 +362,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 <Text
                   style={[
                     styles.stepNumber,
-                    { color: step >= 3 ? "#ffffff" : colors.textSecondary },
+                    { color: step >= 3 ? colors.primaryText : colors.textSecondary },
                   ]}
                 >
                   3
@@ -1127,7 +1127,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   buttonTextPrimary: {
-    color: "#ffffff",
+    color: "#1a1a1a",
     fontSize: 14,
     fontWeight: "500",
   },

@@ -194,8 +194,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       fontSize: 14,
     },
     registerButton: {
-      backgroundColor: '#3b82f6',
       borderRadius: 12,
+      borderWidth: 2,
       padding: 16,
       alignItems: 'center',
       marginTop: 8,
@@ -205,9 +205,9 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       opacity: 0.6,
     },
     registerButtonText: {
-      color: '#ffffff',
+      color: '#3b82f6',
       fontSize: 15,
-      fontWeight: '400',
+      fontWeight: '600',
     },
     divider: {
       flexDirection: 'row',
@@ -391,6 +391,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
         <TouchableOpacity
           style={[
             styles.registerButton,
+            { backgroundColor: colors.surface, borderColor: '#3b82f6' },
             isLoading && styles.registerButtonDisabled,
           ]}
           onPress={handleRegister}

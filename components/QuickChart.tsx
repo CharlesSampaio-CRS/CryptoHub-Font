@@ -64,7 +64,7 @@ export const QuickChart = memo(function QuickChart() {
       datasets: [
         {
           data: values_usd,
-          color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+          color: (opacity = 1) => colors.primary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
           strokeWidth: 3,
         },
       ],
@@ -73,10 +73,10 @@ export const QuickChart = memo(function QuickChart() {
 
   const chartData = getChartData()
   
-  // Cores do gradiente baseado no tema - mais suaves
+  // Cores do gradiente baseado no tema - tons neutros
   const gradientColors: readonly [string, string, ...string[]] = isDark 
-    ? ['rgba(30, 30, 35, 0.4)', 'rgba(40, 40, 45, 0.5)', 'rgba(30, 30, 35, 0.4)']  // Dark mode - cinza escuro neutro
-    : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
+    ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza
+    : ['rgba(248, 249, 250, 0.95)', 'rgba(255, 255, 255, 0.95)', 'rgba(248, 249, 250, 0.95)']  // Light mode - cinza claro neutro
   
   if (loading) {
     return <SkeletonChart />
@@ -110,7 +110,7 @@ export const QuickChart = memo(function QuickChart() {
                 ]}>
                   <Text style={[
                     styles.periodButtonText,
-                    { color: selectedPeriod === period ? '#ffffff' : colors.textSecondary }
+                    { color: selectedPeriod === period ? colors.primaryText : colors.textSecondary }
                   ]}>
                     {period}d
                   </Text>
@@ -136,24 +136,20 @@ export const QuickChart = memo(function QuickChart() {
             backgroundGradientFrom: "transparent",
             backgroundGradientTo: "transparent",
             decimalPlaces: 0,
-            color: (opacity = 1) => isDark 
-              ? `rgba(96, 165, 250, ${opacity})` // Azul claro vibrante no dark mode
-              : `rgba(37, 99, 235, ${opacity})`, // Azul mais escuro no light mode
-            labelColor: (opacity = 1) => isDark
-              ? `rgba(203, 213, 225, ${opacity * 0.9})` // Labels claros no dark
-              : `rgba(71, 85, 105, ${opacity * 0.9})`, // Labels escuros no light
+            color: (opacity = 1) => colors.primary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
+            labelColor: (opacity = 1) => colors.textSecondary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
             style: {
               borderRadius: 16,
             },
             propsForDots: {
               r: "5",
               strokeWidth: "2",
-              stroke: isDark ? "#60a5fa" : "#2563eb",
-              fill: isDark ? "#60a5fa" : "#2563eb",
+              stroke: colors.primary,
+              fill: colors.primary,
             },
             propsForBackgroundLines: {
               strokeDasharray: "",
-              stroke: isDark ? "rgba(71, 85, 105, 0.3)" : "rgba(203, 213, 225, 0.4)",
+              stroke: colors.borderLight,
               strokeWidth: 1,
             },
             propsForLabels: {
@@ -220,9 +216,9 @@ export const QuickChart = memo(function QuickChart() {
                     left: x - 30,
                     top: y - 35,
                     fontSize: 11,
-                    fontWeight: '700',
-                    color: '#ffffff',
-                    backgroundColor: isDark ? '#3b82f6' : '#2563eb',
+                    fontWeight: '400',
+                    color: colors.primaryText,
+                    backgroundColor: colors.primary,
                     paddingHorizontal: 8,
                     paddingVertical: 4,
                     borderRadius: 6,
@@ -252,15 +248,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   container: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   titleContainer: {
     flexDirection: "row",
@@ -270,24 +274,25 @@ const styles = StyleSheet.create({
   },
   periodButtonsContainer: {
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
   },
   periodButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
     borderWidth: 1,
-    minWidth: 36,
+    minWidth: 42,
     alignItems: "center",
     justifyContent: "center",
   },
   periodButtonText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
   },
   title: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "400",
+    letterSpacing: 0.2,
   },
   hint: {
     fontSize: 11,

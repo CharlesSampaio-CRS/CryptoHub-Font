@@ -114,7 +114,7 @@ export function SkeletonPortfolioOverview() {
   const { colors } = useTheme()
   
   return (
-    <View style={[styles.overviewContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+    <View style={[styles.overviewContainer, { borderColor: colors.cardBorder }]}>
       <Skeleton width={120} height={14} />
       <Skeleton width={200} height={32} style={{ marginTop: 12 }} />
       <View style={styles.overviewStats}>

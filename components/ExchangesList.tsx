@@ -81,19 +81,17 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
     card: { backgroundColor: colors.surface, borderColor: colors.border },
-    toggle: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
-    toggleActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    toggleThumb: { backgroundColor: colors.background },
+    toggle: { backgroundColor: colors.toggleInactive, borderColor: colors.toggleInactive },
+    toggleActive: { backgroundColor: colors.toggleActive, borderColor: colors.toggleActive },
+    toggleThumb: { backgroundColor: colors.toggleThumb },
     tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
-    tokenSymbolBadge: { backgroundColor: colors.surfaceSecondary, borderColor: colors.primary },
-    tokenItem: { borderBottomColor: isDark ? 'rgba(71, 85, 105, 0.3)' : colors.border }, // Borda mais suave no dark mode
     logoContainer: { backgroundColor: '#ffffff', borderColor: colors.border }, // Fundo branco em ambos os modos para os ícones
-  }), [colors, isDark])
+  }), [colors])
 
-  // Cores do gradiente para os cards - mesmo do gráfico (suave)
+  // Cores do gradiente para os cards - tons neutros
   const cardGradientColors: readonly [string, string, ...string[]] = isDark 
-    ? ['rgba(30, 30, 35, 0.4)', 'rgba(40, 40, 45, 0.5)', 'rgba(30, 30, 35, 0.4)']  // Dark mode - cinza escuro neutro
-    : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
+    ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza
+    : ['rgba(248, 249, 250, 0.95)', 'rgba(255, 255, 255, 0.95)', 'rgba(248, 249, 250, 0.95)']  // Light mode - cinza claro neutro
 
   if (loading) {
     return (
@@ -120,7 +118,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         {availableExchangesCount > 0 && onAddExchange && (
-          <TouchableOpacity style={styles.addButton} onPress={onAddExchange}>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={onAddExchange}>
             <Text style={[styles.addButtonText, { color: colors.primary }]}>+ Adicionar</Text>
           </TouchableOpacity>
         )}
@@ -229,11 +227,15 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
               </TouchableOpacity>
 
               {isExpanded && (
-                <LinearGradient
-                  colors={cardGradientColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.tokensContainer, { borderColor: colors.border }]}
+                <View
+                  style={[
+                    styles.tokensContainer,
+                    { 
+                      backgroundColor: colors.surfaceSecondary,
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    }
+                  ]}
                 >
                   <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>{t('exchanges.tokensAvailable')}:</Text>
                   {tokens.length === 0 ? (
@@ -247,26 +249,44 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                       return (
                         <TouchableOpacity
                           key={symbol}
-                          style={[styles.tokenItem, themedStyles.tokenItem]}
+                          style={[
+                            styles.tokenItem,
+                            { 
+                              backgroundColor: colors.surface,
+                              borderBottomColor: colors.border,
+                              paddingHorizontal: 12,
+                              paddingVertical: 14,
+                              borderRadius: 8,
+                              marginBottom: 8,
+                            }
+                          ]}
                           onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
                           activeOpacity={0.7}
                         >
                           <View style={styles.tokenLeft}>
-                            <View style={[styles.tokenSymbolBadge, themedStyles.tokenSymbolBadge]}>
-                              <Text style={[styles.tokenSymbol, { color: colors.primary }]}>{symbol}</Text>
+                            <View style={[
+                              styles.tokenSymbolBadge,
+                              { 
+                                backgroundColor: colors.primaryLight + '20',
+                                borderColor: colors.primary + '40',
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                              }
+                            ]}>
+                              <Text style={[styles.tokenSymbol, { color: colors.primary, fontSize: 12, fontWeight: '600' }]}>{symbol}</Text>
                             </View>
                             <View style={styles.tokenInfo}>
-                              <Text style={[styles.tokenValue, { color: colors.text }]}>
+                              <Text style={[styles.tokenValue, { color: colors.text, fontSize: 15, fontWeight: '500' }]}>
                                 {hideValue(apiService.formatUSD(valueUSD))}
                               </Text>
-                              <Text style={[styles.tokenAmount, { color: colors.textSecondary }]}>
+                              <Text style={[styles.tokenAmount, { color: colors.textSecondary, fontSize: 12 }]}>
                                 {hideValue(apiService.formatTokenAmount(token.amount))}
                               </Text>
                             </View>
                           </View>
                           <View style={styles.tokenRight}>
                             {priceUSD > 0 && (
-                              <Text style={[styles.tokenPrice, { color: colors.text }]}>
+                              <Text style={[styles.tokenPrice, { color: colors.textSecondary, fontSize: 13, fontWeight: '500' }]}>
                                 {hideValue(apiService.formatUSD(priceUSD))}
                               </Text>
                             )}
@@ -275,7 +295,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                       )
                     })
                   )}
-                </LinearGradient>
+                </View>
               )}
             </View>
           )
@@ -297,7 +317,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
+    marginTop: 4,
   },
   header: {
     flexDirection: "row",
@@ -308,14 +328,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "400",
+    letterSpacing: 0.2,
   },
   addButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 2,
   },
   addButtonText: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: 13,
+    fontWeight: "600",
   },
   filtersContainer: {
     paddingHorizontal: 4,
@@ -327,16 +350,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
   toggleLabelContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
   },
   toggleLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
   },
   hiddenCount: {
@@ -345,9 +368,9 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   toggle: {
-    width: 38,
-    height: 22,
-    borderRadius: 11,
+    width: 44,
+    height: 24,
+    borderRadius: 12,
     padding: 2,
     justifyContent: "center",
     borderWidth: 1,
@@ -356,26 +379,34 @@ const styles = StyleSheet.create({
     // Colors from theme
   },
   toggleThumb: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
   },
   toggleThumbActive: {
-    transform: [{ translateX: 16 }],
+    transform: [{ translateX: 20 }],
   },
   list: {
-    gap: 12,
+    gap: 10,
   },
   cardWrapper: {
     borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   card: {
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardMargin: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   cardContent: {
     flexDirection: "row",
@@ -388,13 +419,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logoContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    padding: 4,
+    padding: 5,
     borderWidth: 0.5,
   },
   logoImage: {
@@ -406,29 +437,28 @@ const styles = StyleSheet.create({
   },
   exchangeName: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "400",
     marginBottom: 2,
   },
   assetsCount: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "400",
   },
   rightSection: {
     alignItems: "flex-end",
   },
   balance: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "400",
     marginBottom: 2,
   },
   change: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "400",
   },
   changePositive: {
-    // Use colors.primary
   },
   changeNegative: {
-    // Use colors.danger
   },
   loadingContainer: {
     padding: 40,
@@ -441,32 +471,31 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   expandIcon: {
-    fontSize: 12,
+    fontSize: 10,
   },
   tokensContainer: {
     borderRadius: 12,
     padding: 16,
-    marginTop: 12,
-    borderWidth: 1,
+    marginTop: 10,
+    borderWidth: 0,
   },
   tokensTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "400",
     marginBottom: 12,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    opacity: 0.6,
   },
   noTokensText: {
-    fontSize: 13,
+    fontSize: 12,
     textAlign: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   tokenItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   tokenLeft: {
     flexDirection: "row",
@@ -475,30 +504,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenSymbolBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: 6,
+    borderWidth: 1,
   },
   tokenSymbol: {
-    fontSize: 10,
-    fontWeight: "500",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   tokenInfo: {
     flex: 1,
   },
   tokenAmount: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "300",
   },
   tokenPrice: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "400",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   tokenValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "400",
   },
   tokenValueZero: {

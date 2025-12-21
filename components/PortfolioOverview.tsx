@@ -23,7 +23,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   if (error || !data) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>{error || t('home.noData')}</Text>
+        <Text style={[styles.errorText, { color: colors.danger }]}>{error || t('home.noData')}</Text>
       </View>
     )
   }
@@ -90,10 +90,10 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const change24h = pnl.changePercent
   const isPositive = pnl.isPositive
 
-  // Define cores do gradiente baseado no tema - mesmo do gráfico (suave)
+  // Define cores do gradiente baseado no tema - tons neutros
   const gradientColors: readonly [string, string, ...string[]] = isDark 
-    ? ['rgba(30, 30, 35, 0.4)', 'rgba(40, 40, 45, 0.5)', 'rgba(30, 30, 35, 0.4)']  // Dark mode - cinza escuro neutro
-    : ['rgba(59, 130, 246, 0.15)', 'rgba(96, 165, 250, 0.2)', 'rgba(147, 197, 253, 0.15)']  // Light mode - 15-20% opacidade
+    ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza
+    : ['rgba(248, 249, 250, 0.95)', 'rgba(255, 255, 255, 0.95)', 'rgba(248, 249, 250, 0.95)']  // Light mode - cinza claro neutro
 
   return (
     <View style={styles.containerWrapper}>
@@ -117,7 +117,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             {refreshing ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Text style={[styles.refreshIcon, { color: colors.text }]}>↻</Text>
+              <Text style={[styles.refreshIcon, { color: colors.primary }]}>↻</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -131,21 +131,20 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
           </Text>
         </View>
 
-        <View style={styles.changeContainer}>
+        <View style={[styles.changeContainer, { borderTopColor: colors.borderLight }]}>
           <Text style={[
             styles.badgeText, 
-            isPositive ? styles.textPositive : styles.textNegative
+            { color: isPositive ? colors.success : colors.danger }
           ]}>
-            {isPositive ? "↑" : "↓"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
+             {isPositive ? "↑" : "↓"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
           </Text>
 
           <Text style={[
             styles.changeValue,
-            isPositive ? styles.textPositive : styles.textNegative
+            { color: isPositive ? colors.success : colors.danger }
           ]}>
             {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
           </Text>
-
           <Text style={[styles.timeframe, { color: colors.textSecondary }]}>
             Últimos {currentPeriod} dias
           </Text>
@@ -157,28 +156,38 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
 const styles = StyleSheet.create({
   containerWrapper: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   container: {
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "400",
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    opacity: 0.7,
   },
   refreshButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -187,57 +196,52 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   refreshIcon: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "300",
     opacity: 0.7,
   },
   valueContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 8,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 20,
   },
   value: {
-    fontSize: 38,
-    fontWeight: "200",
-    letterSpacing: -1,
+    fontSize: 42,
+    fontWeight: "300",
+    letterSpacing: -1.5,
   },
   lastUpdated: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "400",
-    opacity: 0.6,
+    opacity: 0.5,
   },
   changeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
   },
   badgeText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  textPositive: {
-    color: "#10b981", // Verde destacado
-  },
-  textNegative: {
-    color: "#ef4444", // Vermelho destacado
+    fontSize: 15,
+    fontWeight: "400",
   },
   changeValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "400",
   },
   timeframe: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "400",
+    marginLeft: "auto",
   },
   errorText: {
     fontSize: 14,
-    color: "#ef4444",
     textAlign: "center",
   },
   exchangesCount: {
     fontSize: 12,
-    color: "#6b7280",
   },
   refreshButtonDisabled: {
     opacity: 0.5,

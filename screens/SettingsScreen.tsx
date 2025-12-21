@@ -128,56 +128,19 @@ export function SettingsScreen() {
               </View>
             </View>
             <TouchableOpacity 
-              style={[styles.toggle, theme === 'dark' && styles.toggleActive]}
+              style={[
+                styles.toggle,
+                { backgroundColor: theme === 'dark' ? colors.toggleActive : colors.toggleInactive }
+              ]}
               onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               activeOpacity={0.7}
             >
-              <View style={[styles.toggleThumb, theme === 'dark' && styles.toggleThumbActive]} />
+              <View style={[
+                styles.toggleThumb,
+                { backgroundColor: colors.toggleThumb },
+                theme === 'dark' && styles.toggleThumbActive
+              ]} />
             </TouchableOpacity>
-          </View>
-
-          {/* Idioma */}
-          <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIconContainer, { backgroundColor: colors.surface }]}>
-                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <Circle cx="12" cy="12" r="10" stroke={colors.text} strokeWidth="2" />
-                  <Path
-                    d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-                    stroke={colors.text}
-                    strokeWidth="2"
-                  />
-                </Svg>
-              </View>
-              <View>
-                <Text style={[styles.menuItemText, { color: colors.text }]}>{t('profile.language')}</Text>
-                <Text style={[styles.menuItemSubtext, { color: colors.textSecondary }]}>
-                  {language === 'pt-BR' ? 'Português' : 'English'}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.languageButtons}>
-              <TouchableOpacity 
-                style={[
-                  styles.languageButton, 
-                  { borderColor: colors.border },
-                  language === 'pt-BR' && { backgroundColor: colors.primary, borderColor: colors.primary }
-                ]}
-                onPress={() => setLanguage('pt-BR')}
-              >
-                <Text style={[styles.languageButtonText, { color: language === 'pt-BR' ? '#fff' : colors.text }]}>PT</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[
-                  styles.languageButton, 
-                  { borderColor: colors.border },
-                  language === 'en-US' && { backgroundColor: colors.primary, borderColor: colors.primary }
-                ]}
-                onPress={() => setLanguage('en-US')}
-              >
-                <Text style={[styles.languageButtonText, { color: language === 'en-US' ? '#fff' : colors.text }]}>EN</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
 
@@ -256,11 +219,18 @@ export function SettingsScreen() {
                 </View>
               </View>
               <TouchableOpacity 
-                style={[styles.toggle, isBiometricEnabled && styles.toggleActive]}
+                style={[
+                  styles.toggle,
+                  { backgroundColor: isBiometricEnabled ? colors.toggleActive : colors.toggleInactive }
+                ]}
                 onPress={handleBiometricToggle}
                 activeOpacity={0.7}
               >
-                <View style={[styles.toggleThumb, isBiometricEnabled && styles.toggleThumbActive]} />
+                <View style={[
+                  styles.toggleThumb,
+                  { backgroundColor: colors.toggleThumb },
+                  isBiometricEnabled && styles.toggleThumbActive
+                ]} />
               </TouchableOpacity>
             </View>
           )}
@@ -335,19 +305,19 @@ export function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>CONTA</Text>
           
           <TouchableOpacity 
-            style={[styles.deleteAccountButton, { backgroundColor: colors.card, borderColor: '#ef4444' }]}
+            style={[styles.deleteAccountButton, { backgroundColor: colors.surface, borderColor: colors.danger }]}
             onPress={() => setDeleteAccountModalVisible(true)}
           >
             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <Path
                 d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
-                stroke="#ef4444"
+                stroke={colors.danger}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={[styles.deleteAccountButtonText, { color: '#ef4444' }]}>Excluir Conta</Text>
+            <Text style={[styles.deleteAccountButtonText, { color: colors.danger }]}>Excluir Conta</Text>
           </TouchableOpacity>
         </View>
 
@@ -399,11 +369,18 @@ export function SettingsScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity 
-                  style={[styles.toggle, twoFactorEnabled && styles.toggleActive]}
+                  style={[
+                    styles.toggle,
+                    { backgroundColor: twoFactorEnabled ? colors.toggleActive : colors.toggleInactive }
+                  ]}
                   onPress={() => setTwoFactorEnabled(!twoFactorEnabled)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.toggleThumb, twoFactorEnabled && styles.toggleThumbActive]} />
+                  <View style={[
+                    styles.toggleThumb,
+                    { backgroundColor: colors.toggleThumb },
+                    twoFactorEnabled && styles.toggleThumbActive
+                  ]} />
                 </TouchableOpacity>
               </View>
 
@@ -415,11 +392,18 @@ export function SettingsScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity 
-                  style={[styles.toggle, googleAuthEnabled && styles.toggleActive]}
+                  style={[
+                    styles.toggle,
+                    { backgroundColor: googleAuthEnabled ? colors.toggleActive : colors.toggleInactive }
+                  ]}
                   onPress={() => setGoogleAuthEnabled(!googleAuthEnabled)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.toggleThumb, googleAuthEnabled && styles.toggleThumbActive]} />
+                  <View style={[
+                    styles.toggleThumb,
+                    { backgroundColor: colors.toggleThumb },
+                    googleAuthEnabled && styles.toggleThumbActive
+                  ]} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -434,11 +418,18 @@ export function SettingsScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity 
-                  style={[styles.toggle, autoLockEnabled && styles.toggleActive]}
+                  style={[
+                    styles.toggle,
+                    { backgroundColor: autoLockEnabled ? colors.toggleActive : colors.toggleInactive }
+                  ]}
                   onPress={() => setAutoLockEnabled(!autoLockEnabled)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.toggleThumb, autoLockEnabled && styles.toggleThumbActive]} />
+                  <View style={[
+                    styles.toggleThumb,
+                    { backgroundColor: colors.toggleThumb },
+                    autoLockEnabled && styles.toggleThumbActive
+                  ]} />
                 </TouchableOpacity>
               </View>
 
@@ -451,8 +442,10 @@ export function SettingsScreen() {
                         key={time}
                         style={[
                           styles.timeOption,
-                          { borderColor: colors.border },
-                          autoLockTime === time && { backgroundColor: colors.primary, borderColor: colors.primary }
+                          { 
+                            backgroundColor: autoLockTime === time ? colors.primary : colors.surface,
+                            borderColor: autoLockTime === time ? colors.primary : colors.border 
+                          }
                         ]}
                         onPress={() => setAutoLockTime(time)}
                       >
@@ -476,11 +469,18 @@ export function SettingsScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity 
-                  style={[styles.toggle, loginAlertsEnabled && styles.toggleActive]}
+                  style={[
+                    styles.toggle,
+                    { backgroundColor: loginAlertsEnabled ? colors.toggleActive : colors.toggleInactive }
+                  ]}
                   onPress={() => setLoginAlertsEnabled(!loginAlertsEnabled)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.toggleThumb, loginAlertsEnabled && styles.toggleThumbActive]} />
+                  <View style={[
+                    styles.toggleThumb,
+                    { backgroundColor: colors.toggleThumb },
+                    loginAlertsEnabled && styles.toggleThumbActive
+                  ]} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -493,7 +493,7 @@ export function SettingsScreen() {
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                     Use este IP para whitelist nas exchanges
                   </Text>
-                  <View style={styles.ipContainer}>
+                  <View style={[styles.ipContainer, { backgroundColor: colors.primaryLight, borderWidth: 1, borderColor: colors.primary + '40' }]}>
                     <Text style={[styles.ipText, { color: colors.primary }]}>{deviceIp}</Text>
                   </View>
                 </View>
@@ -506,7 +506,7 @@ export function SettingsScreen() {
                   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <Path 
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" 
-                      stroke="#ffffff" 
+                      stroke={colors.textInverse} 
                       strokeWidth="2" 
                       strokeLinecap="round" 
                       strokeLinejoin="round"
@@ -643,7 +643,7 @@ export function SettingsScreen() {
             <View style={[styles.deleteAccountModalContainer, { backgroundColor: colors.card }]}>
               {/* Header */}
               <View style={[styles.deleteAccountModalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.deleteAccountModalTitle, { color: '#ef4444' }]}>⚠️ Excluir Conta</Text>
+                <Text style={[styles.deleteAccountModalTitle, { color: colors.danger }]}>⚠️ Excluir Conta</Text>
                 <TouchableOpacity 
                   onPress={() => setDeleteAccountModalVisible(false)} 
                   style={styles.modalCloseButton}
@@ -655,30 +655,30 @@ export function SettingsScreen() {
               {/* Content */}
               <View style={styles.deleteAccountModalContent}>
                 <Text style={[styles.deleteAccountWarningText, { color: colors.text }]}>
-                  Esta ação é <Text style={{ fontWeight: '700', color: '#ef4444' }}>irreversível</Text> e resultará em:
+                  Esta ação é <Text style={{ fontWeight: '700', color: colors.danger }}>irreversível</Text> e resultará em:
                 </Text>
 
                 <View style={styles.deleteAccountWarningList}>
                   <View style={styles.deleteAccountWarningItem}>
-                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningBullet, { color: colors.danger }]}>•</Text>
                     <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
                       Perda permanente de todos os seus dados
                     </Text>
                   </View>
                   <View style={styles.deleteAccountWarningItem}>
-                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningBullet, { color: colors.danger }]}>•</Text>
                     <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
                       Desconexão de todas as exchanges vinculadas
                     </Text>
                   </View>
                   <View style={styles.deleteAccountWarningItem}>
-                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningBullet, { color: colors.danger }]}>•</Text>
                     <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
                       Perda do histórico de transações e estratégias
                     </Text>
                   </View>
                   <View style={styles.deleteAccountWarningItem}>
-                    <Text style={styles.deleteAccountWarningBullet}>•</Text>
+                    <Text style={[styles.deleteAccountWarningBullet, { color: colors.danger }]}>•</Text>
                     <Text style={[styles.deleteAccountWarningItemText, { color: colors.textSecondary }]}>
                       Impossibilidade de recuperação dos dados
                     </Text>
@@ -692,16 +692,16 @@ export function SettingsScreen() {
                 {/* Botões */}
                 <View style={styles.deleteAccountModalButtons}>
                   <TouchableOpacity
-                    style={[styles.deleteAccountCancelButton, { backgroundColor: colors.surface }]}
+                    style={[styles.deleteAccountCancelButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
                     onPress={() => setDeleteAccountModalVisible(false)}
                   >
-                    <Text style={[styles.deleteAccountCancelButtonText, { color: colors.text }]}>
+                    <Text style={[styles.deleteAccountCancelButtonText, { color: colors.primary }]}>
                       Cancelar
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.deleteAccountConfirmButton, { backgroundColor: '#ef4444' }]}
+                    style={[styles.deleteAccountConfirmButton, { backgroundColor: colors.surface, borderColor: colors.danger }]}
                     onPress={async () => {
                       if (Platform.OS === 'web') {
                         const confirmed = window.confirm(
@@ -738,7 +738,7 @@ export function SettingsScreen() {
                       }
                     }}
                   >
-                    <Text style={styles.deleteAccountConfirmButtonText}>
+                    <Text style={[styles.deleteAccountConfirmButtonText, { color: colors.danger }]}>
                       Excluir Permanentemente
                     </Text>
                   </TouchableOpacity>
@@ -832,20 +832,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "300",
   },
-  languageButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  languageButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  languageButtonText: {
-    fontSize: 13,
-    fontWeight: "400",
-  },
   modalContainer: {
     flex: 1,
   },
@@ -937,18 +923,13 @@ const styles = StyleSheet.create({
     width: 46,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#d4d4d4",
     padding: 2,
     justifyContent: "center",
-  },
-  toggleActive: {
-    backgroundColor: "#3b82f6",
   },
   toggleThumb: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#ffffff",
   },
   toggleThumbActive: {
     alignSelf: "flex-end",
@@ -956,10 +937,7 @@ const styles = StyleSheet.create({
   ipContainer: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.3)",
   },
   ipText: {
     fontSize: 16,
@@ -1134,7 +1112,6 @@ const styles = StyleSheet.create({
   },
   deleteAccountWarningBullet: {
     fontSize: 18,
-    color: "#ef4444",
     marginRight: 12,
     fontWeight: "700",
   },
@@ -1159,6 +1136,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
   },
   deleteAccountCancelButtonText: {
     fontSize: 16,
@@ -1170,11 +1148,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
   },
   deleteAccountConfirmButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#ffffff",
   },
 })
 

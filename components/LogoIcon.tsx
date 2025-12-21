@@ -17,8 +17,8 @@ export const LogoIcon = ({ size = 24 }: LogoIconProps) => (
     </Defs>
     
     {/* Central Hub Circle */}
-    <Circle cx="512" cy="512" r="140" fill="#3B82F6" filter="url(#glow)"/>
-    <Circle cx="512" cy="512" r="100" fill="#1E40AF"/>
+    <Circle cx="512" cy="512" r="140" fill="#FFC107" filter="url(#glow)"/>
+    <Circle cx="512" cy="512" r="100" fill="#F59E0B"/>
     
     {/* Connection lines */}
     <Line x1="512" y1="412" x2="512" y2="220" stroke="#60A5FA" strokeWidth="12" opacity="0.6"/>
@@ -33,17 +33,17 @@ export const LogoIcon = ({ size = 24 }: LogoIconProps) => (
     <Line x1="426" y1="426" x2="286" y2="286" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
     
     {/* Satellite Nodes */}
-    <Circle cx="512" cy="200" r="70" fill="#FFC107" filter="url(#glow)"/>
-    <Circle cx="512" cy="200" r="50" fill="#F59E0B"/>
+    <Circle cx="512" cy="200" r="70" fill="#3B82F6" filter="url(#glow)"/>
+    <Circle cx="512" cy="200" r="50" fill="#2563EB"/>
     
-    <Circle cx="824" cy="512" r="70" fill="#FFC107" filter="url(#glow)"/>
-    <Circle cx="824" cy="512" r="50" fill="#F59E0B"/>
+    <Circle cx="824" cy="512" r="70" fill="#3B82F6" filter="url(#glow)"/>
+    <Circle cx="824" cy="512" r="50" fill="#2563EB"/>
     
-    <Circle cx="512" cy="824" r="70" fill="#FFC107" filter="url(#glow)"/>
-    <Circle cx="512" cy="824" r="50" fill="#F59E0B"/>
+    <Circle cx="512" cy="824" r="70" fill="#3B82F6" filter="url(#glow)"/>
+    <Circle cx="512" cy="824" r="50" fill="#2563EB"/>
     
-    <Circle cx="200" cy="512" r="70" fill="#FFC107" filter="url(#glow)"/>
-    <Circle cx="200" cy="512" r="50" fill="#F59E0B"/>
+    <Circle cx="200" cy="512" r="70" fill="#3B82F6" filter="url(#glow)"/>
+    <Circle cx="200" cy="512" r="50" fill="#2563EB"/>
     
     {/* Corner nodes */}
     <Circle cx="268" cy="268" r="50" fill="#3B82F6" opacity="0.8"/>

@@ -326,7 +326,7 @@ export function StrategyScreen() {
         
         {activeTab === "strategies" && hasStrategies && (
           <TouchableOpacity
-            style={[styles.newButton, { backgroundColor: colors.primary }]}
+            style={[styles.newButton, { backgroundColor: colors.surface, borderColor: '#3b82f6' }]}
             onPress={handleNewStrategy}
             activeOpacity={0.8}
           >
@@ -407,7 +407,7 @@ export function StrategyScreen() {
                 {t('strategy.emptyDesc')}
               </Text>
               <TouchableOpacity
-                style={[styles.createButton, { backgroundColor: colors.primary }]}
+                style={[styles.createButton, { backgroundColor: colors.surface, borderColor: '#3b82f6' }]}
                 onPress={handleNewStrategy}
                 activeOpacity={0.8}
               >
@@ -560,14 +560,19 @@ export function StrategyScreen() {
 
                 {/* Footer with Status and Delete */}
                 <View style={[styles.strategyFooter, { borderTopColor: colors.border }]}>
-                  <View style={styles.statusContainer}>
+                  <View style={[
+                    styles.statusContainer,
+                    strategy.isActive 
+                      ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }
+                      : { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }
+                  ]}>
                     <View
                       style={[
                         styles.statusDot,
-                        { backgroundColor: strategy.isActive ? "#10b981" : "#6b7280" },
+                        { backgroundColor: strategy.isActive ? colors.primary : colors.danger },
                       ]}
                     />
-                    <Text style={[styles.statusText, { color: colors.textSecondary }]}>
+                    <Text style={[styles.statusText, { color: colors.text }]}>
                       {strategy.isActive ? t('strategy.active') : t('strategy.inactive')}
                     </Text>
                   </View>
@@ -852,11 +857,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 2,
   },
   newButtonText: {
-    color: "#ffffff",
+    color: "#3b82f6",
     fontSize: 15,
-    fontWeight: "400",
+    fontWeight: "600",
   },
   scrollView: {
     flex: 1,
@@ -930,7 +936,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleActive: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#6b7280",
   },
   toggleThumb: {
     width: 22,
@@ -983,13 +989,14 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "400",
   },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    alignSelf: "flex-start",
   },
   deleteButton: {
     padding: 8,
@@ -1032,11 +1039,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 24,
+    borderWidth: 2,
   },
   createButtonText: {
-    color: "#ffffff",
+    color: "#3b82f6",
     fontSize: 15,
-    fontWeight: "400",
+    fontWeight: "600",
   },
   // Stats
   statsSection: {
