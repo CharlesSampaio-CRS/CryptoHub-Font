@@ -357,7 +357,7 @@ export function StrategyDetailsModal({
           {!loading && !error && strategy && (
             <View style={[styles.footer, { borderTopColor: colors.border }]}>
               <TouchableOpacity
-                style={[styles.footerButton, { backgroundColor: strategy.is_active ? '#ef444420' : '#10b98120' }]}
+                style={[styles.footerButton, { backgroundColor: colors.primary }]}
                 onPress={() => {
                   if (strategyId) {
                     onToggleActive?.(strategyId, strategy.is_active)
@@ -371,16 +371,16 @@ export function StrategyDetailsModal({
                     cx="12" 
                     cy="12" 
                     r="10" 
-                    stroke={strategy.is_active ? '#ef4444' : '#10b981'} 
+                    stroke="#ffffff" 
                     strokeWidth="2" 
                   />
                   {strategy.is_active ? (
-                    <Path d="M15 9l-6 6M9 9l6 6" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                    <Path d="M15 9l-6 6M9 9l6 6" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
                   ) : (
-                    <Path d="M9 12l2 2 4-4" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <Path d="M9 12l2 2 4-4" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   )}
                 </Svg>
-                <Text style={[styles.footerButtonText, { color: strategy.is_active ? '#ef4444' : '#10b981' }]}>
+                <Text style={[styles.footerButtonText, { color: '#ffffff' }]}>
                   {strategy.is_active ? 'Desativar' : 'Ativar'}
                 </Text>
               </TouchableOpacity>

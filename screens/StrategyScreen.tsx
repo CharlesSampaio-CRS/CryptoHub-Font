@@ -1,4 +1,4 @@
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl, KeyboardAvoidingView, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
@@ -704,88 +704,86 @@ export function StrategyScreen() {
       <Modal
         visible={confirmToggleModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmToggleModalVisible(false)}
       >
-        <Pressable
+        <KeyboardAvoidingView 
           style={styles.modalOverlay}
-          onPress={() => setConfirmToggleModalVisible(false)}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable
-            style={[styles.confirmModal, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text style={[styles.confirmTitle, { color: colors.text }]}>
-              {toggleStrategyNewStatus ? t('strategy.activateConfirm') : t('strategy.deactivateConfirm')}
-            </Text>
-            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-              {t('strategy.statusWillChange')}
-            </Text>
-            <View style={styles.confirmButtons}>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
-                onPress={() => setConfirmToggleModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.confirmButtonText, { color: colors.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: toggleStrategyNewStatus ? "#10b981" : "#6b7280" }]}
-                onPress={confirmToggle}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteConfirmButtonText}>
-                  {t('common.confirm')}
-                </Text>
-              </TouchableOpacity>
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.confirmModal, { backgroundColor: colors.card }]}>
+              <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                {toggleStrategyNewStatus ? t('strategy.activateConfirm') : t('strategy.deactivateConfirm')}
+              </Text>
+              <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                {t('strategy.statusWillChange')}
+              </Text>
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity
+                  style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
+                  onPress={() => setConfirmToggleModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmButton, { backgroundColor: colors.primary }]}
+                  onPress={confirmToggle}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.deleteConfirmButtonText}>
+                    {t('common.confirm')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
         visible={confirmDeleteModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmDeleteModalVisible(false)}
       >
-        <Pressable
+        <KeyboardAvoidingView 
           style={styles.modalOverlay}
-          onPress={() => setConfirmDeleteModalVisible(false)}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable
-            style={[styles.confirmModal, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text style={[styles.confirmTitle, { color: colors.text }]}>
-              {t('strategy.confirmDelete')}
-            </Text>
-            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-              {t('strategy.deleteWarning')}
-            </Text>
-            <View style={styles.confirmButtons}>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
-                onPress={() => setConfirmDeleteModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.confirmButtonText, { color: colors.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.deleteConfirmButton]}
-                onPress={confirmDelete}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteConfirmButtonText}>{t('strategy.delete')}</Text>
-              </TouchableOpacity>
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.confirmModal, { backgroundColor: colors.card }]}>
+              <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                {t('strategy.confirmDelete')}
+              </Text>
+              <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                {t('strategy.deleteWarning')}
+              </Text>
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity
+                  style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
+                  onPress={() => setConfirmDeleteModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmButton, styles.deleteConfirmButton]}
+                  onPress={confirmDelete}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.deleteConfirmButtonText}>{t('strategy.delete')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Create Strategy Modal */}
@@ -1118,6 +1116,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalSafeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   confirmModal: {
     width: "85%",

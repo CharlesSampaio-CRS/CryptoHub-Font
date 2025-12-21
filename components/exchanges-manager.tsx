@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard, SafeAreaView } from "react-native"
 import { useEffect, useState, useMemo, useCallback, memo } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
@@ -1057,43 +1057,56 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         animationType="slide"
         onRequestClose={() => setConfirmToggleModalVisible(false)}
       >
-        <View style={styles.confirmModalOverlay}>
-          <View style={styles.safeArea}>
-            <View style={[styles.confirmModalContent, themedStyles.modal]}>
-              <View style={styles.confirmModalHeader}>
+        <KeyboardAvoidingView 
+          style={styles.confirmModalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.confirmModalContent, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
                   {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
                 </Text>
+                <TouchableOpacity onPress={() => setConfirmToggleModalVisible(false)} style={styles.confirmModalCloseButton}>
+                  <Text style={[styles.confirmModalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
               </View>
 
-            <View style={styles.confirmModalBody}>
-              <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
-                {toggleExchangeNewStatus === 'active' 
-                  ? `${t('exchanges.activateConfirm')} ${toggleExchangeName}? ${t('exchanges.activateWarning')}`
-                  : `${t('exchanges.deactivateConfirm')} ${toggleExchangeName}? ${t('exchanges.deactivateWarning')}`
-                }
-              </Text>
-            </View>
-
-            <View style={styles.confirmModalActions}>
-              <TouchableOpacity
-                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary }]}
-                onPress={() => setConfirmToggleModalVisible(false)}
-              >
-                <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmSubmitButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
-                onPress={confirmToggle}
-              >
-                <Text style={styles.confirmSubmitButtonText}>
-                  {toggleExchangeNewStatus === 'active' ? t('exchanges.activate') : t('exchanges.deactivate')}
+              {/* Body */}
+              <View style={styles.confirmModalBody}>
+                <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
+                  {toggleExchangeNewStatus === 'active' 
+                    ? `${t('exchanges.activateConfirm')} ${toggleExchangeName}? ${t('exchanges.activateWarning')}`
+                    : `${t('exchanges.deactivateConfirm')} ${toggleExchangeName}? ${t('exchanges.deactivateWarning')}`
+                  }
                 </Text>
-              </TouchableOpacity>
+              </View>
+
+              {/* Footer Actions */}
+              <View style={[styles.confirmModalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.surface }]}
+                  onPress={() => setConfirmToggleModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.primary }]}
+                  onPress={confirmToggle}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: '#ffffff' }]}>
+                    {toggleExchangeNewStatus === 'active' ? t('exchanges.activate') : t('exchanges.deactivate')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            </View>
-          </View>
-        </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal de Confirmação (Delete/Disconnect) */}
@@ -1103,57 +1116,65 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         animationType="slide"
         onRequestClose={() => setConfirmModalVisible(false)}
       >
-        <View style={styles.confirmModalOverlay}>
-          <View style={styles.safeArea}>
-            <View style={[styles.confirmModalContent, themedStyles.modal, { shadowColor: colors.text }]}>
+        <KeyboardAvoidingView 
+          style={styles.confirmModalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.confirmModalContent, { backgroundColor: colors.card }]}>
+              {/* Header */}
               <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
                   {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
                 </Text>
+                <TouchableOpacity onPress={() => setConfirmModalVisible(false)} style={styles.confirmModalCloseButton}>
+                  <Text style={[styles.confirmModalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
               </View>
 
-            <View style={styles.confirmModalBody}>
-              <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
-                {confirmAction === 'delete' 
-                  ? `${t('exchanges.deleteConfirm')} ${confirmExchangeName}? ${t('exchanges.deleteWarning')}`
-                  : `${t('exchanges.disconnectConfirm')} ${confirmExchangeName}?`
-                }
-              </Text>
-            </View>
-
-            <View style={[styles.confirmModalActions, { borderTopColor: colors.border }]}>
-              <TouchableOpacity
-                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary, borderRightColor: colors.border }]}
-                onPress={() => setConfirmModalVisible(false)}
-              >
-                <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.confirmSubmitButton, 
-                  confirmAction === 'delete' 
-                    ? { backgroundColor: colors.surface, borderColor: colors.danger } 
-                    : { backgroundColor: colors.surface, borderColor: colors.primary }
-                ]}
-                onPress={() => {
-                  if (confirmAction === 'delete') {
-                    confirmDelete()
-                  } else {
-                    confirmDisconnect()
+              {/* Body */}
+              <View style={styles.confirmModalBody}>
+                <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
+                  {confirmAction === 'delete' 
+                    ? `${t('exchanges.deleteConfirm')} ${confirmExchangeName}? ${t('exchanges.deleteWarning')}`
+                    : `${t('exchanges.disconnectConfirm')} ${confirmExchangeName}?`
                   }
-                }}
-              >
-                <Text style={[
-                  styles.confirmSubmitButtonText,
-                  { color: confirmAction === 'delete' ? colors.danger : colors.primary }
-                ]}>
-                  {confirmAction === 'delete' ? t('exchanges.delete') : t('exchanges.disconnect')}
                 </Text>
-              </TouchableOpacity>
+              </View>
+
+              {/* Footer Actions */}
+              <View style={[styles.confirmModalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.surface }]}
+                  onPress={() => setConfirmModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.confirmModalButton, 
+                    { backgroundColor: confirmAction === 'delete' ? colors.danger : colors.primary }
+                  ]}
+                  onPress={() => {
+                    if (confirmAction === 'delete') {
+                      confirmDelete()
+                    } else {
+                      confirmDisconnect()
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: '#ffffff' }]}>
+                    {confirmAction === 'delete' ? t('exchanges.delete') : t('exchanges.disconnect')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            </View>
-          </View>
-        </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* QR Scanner Modal */}
@@ -1626,23 +1647,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   confirmModalContent: {
-    borderRadius: 16,
+    borderRadius: 20,
     width: "90%",
-    maxWidth: 400,
-    overflow: "hidden",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
   },
   confirmModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
   },
   confirmModalTitle: {
-    fontSize: 16,
-    fontWeight: "400",
-    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  confirmModalCloseButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmModalCloseIcon: {
+    fontSize: 24,
+    fontWeight: '300',
   },
   confirmModalBody: {
     padding: 24,
@@ -1651,34 +1684,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "300",
     lineHeight: 20,
-    textAlign: "center",
   },
-  confirmModalActions: {
-    flexDirection: "row",
-    borderTopWidth: 1,
+  confirmModalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 0.5,
   },
-  confirmCancelButton: {
+  confirmModalButton: {
     flex: 1,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRightWidth: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  confirmCancelButtonText: {
-    fontSize: 14,
-    fontWeight: "400",
-  },
-  confirmSubmitButton: {
-    flex: 1,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-  },
-  confirmDeleteButton: {
-  },
-  confirmSubmitButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
+  confirmModalButtonText: {
+    fontSize: 15,
+    fontWeight: '400',
   },
 })
