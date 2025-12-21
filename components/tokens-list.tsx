@@ -17,7 +17,6 @@ export function TokensList({ exchange }: TokensListProps) {
   )
 
   const handleTokenPress = (symbol: string) => {
-    console.log(`🔍 Token clicado: ${symbol} na exchange ${exchange.name} (${exchange.exchange_id})`)
     setSelectedToken(symbol)
     setModalVisible(true)
   }

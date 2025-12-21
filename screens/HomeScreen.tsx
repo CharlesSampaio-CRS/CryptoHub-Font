@@ -59,12 +59,10 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
 
   // Refresh completo: balances + evolution
   const handleRefresh = useCallback(async () => {
-    console.log('🔄 HomeScreen: Iniciando refresh completo (balances + evolution)')
     await Promise.all([
       refreshBalance(),
       refreshEvolution()
     ])
-    console.log('✅ HomeScreen: Refresh completo finalizado')
   }, [refreshBalance, refreshEvolution])
 
   const handleScroll = useMemo(() => Animated.event(

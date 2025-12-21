@@ -710,7 +710,6 @@ export function SettingsScreen() {
                         )
                         if (confirmed) {
                           // Aqui você implementaria a lógica de exclusão
-                          console.log('✅ Conta excluída')
                           setDeleteAccountModalVisible(false)
                           Alert.alert('✓', 'Conta excluída com sucesso')
                         }
@@ -728,7 +727,6 @@ export function SettingsScreen() {
                               style: 'destructive',
                               onPress: async () => {
                                 // Aqui você implementaria a lógica de exclusão
-                                console.log('✅ Conta excluída')
                                 setDeleteAccountModalVisible(false)
                                 Alert.alert('✓', 'Conta excluída com sucesso')
                               }

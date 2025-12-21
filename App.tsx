@@ -35,17 +35,12 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
   // Força refresh quando monta (após login)
   useEffect(() => {
     if (!hasRefreshedRef.current) {
-      console.log('🔄 DataLoader: Forçando refresh após login...')
       hasRefreshedRef.current = true
       
-      const startTime = Date.now()
       Promise.all([
         refreshBalance(),
         refreshEvolution()
-      ]).then(() => {
-        const duration = Date.now() - startTime
-        console.log(`✅ DataLoader: Dados carregados em ${duration}ms`)
-      }).catch(err => {
+      ]).catch(err => {
         console.error('❌ Erro ao fazer refresh inicial:', err)
       })
     }
@@ -58,41 +53,20 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
   useEffect(() => {
     // Se erro crítico detectado, mostra tela de manutenção
     if (isCriticalError && !showMaintenance) {
-      console.log('🚨 DataLoader: Erro crítico detectado (API offline), mostrando tela de manutenção')
       setShowMaintenance(true)
       hasCalledRef.current = true
-      onDataReady() // Finaliza o loading progress
+      onDataReady()
       return
     }
 
     // Aguarda os dados estarem prontos (não loading E dados existem)
     const balanceReady = !balanceLoading && (balanceData !== null || balanceError !== null)
     const portfolioReady = !portfolioLoading && (portfolioData !== null || portfolioError !== null)
-    
-    console.log('📊 DataLoader check:', {
-      balanceReady,
-      portfolioReady,
-      balanceLoading,
-      portfolioLoading,
-      hasBalance: !!balanceData,
-      hasPortfolio: !!portfolioData,
-      balanceError,
-      portfolioError,
-      hasCalled: hasCalledRef.current
-    })
 
     // Chama onDataReady quando:
     // 1. AMBOS terminaram de carregar (sucesso OU erro)
     // 2. Ainda não foi chamado
     if (balanceReady && portfolioReady && !hasCalledRef.current) {
-      if (balanceError || portfolioError) {
-        console.log('⚠️ DataLoader: Erro ao carregar dados, mas finalizando loading...')
-        if (balanceError) console.error('❌ Balance error:', balanceError)
-        if (portfolioError) console.error('❌ Portfolio error:', portfolioError)
-      } else {
-        console.log('✅ DataLoader: Todos os dados prontos! Desativando loading...')
-      }
-      
       hasCalledRef.current = true
       onDataReady()
     }
@@ -100,11 +74,8 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
 
   // Timeout de segurança: se demorar mais de 10 segundos, finaliza o loading
   useEffect(() => {
-    console.log('⏱️ DataLoader: Timeout de segurança iniciado (10 segundos)')
     const timeout = setTimeout(() => {
       if (!hasCalledRef.current) {
-        console.log('⏱️ DataLoader: Timeout de 10s atingido, finalizando loading de segurança...')
-        console.log('⚠️ Dados podem não ter carregado completamente')
         hasCalledRef.current = true
         onDataReady()
       }
@@ -124,7 +95,6 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
 
   // Função de retry
   const handleRetry = async () => {
-    console.log('🔄 DataLoader: Tentando reconectar...')
     setShowMaintenance(false)
     hasCalledRef.current = false
     
@@ -229,17 +199,6 @@ function AppNavigator() {
   const { isAuthenticated, isLoading, isLoadingData, setLoadingDataComplete, user } = useAuth()
   const { colors, isDark } = useTheme()
 
-  // Debug: monitorar mudanças no estado de autenticação
-  useEffect(() => {
-    console.log('� AppNavigator - Estado mudou:', {
-      isAuthenticated,
-      isLoading,
-      isLoadingData,
-      userEmail: user?.email,
-      hasUser: !!user
-    })
-  }, [isAuthenticated, isLoading, isLoadingData, user])
-
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
@@ -251,14 +210,23 @@ function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {!isAuthenticated || isLoadingData ? (
-        // Mantém AuthStack visível durante o loading inicial
-        <AuthStack />
+      {isAuthenticated && !isLoadingData ? (
+        // Só mostra MainTabs quando COMPLETAMENTE pronto (autenticado + dados carregados)
+        <MainTabs />
       ) : (
-        <DataLoader onDataReady={setLoadingDataComplete}>
-          <MainTabs />
-        </DataLoader>
+        // Mantém AuthStack durante login E carregamento para não desmontar LoginScreen
+        <>
+          <AuthStack />
+          
+          {/* DataLoader monitora em segundo plano DURANTE o carregamento após login */}
+          {isAuthenticated && isLoadingData && (
+            <DataLoader onDataReady={setLoadingDataComplete}>
+              <View />
+            </DataLoader>
+          )}
+        </>
       )}
+      
       {/* LoadingProgress aparece sobre qualquer tela quando isLoadingData = true */}
       <LoadingProgress visible={isLoadingData} />
     </NavigationContainer>

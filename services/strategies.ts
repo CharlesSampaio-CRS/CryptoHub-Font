@@ -101,10 +101,6 @@ class StrategiesService {
    * Cria uma nova estratégia usando template (RECOMENDADO)
    */
   async createStrategy(data: CreateStrategyRequest): Promise<Strategy> {
-    console.log("🌐 strategiesService.createStrategy: Iniciando requisição")
-    console.log("📦 Dados que serão enviados:", JSON.stringify(data, null, 2))
-    console.log("🎯 Template sendo enviado:", data.template)
-    
     const response = await fetch(`${API_BASE_URL}/strategies`, {
       method: "POST",
       headers: {
@@ -120,8 +116,6 @@ class StrategiesService {
     }
 
     const result = await response.json()
-    console.log("✅ Estratégia criada - Resposta da API:", JSON.stringify(result, null, 2))
-    console.log("📋 Template retornado pela API:", result.strategy?.template)
     return result.strategy
   }
 
@@ -221,8 +215,6 @@ class StrategiesService {
       url += `?user_id=${userId}`
     }
     
-    console.log("🗑️ DELETE request to:", url)
-    
     const response = await fetch(url, {
       method: "DELETE",
     })
@@ -238,8 +230,6 @@ class StrategiesService {
       console.error("❌ Delete failed:", errorMessage)
       throw new Error(errorMessage)
     }
-    
-    console.log("✅ Delete request successful")
   }
 
   /**
@@ -291,8 +281,6 @@ class StrategiesService {
       // Apenas loga erro se não for 404 (estratégia nova sem stats ainda)
       if (response.status !== 404) {
         console.error(`❌ Error fetching stats for strategy ${strategyId}:`, errorMessage)
-      } else {
-        console.log(`ℹ️ No stats available yet for strategy ${strategyId} (newly created)`)
       }
       
       throw new Error(errorMessage)
@@ -319,7 +307,6 @@ class StrategiesService {
         
         // Pula estratégias recém-criadas (sem stats ainda)
         if (skipStrategyIds.has(strategyId)) {
-          console.log(`⏭️ Skipping executions for newly created strategy: ${strategyId}`)
           return null
         }
 

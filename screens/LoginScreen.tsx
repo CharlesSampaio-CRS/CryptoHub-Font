@@ -117,23 +117,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  // Combina os dois estados de loading: botão continua rodando até completar tudo
   const isFullLoading = isLoading || isLoadingData
-
-  // Debug: verificar quando isLoading muda
-  React.useEffect(() => {
-    console.log('🔍 LoginScreen - Estados:', {
-      isLoading,
-      isLoadingData,
-      isFullLoading,
-      timestamp: new Date().toLocaleTimeString()
-    })
-    if (isFullLoading) {
-      console.log('✨ AnimatedLogoIcon DEVE estar visível agora!')
-    } else {
-      console.log('⚪ AnimatedLogoIcon está OCULTO')
-    }
-  }, [isLoading, isLoadingData, isFullLoading])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -142,9 +126,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     }
 
     try {
-      console.log('🔄 Iniciando login... isLoading atual:', isLoading)
       await login(email, password)
-      console.log('✅ Login concluído, isLoadingData ativo, aguardando dados...')
     } catch (error: any) {
       console.error('❌ Erro no login:', error)
       Alert.alert('Erro', error.message || 'Falha ao fazer login')

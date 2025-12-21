@@ -102,7 +102,6 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
       setLoading(true)
       setError(null)
       
-      console.log(`📊 Carregando detalhes do token ${symbol} na exchange ${exchangeId}...`)
       const response = await fetch(
         `${config.apiBaseUrl}/exchanges/${exchangeId}/token/${symbol}?user_id=${config.userId}&include_variations=true`
       )
@@ -112,7 +111,6 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
       }
       
       const data = await response.json()
-      console.log('✅ Detalhes do token carregados:', data)
       setTokenData(data)
     } catch (err: any) {
       console.error('❌ Erro ao carregar token:', err)

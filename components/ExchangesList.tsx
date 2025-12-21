@@ -151,16 +151,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
         {filteredExchanges.map((exchange, index) => {
           const allTokens = Object.entries(exchange.tokens || {})
           
-          // Log para debug
-          if (index === 0) {
-            console.log('🔍 ExchangesList - Primeira exchange:', {
-              name: exchange.name,
-              tokensObject: exchange.tokens ? Object.keys(exchange.tokens).length : 0,
-              allTokensArray: allTokens.length,
-              token_count: exchange.token_count
-            })
-          }
-          
           // Mostra todos os tokens da corretora
           let tokens = allTokens
           

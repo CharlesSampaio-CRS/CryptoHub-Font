@@ -9,94 +9,55 @@ interface AnimatedLogoIconProps {
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 
 export const AnimatedLogoIcon = ({ size = 40 }: AnimatedLogoIconProps) => {
-  const rotateAnim = useRef(new Animated.Value(0)).current
-  const pulse1 = useRef(new Animated.Value(1)).current
-  const pulse2 = useRef(new Animated.Value(1)).current
-  const pulse3 = useRef(new Animated.Value(1)).current
-  const pulse4 = useRef(new Animated.Value(1)).current
-  const cornerPulse = useRef(new Animated.Value(1)).current
+  // Apenas valores para pulsar as cores
+  const colorAnim1 = useRef(new Animated.Value(0)).current
+  const colorAnim2 = useRef(new Animated.Value(0)).current
+  const colorAnim3 = useRef(new Animated.Value(0)).current
+  const colorAnim4 = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    console.log('🎨 AnimatedLogoIcon mounted, starting animations...', {
-      platform: Platform.OS,
-      size
-    })
-    
-    // Rotação contínua - sempre loop infinito
-    Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 3000,
-        easing: Easing.linear,
-        useNativeDriver: false,
-      })
-    ).start()
-    
-    console.log('✅ Rotation animation started!')
-    
-    // Pulso dos satélites principais em sequência
-    const createPulse = (anim: Animated.Value, delay: number) => {
+    // Animação de pulsação das cores (azul -> amarelo -> azul)
+    const createColorPulse = (anim: Animated.Value, delay: number) => {
       return Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
           Animated.timing(anim, {
-            toValue: 1.3,
-            duration: 400,
-            easing: Easing.out(Easing.ease),
+            toValue: 1,
+            duration: 600,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: false,
           }),
           Animated.timing(anim, {
-            toValue: 1,
-            duration: 400,
-            easing: Easing.in(Easing.ease),
+            toValue: 0,
+            duration: 600,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: false,
           }),
         ])
       )
     }
-    
-    // Pulso dos nós de canto
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cornerPulse, {
-          toValue: 1.2,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(cornerPulse, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start()
-    
-    createPulse(pulse1, 0).start()
-    createPulse(pulse2, 200).start()
-    createPulse(pulse3, 400).start()
-    createPulse(pulse4, 600).start()
-    
-    console.log('✅ All AnimatedLogoIcon animations started successfully!')
-    
-    // Não precisa de cleanup porque loop roda infinitamente
-  }, []) // Dependências vazias para rodar só uma vez
 
-  const rotate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  })
+    // Inicia as animações em sequência
+    createColorPulse(colorAnim1, 0).start()
+    createColorPulse(colorAnim2, 150).start()
+    createColorPulse(colorAnim3, 300).start()
+    createColorPulse(colorAnim4, 450).start()
+  }, [])
 
-  const AnimatedSvg = Animated.createAnimatedComponent(Svg)
+  // Interpolar cores: azul (#3B82F6) -> amarelo (#FFC107)
+  const getColor = (anim: Animated.Value) => {
+    return anim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['rgb(59, 130, 246)', 'rgb(255, 193, 7)'] // azul -> amarelo
+    })
+  }
 
   return (
-    <AnimatedSvg 
+    <Svg 
       width={size} 
       height={size} 
       viewBox="0 0 1024 1024" 
       fill="none"
-      style={{ transform: [{ rotate }] }}
     >
       <Defs>
         <Filter id="glow-anim">
@@ -108,7 +69,7 @@ export const AnimatedLogoIcon = ({ size = 40 }: AnimatedLogoIconProps) => {
         </Filter>
       </Defs>
       
-      {/* Central Hub Circle */}
+      {/* Central Hub Circle - sempre amarelo */}
       <Circle cx="512" cy="512" r="140" fill="#FFC107" filter="url(#glow-anim)"/>
       <Circle cx="512" cy="512" r="100" fill="#F59E0B"/>
       
@@ -124,144 +85,24 @@ export const AnimatedLogoIcon = ({ size = 40 }: AnimatedLogoIconProps) => {
       <Line x1="426" y1="598" x2="286" y2="738" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
       <Line x1="426" y1="426" x2="286" y2="286" stroke="#60A5FA" strokeWidth="10" opacity="0.4"/>
       
-      {/* Satellite Nodes */}
-      <AnimatedCircle 
-        cx="512" 
-        cy="200" 
-        r={pulse1.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [70, 91]
-        })} 
-        fill="#3B82F6" 
-        filter="url(#glow-anim)"
-        opacity={pulse1.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [1, 0.8]
-        })}
-      />
-      <AnimatedCircle 
-        cx="512" 
-        cy="200" 
-        r={pulse1.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [50, 65]
-        })} 
-        fill="#2563EB"
-      />
+      {/* Satellite Nodes - APENAS ESTES pulsam entre azul e amarelo */}
+      <AnimatedCircle cx="512" cy="200" r="70" fill={getColor(colorAnim1)} filter="url(#glow-anim)"/>
+      <AnimatedCircle cx="512" cy="200" r="50" fill={getColor(colorAnim1)} />
       
-      <AnimatedCircle 
-        cx="824" 
-        cy="512" 
-        r={pulse2.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [70, 91]
-        })} 
-        fill="#3B82F6" 
-        filter="url(#glow-anim)"
-        opacity={pulse2.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [1, 0.8]
-        })}
-      />
-      <AnimatedCircle 
-        cx="824" 
-        cy="512" 
-        r={pulse2.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [50, 65]
-        })} 
-        fill="#2563EB"
-      />
+      <AnimatedCircle cx="824" cy="512" r="70" fill={getColor(colorAnim2)} filter="url(#glow-anim)"/>
+      <AnimatedCircle cx="824" cy="512" r="50" fill={getColor(colorAnim2)} />
       
-      <AnimatedCircle 
-        cx="512" 
-        cy="824" 
-        r={pulse3.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [70, 91]
-        })} 
-        fill="#3B82F6" 
-        filter="url(#glow-anim)"
-        opacity={pulse3.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [1, 0.8]
-        })}
-      />
-      <AnimatedCircle 
-        cx="512" 
-        cy="824" 
-        r={pulse3.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [50, 65]
-        })} 
-        fill="#2563EB"
-      />
+      <AnimatedCircle cx="512" cy="824" r="70" fill={getColor(colorAnim3)} filter="url(#glow-anim)"/>
+      <AnimatedCircle cx="512" cy="824" r="50" fill={getColor(colorAnim3)} />
       
-      <AnimatedCircle 
-        cx="200" 
-        cy="512" 
-        r={pulse4.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [70, 91]
-        })} 
-        fill="#3B82F6" 
-        filter="url(#glow-anim)"
-        opacity={pulse4.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [1, 0.8]
-        })}
-      />
-      <AnimatedCircle 
-        cx="200" 
-        cy="512" 
-        r={pulse4.interpolate({
-          inputRange: [1, 1.3],
-          outputRange: [50, 65]
-        })} 
-        fill="#2563EB"
-      />
+      <AnimatedCircle cx="200" cy="512" r="70" fill={getColor(colorAnim4)} filter="url(#glow-anim)"/>
+      <AnimatedCircle cx="200" cy="512" r="50" fill={getColor(colorAnim4)} />
       
-      {/* Corner nodes */}
-      <AnimatedCircle 
-        cx="268" 
-        cy="268" 
-        r={cornerPulse.interpolate({
-          inputRange: [1, 1.2],
-          outputRange: [50, 60]
-        })} 
-        fill="#3B82F6" 
-        opacity="0.8"
-      />
-      <AnimatedCircle 
-        cx="756" 
-        cy="268" 
-        r={cornerPulse.interpolate({
-          inputRange: [1, 1.2],
-          outputRange: [50, 60]
-        })} 
-        fill="#3B82F6" 
-        opacity="0.8"
-      />
-      <AnimatedCircle 
-        cx="756" 
-        cy="756" 
-        r={cornerPulse.interpolate({
-          inputRange: [1, 1.2],
-          outputRange: [50, 60]
-        })} 
-        fill="#3B82F6" 
-        opacity="0.8"
-      />
-      <AnimatedCircle 
-        cx="268" 
-        cy="756" 
-        r={cornerPulse.interpolate({
-          inputRange: [1, 1.2],
-          outputRange: [50, 60]
-        })} 
-        fill="#3B82F6" 
-        opacity="0.8"
-      />
-    </AnimatedSvg>
+      {/* Corner nodes - FIXOS em azul */}
+      <Circle cx="268" cy="268" r="50" fill="#3B82F6" opacity="0.8"/>
+      <Circle cx="756" cy="268" r="50" fill="#3B82F6" opacity="0.8"/>
+      <Circle cx="756" cy="756" r="50" fill="#3B82F6" opacity="0.8"/>
+      <Circle cx="268" cy="756" r="50" fill="#3B82F6" opacity="0.8"/>
+    </Svg>
   )
 }

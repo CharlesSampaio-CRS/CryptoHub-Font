@@ -30,8 +30,6 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
     steps.map(() => new Animated.Value(0))
   ).current
 
-  console.log('🔄 LoadingProgress - visible:', visible, 'currentStep:', currentStep)
-
   // Animação de entrada
   useEffect(() => {
     if (visible) {
@@ -122,7 +120,6 @@ export function LoadingProgress({ visible }: LoadingProgressProps) {
 
   // Progressão dos steps com tempo mínimo entre cada um
   useEffect(() => {
-    console.log('🔄 LoadingProgress useEffect - visible:', visible)
     if (!visible) {
       setCurrentStep(0)
       return

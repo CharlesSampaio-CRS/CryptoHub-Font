@@ -32,7 +32,6 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const totalValue = parseFloat(data.summary.total_usd)
   const formattedValue = apiService.formatUSD(totalValue)
   
-  console.log(`💰 PortfolioOverview: Total USD = $${totalValue} (timestamp: ${data.timestamp})`)
   
   // Formata o timestamp de última atualização
   const formatLastUpdated = () => {
@@ -109,7 +108,6 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
           <TouchableOpacity 
             style={[styles.refreshButton, refreshing && styles.refreshButtonDisabled]}
             onPress={() => {
-              console.log('🔄 PortfolioOverview: Botão refresh clicado! refreshing atual:', refreshing)
               refresh()
             }}
             disabled={refreshing}

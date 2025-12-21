@@ -24,13 +24,11 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       if (showLoading) setLoading(true)
       setError(null)
       
-      console.log(`📊 PortfolioContext: Carregando evolution (days=${days}, showLoading=${showLoading})...`)
       const startTime = Date.now()
       
       const data = await apiService.getPortfolioEvolution(config.userId, days)
       
       const duration = Date.now() - startTime
-      console.log(`✅ PortfolioContext: Evolution carregado em ${duration}ms`)
       
       setEvolutionData(data)
       setCurrentPeriod(days)
@@ -53,7 +51,6 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   // Refresh sem mostrar loading (usado no pull-to-refresh)
   const refreshEvolution = useCallback(async (days?: number, showLoadingState = true) => {
     const daysToUse = days !== undefined ? days : currentPeriod
-    console.log(`🔄 PortfolioContext: Refresh evolution solicitado (days=${daysToUse}, showLoading=${showLoadingState})`)
     await loadEvolutionData(daysToUse, showLoadingState)
   }, [loadEvolutionData, currentPeriod])
 

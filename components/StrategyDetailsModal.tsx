@@ -58,10 +58,8 @@ export function StrategyDetailsModal({
     try {
       setLoading(true)
       setError(null)
-      console.log('📊 Loading strategy details:', strategyId)
       
       const data = await strategiesService.getStrategy(strategyId)
-      console.log('✅ Strategy loaded:', data)
       setStrategy(data)
     } catch (err) {
       console.error('❌ Error loading strategy:', err)

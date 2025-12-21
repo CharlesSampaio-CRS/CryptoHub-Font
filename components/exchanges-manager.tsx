@@ -302,17 +302,11 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       setLoading(true)
       setError(null)
       
-      console.log('🔄 Fetching exchanges... forceRefresh:', forceRefresh)
       
       const [availableData, linkedData] = await Promise.all([
         apiService.getAvailableExchanges(config.userId, forceRefresh),
         apiService.getLinkedExchanges(config.userId, forceRefresh)
       ])
-      
-      console.log('✅ Exchanges fetched:', {
-        available: availableData.exchanges?.length || 0,
-        linked: linkedData.exchanges?.length || 0
-      })
       
       setAvailableExchanges(availableData.exchanges || [])
       setLinkedExchanges(linkedData.exchanges || [])
@@ -331,7 +325,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   // Atualiza exchanges quando trocar de aba (força refresh para pegar dados atualizados do banco)
   useEffect(() => {
     if (activeTab === 'available') {
-      console.log('📱 Aba "Disponíveis" ativada - forçando refresh dos dados')
       fetchExchanges(true) // força refresh sem cache
     }
   }, [activeTab, fetchExchanges])
@@ -387,7 +380,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     
     setConfirmToggleModalVisible(false)
     
-    console.log(`🔄 Toggling exchange ${exchangeId}: ${currentStatus} → ${newStatus}`)
     
     // Atualização otimista
     setLinkedExchanges(prev =>
@@ -397,7 +389,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     )
 
     try {
-      console.log(`🔄 Status da exchange atualizado: ${exchangeId} → ${newStatus}`)
       
       // Atualizar balances com cache:false (toggle afeta quais exchanges são incluídas)
       await refreshOnExchangeChange()
@@ -489,7 +480,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🗑️ Exchange deletada, atualizando dados...')
         
         // Pequeno delay para garantir que o backend processou
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -542,12 +532,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     try {
       // Busca detalhes completos da exchange
       const exchangeId = type === 'linked' ? exchange.exchange_id : exchange._id
-      console.log('🔍 Fetching full details for exchange:', exchangeId)
       const fullData = await apiService.getExchangeFullDetails(exchangeId, true, true)
-      console.log('✅ Full details loaded:', fullData)
-      console.log('📊 Fees data:', fullData?.fees)
-      console.log('📈 Markets count:', fullData?.markets ? Object.keys(fullData.markets).length : 0)
-      console.log('✨ Has capabilities:', fullData?.has ? Object.keys(fullData.has).length : 0)
       setDetailsFullData(fullData)
     } catch (error) {
       console.error('❌ Error loading exchange details:', error)
@@ -641,21 +626,17 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log(`✅ Exchange "${selectedExchange.nome}" linkada com sucesso!`)
         closeConnectModal()
         
         // Pequeno delay para garantir que o backend processou
-        console.log('⏳ Aguardando 300ms para backend processar...')
         await new Promise(resolve => setTimeout(resolve, 300))
         
         // Atualizar exchanges e balances em paralelo para ser mais rápido
-        console.log('� Atualizando exchanges e balances...')
         await Promise.all([
           fetchExchanges(true),
           refreshOnExchangeChange()
         ])
         
-        console.log('✅ Processo de link completo!')
       } else {
         console.error('❌ Falha ao linkar exchange:', data.error)
         alert(data.error || 'Falha ao conectar exchange')

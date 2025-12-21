@@ -91,8 +91,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
   // Load tokens when reaching step 3
   useEffect(() => {
     if (step === 3 && selectedExchange) {
-      console.log("📍 Step 3 reached, loading tokens for exchange:", selectedExchange)
-      console.log("🔄 Calling loadTokens() automatically...")
       setToken("") // Clear token selection when exchange changes
       setTokenSearchQuery("") // Clear search
       loadTokens()
@@ -101,19 +99,14 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
 
   // Filtrar tokens com base na busca
   const filteredTokens = React.useMemo(() => {
-    console.log("🔄 Recalculating filteredTokens...")
-    console.log("  - tokens.length:", tokens.length)
-    console.log("  - tokenSearchQuery:", tokenSearchQuery)
     
     // Garante que tokens é um array válido
     if (!Array.isArray(tokens) || tokens.length === 0) {
-      console.log("  ❌ No tokens available")
       return []
     }
     
     // Se não há busca, retorna todos os tokens
     if (!tokenSearchQuery.trim()) {
-      console.log("  ✅ Returning all tokens:", tokens.length)
       return tokens
     }
     
@@ -122,7 +115,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
     const filtered = tokens.filter(tokenSymbol => 
       tokenSymbol && typeof tokenSymbol === 'string' && tokenSymbol.toLowerCase().includes(query)
     )
-    console.log("  ✅ Filtered tokens:", filtered.length)
     return filtered
   }, [tokens, tokenSearchQuery])
 
@@ -130,10 +122,8 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
     try {
       setLoadingExchanges(true)
       const response = await apiService.getLinkedExchanges(userId)
-      console.log("🏦 Loaded exchanges:", response.exchanges?.length || 0)
       response.exchanges?.forEach(ex => {
         const id = ex.exchange_id || ex._id || "no-id"
-        console.log("  - Exchange:", ex.name, "ID:", id)
       })
       setExchanges(response.exchanges || [])
     } catch (error) {
@@ -156,12 +146,9 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       setLoadingTokens(true)
       setTokens([])
       
-      console.log("🪙 Loading available tokens for exchange:", selectedExchange)
       
       // 🚀 Chama endpoint de tokens disponíveis
       const url = `${config.apiBaseUrl}/tokens/available?exchange_id=${selectedExchange}`
-      console.log("🌐 Calling endpoint:", url)
-      console.log("📡 Sending GET request to fetch available tokens...")
       
       const response = await fetch(url, {
         method: 'GET',
@@ -177,12 +164,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       }
       
       const data = await response.json()
-      console.log("✅ Received available tokens data:", {
-        hasTokens: !!data.tokens,
-        tokenCount: data.tokens ? data.tokens.length : 0,
-        exchangeId: data.exchange_id,
-        firstToken: data.tokens?.[0]
-      })
       
       if (data && Array.isArray(data.tokens)) {
         // Se tokens são objetos, extrai o campo 'symbol'
@@ -200,9 +181,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
         // Remove duplicatas usando Set e garante tipo string[]
         const uniqueTokens = [...new Set<string>(tokenSymbols)].sort()
         
-        console.log("🪙 Found available tokens:", tokenSymbols.length)
-        console.log("✨ Unique tokens after deduplication:", uniqueTokens.length)
-        console.log("📋 First 10 tokens:", uniqueTokens.slice(0, 10))
         
         if (uniqueTokens.length > 0) {
           setTokens(uniqueTokens)
@@ -244,10 +222,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
         is_active: true,
       }
       
-      console.log("🚀 Criando estratégia com dados:", strategyData)
-      console.log("📋 Template selecionado:", selectedTemplate)
-      console.log("🏦 Exchange selecionada:", selectedExchange)
-      console.log("🪙 Token:", token)
       
       const createdStrategy = await strategiesService.createStrategy(strategyData)
 
@@ -256,7 +230,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       onClose()
       
       const strategyId = createdStrategy._id || createdStrategy.id || ""
-      console.log(`✅ Strategy created successfully with ID: ${strategyId}`)
       
       // Aguarda um pouco para o modal fechar antes de recarregar
       setTimeout(() => {
@@ -279,7 +252,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       const exchangeId = e.exchange_id || e._id || ""
       return exchangeId === selectedExchange
     })
-    console.log("🔍 Looking for exchange:", selectedExchange, "Found:", exchange?.name || "not found")
     return exchange?.name || ""
   }
 
@@ -402,7 +374,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                         },
                       ]}
                       onPress={() => {
-                        console.log("🎯 Template selecionado:", template.id, "-", t(template.nameKey))
                         setSelectedTemplate(template.id)
                       }}
                       activeOpacity={0.7}
@@ -459,10 +430,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                             },
                           ]}
                           onPress={() => {
-                            console.log("🏦 Exchange selected in Step 2:", exchangeId, exchange.name)
-                            console.log("💾 Setting selectedExchange state to:", exchangeId)
                             setSelectedExchange(exchangeId)
-                            console.log("✅ Exchange selection completed, will load tokens when reaching Step 3")
                           }}
                           activeOpacity={0.7}
                         >
@@ -540,7 +508,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                         placeholderTextColor={colors.textSecondary}
                         value={tokenSearchQuery || token}
                         onChangeText={(text) => {
-                          console.log("🔍 Token search query changed:", text)
                           setTokenSearchQuery(text)
                           setShowTokenDropdown(true)
                           // Se limpar, limpa a seleção
@@ -549,14 +516,9 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                           }
                         }}
                         onFocus={() => {
-                          console.log("👆 Token input focused - calling API to load available tokens")
-                          console.log("📋 Current tokens loaded:", tokens.length)
-                          console.log("🔎 Current search query:", tokenSearchQuery)
-                          console.log("🪙 Current selected token:", token)
                           
                           // Chama o endpoint para buscar tokens disponíveis
                           if (selectedExchange && tokens.length === 0) {
-                            console.log("🔄 Reloading tokens from API...")
                             loadTokens()
                           }
                           
@@ -567,14 +529,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                           }
                         }}
                       />
-                      {(() => {
-                        console.log("🎨 Rendering dropdown check:", {
-                          showTokenDropdown,
-                          filteredTokensLength: filteredTokens.length,
-                          willShowDropdown: showTokenDropdown && filteredTokens.length > 0
-                        })
-                        return null
-                      })()}
                       {showTokenDropdown && filteredTokens.length > 0 && (
                         <View
                           style={[
@@ -606,7 +560,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                                   setToken(tokenSymbol)
                                   setTokenSearchQuery("")
                                   setShowTokenDropdown(false)
-                                  console.log("🪙 Token selected:", tokenSymbol)
                                 }}
                               >
                                 <Text
@@ -679,12 +632,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 ]}
                 onPress={() => {
                   const nextStep = (step + 1) as 1 | 2 | 3
-                  console.log(`➡️ Moving from Step ${step} to Step ${nextStep}`)
-                  console.log(`📋 Template atual: "${selectedTemplate}"`)
-                  console.log(`🏦 Exchange atual: "${selectedExchange}"`)
                   if (nextStep === 3) {
-                    console.log("📍 Entering Step 3 with exchange:", selectedExchange || "NONE")
-                    console.log("📍 Template sendo levado para Step 3:", selectedTemplate)
                   }
                   setStep(nextStep)
                 }}

@@ -23,7 +23,6 @@ export const QuickChart = memo(function QuickChart() {
 
   // Busca novos dados quando o período mudar
   useEffect(() => {
-    console.log(`📊 QuickChart: Período alterado para ${selectedPeriod} dias, buscando dados...`)
     setIsChangingPeriod(true)
     refreshEvolution(selectedPeriod).finally(() => {
       setIsChangingPeriod(false)

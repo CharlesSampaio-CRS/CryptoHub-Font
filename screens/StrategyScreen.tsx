@@ -64,8 +64,6 @@ export function StrategyScreen() {
       setLoading(true)
       const apiStrategies = await strategiesService.getUserStrategies(USER_ID)
       
-      console.log("📊 Loaded strategies from API:", apiStrategies.length)
-      console.log(`📈 Skip stats: ${skipStats ? 'YES (strategy just created)' : 'NO (normal load)'}`)
       
       // Transform API data to local format - Filter out invalid strategies
       const validStrategies = apiStrategies.filter(apiStrategy => {
@@ -74,7 +72,6 @@ export function StrategyScreen() {
           console.warn("⚠️ Strategy without _id or id:", apiStrategy)
           return false
         }
-        console.log("✅ Valid strategy ID:", strategyId, "Token:", apiStrategy.token)
         return true
       })
 
@@ -88,7 +85,6 @@ export function StrategyScreen() {
           
           // Pula stats de estratégias recém-criadas (ainda não têm execuções)
           if (newlyCreatedStrategyIds.current.has(strategyId)) {
-            console.log(`⏭️ Skipping stats for newly created strategy: ${strategyId}`)
             return Promise.resolve(null)
           }
           
@@ -123,7 +119,6 @@ export function StrategyScreen() {
             }
           } else if (statsResult.status === 'fulfilled' && statsResult.value === null) {
             // Estratégia recém-criada - stats serão undefined
-            console.log(`📝 Strategy ${strategyId} is newly created - no stats yet`)
           } else if (statsResult.status === 'rejected') {
             // Apenas loga warning se não for erro 404 (estratégia nova)
             const errorMsg = statsResult.reason?.message || ''
@@ -160,10 +155,8 @@ export function StrategyScreen() {
 
   const loadExecutions = useCallback(async () => {
     try {
-      console.log("🔄 Loading executions from API...")
       // Passa a lista de estratégias recém-criadas para pular
       const apiExecutions = await strategiesService.getUserExecutions(USER_ID, newlyCreatedStrategyIds.current)
-      console.log("📊 Loaded executions:", apiExecutions.length)
       setExecutions(apiExecutions)
     } catch (error) {
       console.error("Error loading executions:", error)
@@ -213,7 +206,6 @@ export function StrategyScreen() {
     // Update on server
     try {
       await strategiesService.updateStrategy(id, { is_active: newIsActive })
-      console.log(`✅ Strategy ${id} toggled to ${newIsActive}`)
     } catch (error) {
       console.error("Error toggling strategy:", error)
       // Rollback on error
@@ -237,7 +229,6 @@ export function StrategyScreen() {
     setConfirmStrategyName("")
 
     try {
-      console.log("🔄 Deleting strategy:", id)
       
       // Optimistic update - remove from UI immediately
       setStrategies(prev => prev.filter(s => s.id !== id))
@@ -245,7 +236,6 @@ export function StrategyScreen() {
       // Call API with user_id parameter
       await strategiesService.deleteStrategy(id, USER_ID)
       
-      console.log(`✅ Strategy "${name}" deleted successfully`)
     } catch (error: any) {
       console.error("Error deleting strategy:", error)
       
@@ -264,12 +254,10 @@ export function StrategyScreen() {
     setCreateModalVisible(false)
     
     // Adiciona o ID da nova estratégia à lista de recém-criadas
-    console.log(`📝 Marking strategy ${strategyId} as newly created (will skip stats)`)
     newlyCreatedStrategyIds.current.add(strategyId)
     
     // Limpa o ID após 5 minutos (tempo suficiente para primeira execução)
     setTimeout(() => {
-      console.log(`⏰ Removing ${strategyId} from newly created list`)
       newlyCreatedStrategyIds.current.delete(strategyId)
     }, 5 * 60 * 1000)
     
@@ -805,7 +793,6 @@ export function StrategyScreen() {
           setSelectedStrategyId(null)
         }}
         onEdit={(strategyId: string) => {
-          console.log('📝 Edit strategy:', strategyId)
           // TODO: Implement edit functionality
         }}
         onDelete={(strategyId: string) => {

@@ -30,14 +30,11 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBalances = useCallback(async (forceRefresh = false, emitEvent = false, silent = false, useSummary = false) => {
     try {
-      console.log('🔄 fetchBalances chamado:', { forceRefresh, emitEvent, silent, useSummary })
       
       // Controle inteligente de loading states
       if (!silent && !data) {
-        console.log('📊 setLoading(true) - primeira carga')
         setLoading(true)
       } else if (!silent && forceRefresh) {
-        console.log('🔄 setRefreshing(true) - refresh manual')
         setRefreshing(true)
         isRefreshingRef.current = true // Marca ref imediatamente
       }
@@ -47,17 +44,6 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       const response = useSummary 
         ? await apiService.getBalancesSummary(config.userId, forceRefresh)
         : await apiService.getBalances(config.userId, forceRefresh)
-      
-      console.log('✅ Dados recebidos:', {
-        exchanges: response.exchanges?.length || 0,
-        totalExchanges: response.summary?.exchanges_count,
-        timestamp: response.timestamp,
-        firstExchange: response.exchanges?.[0] ? {
-          name: response.exchanges[0].name,
-          tokensCount: Object.keys(response.exchanges[0].tokens || {}).length,
-          tokens: Object.keys(response.exchanges[0].tokens || {}).slice(0, 3)
-        } : null
-      })
       
       setData(response)
       
@@ -75,7 +61,6 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       // Aguarda um pouco para garantir que a UI atualize antes de parar a animação
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      console.log('✅ fetchBalances finally: setLoading(false) e setRefreshing(false)')
       setLoading(false)
       setRefreshing(false)
       isRefreshingRef.current = false // Libera ref
@@ -85,32 +70,26 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     // Previne múltiplas chamadas simultâneas usando ref (verificação síncrona)
     if (isRefreshingRef.current) {
-      console.log('⏭️ BalanceContext.refresh: Já está atualizando (ref check), ignorando chamada duplicada')
       return
     }
     
-    console.log('🔄 BalanceContext.refresh: Forçando atualização COMPLETA (sem cache)')
     await fetchBalances(true, true, false, false) // forceRefresh=TRUE (sem cache), emitEvent=true, silent=false, useSummary=FALSE
   }, [fetchBalances])
 
   // Função específica para atualizar quando exchanges mudam
   const refreshOnExchangeChange = useCallback(async () => {
-    console.log('🔄 refreshOnExchangeChange: Iniciando atualização de balances após mudança de exchange')
     // Atualiza com cache: false, de forma silenciosa, e emite evento
     await fetchBalances(true, true, true)
-    console.log('✅ refreshOnExchangeChange: Atualização concluída')
   }, [fetchBalances])
 
   // Fetch inicial DESABILITADO - será feito pelo DataLoader no App.tsx após login
   // useEffect(() => {
-  //   console.log('📊 BalanceContext: Carregamento inicial COMPLETO (com todos os tokens)')
   //   fetchBalances(false, false, false, false) // forceRefresh=FALSE (usa cache), emitEvent=false, silent=false, useSummary=FALSE
   // }, [])
 
   // Auto-refresh a cada 5 minutos de forma silenciosa com dados COMPLETOS
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refresh: Atualizando balances COMPLETOS (5 minutos)')
       fetchBalances(true, false, true, false) // forceRefresh=true, silent=true, useSummary=FALSE
     }, 5 * 60 * 1000) // 5 minutos
 
@@ -120,7 +99,6 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   // Listener para eventos externos (como exchanges-manager)
   useEffect(() => {
     const handleBalancesUpdate = () => {
-      console.log('🔔 BalanceContext: Evento externo - atualizando COMPLETO')
       setTimeout(() => fetchBalances(true, false, true, false), 100) // useSummary=FALSE
     }
     

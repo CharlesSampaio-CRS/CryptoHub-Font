@@ -14,17 +14,12 @@ async function fetchWithTimeout(
   timeout = DEFAULT_TIMEOUT,
   retries = MAX_RETRIES
 ): Promise<Response> {
-  console.log(`🌐 Fetching: ${url} (timeout: ${timeout}ms, retries left: ${retries})`);
   const startTime = Date.now();
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await Promise.race([
-        fetch(url, options).then(response => {
-          const duration = Date.now() - startTime;
-          console.log(`✅ Response received in ${duration}ms: ${response.status} ${response.statusText}`);
-          return response;
-        }),
+        fetch(url, options),
         new Promise<Response>((_, reject) =>
           setTimeout(() => {
             reject(new Error(`Request timeout after ${timeout}ms`));
@@ -124,7 +119,6 @@ export const apiService = {
       }
       
       const data: BalanceResponse = await response.json();
-      console.log(`🚀 Summary loaded: ${data.summary.exchanges_count} exchanges in ${data.meta?.fetch_time || 'N/A'}s`);
       return data;
     } catch (error) {
       console.error('Error fetching balances summary:', error);
@@ -146,9 +140,6 @@ export const apiService = {
       const variationsParam = includeVariations ? '&include_variations=true' : '';
       const url = `${API_BASE_URL}/balances/exchange/${exchangeId}?user_id=${userId}${variationsParam}&_t=${timestamp}`;
       
-      console.log(`🌐 API Call: ${url}`);
-      console.log(`📊 Include variations: ${includeVariations}, param: ${variationsParam}`);
-      
       const response = await fetchWithTimeout(
         url,
         {
@@ -162,23 +153,6 @@ export const apiService = {
       }
       
       const data = await response.json();
-      console.log(`📊 Exchange details loaded: ${data.name} - ${Object.keys(data.tokens || {}).length} tokens`);
-      
-      // Debug: verificar se as variações estão vindo
-      if (data.tokens) {
-        const firstToken = Object.entries(data.tokens)[0];
-        if (firstToken) {
-          const [symbol, tokenData]: [string, any] = firstToken;
-          console.log(`📊 First token (${symbol}) data sample:`, {
-            has_change_1h: !!tokenData.change_1h,
-            has_change_4h: !!tokenData.change_4h,
-            has_change_24h: !!tokenData.change_24h,
-            change_1h: tokenData.change_1h,
-            change_4h: tokenData.change_4h,
-            change_24h: tokenData.change_24h
-          });
-        }
-      }
       
       return data;
     } catch (error) {
@@ -196,7 +170,6 @@ export const apiService = {
   async getAvailableExchanges(userId: string, forceRefresh: boolean = false): Promise<AvailableExchangesResponse> {
     try {
       const url = `${API_BASE_URL}/exchanges/available?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
-      console.log('Fetching available exchanges from:', url, 'forceRefresh:', forceRefresh);
       
       // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
       const response = await fetchWithTimeout(url, { 
@@ -225,7 +198,6 @@ export const apiService = {
   async getLinkedExchanges(userId: string, forceRefresh: boolean = false): Promise<LinkedExchangesResponse> {
     try {
       const url = `${API_BASE_URL}/exchanges/linked?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
-      console.log('Fetching linked exchanges from:', url, 'forceRefresh:', forceRefresh);
       
       // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
       const response = await fetchWithTimeout(url, { 
@@ -297,13 +269,11 @@ export const apiService = {
     // Verifica se existe cache válido
     const cached = portfolioEvolutionCache.get(cacheKey);
     if (cached && (now - cached.timestamp) < CACHE_TTL) {
-      console.log('📊 Using cached portfolio evolution data');
       return cached.data;
     }
 
     try {
       const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
-      console.log('📊 Fetching portfolio evolution from:', url);
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
@@ -318,7 +288,6 @@ export const apiService = {
       }
       
       const data = await response.json();
-      console.log(`✅ Portfolio evolution fetched: ${days} days, ${data.evolution?.data?.length || 0} data points`);
       
       // Armazena no cache
       portfolioEvolutionCache.set(cacheKey, {
@@ -344,7 +313,6 @@ export const apiService = {
     try {
       const upperToken = token.toUpperCase();
       const url = `${API_BASE_URL}/tokens/search?user_id=${userId}&exchange_id=${exchangeId}&token=${upperToken}`;
-      console.log('🔍 Searching token:', upperToken, 'at exchange:', exchangeId);
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
@@ -362,7 +330,6 @@ export const apiService = {
       }
       
       const data = await response.json();
-      console.log('✅ Token found:', data);
       return {
         success: true,
         ...data
@@ -398,7 +365,6 @@ export const apiService = {
     if (!forceRefresh) {
       const cached = exchangeDetailsCache.get(cacheKey);
       if (cached && (now - cached.timestamp) < EXCHANGE_DETAILS_CACHE_TTL) {
-        console.log('📦 Using cached exchange details for:', exchangeId);
         return cached.data;
       }
     }
@@ -408,8 +374,6 @@ export const apiService = {
       const marketsParam = includeMarkets ? 'include_markets=true' : '';
       const params = [feesParam, marketsParam].filter(p => p).join('&');
       const url = `${API_BASE_URL}/exchanges/${exchangeId}${params ? '?' + params : ''}`;
-      
-      console.log('🔍 Fetching full exchange details:', url);
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
@@ -421,7 +385,6 @@ export const apiService = {
       }
       
       const data = await response.json();
-      console.log('✅ Exchange full details loaded:', data);
       
       // Armazena no cache
       exchangeDetailsCache.set(cacheKey, {
@@ -450,11 +413,9 @@ export const apiService = {
         }
       });
       keysToDelete.forEach(key => exchangeDetailsCache.delete(key));
-      console.log(`🗑️ Cache cleared for exchange: ${exchangeId}`);
     } else {
       // Limpa todo o cache
       exchangeDetailsCache.clear();
-      console.log('🗑️ All exchange details cache cleared');
     }
   },
 
