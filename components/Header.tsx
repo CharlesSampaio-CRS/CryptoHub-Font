@@ -115,7 +115,7 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
       <View style={styles.headerContent}>
         <LogoIcon size={24} />
         <View style={styles.headerText}>
-          <Text style={[styles.title, { color: colors.text }]}>MultExchanges</Text>
+          <Text style={[styles.title, { color: colors.text }]}>MeX</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
         </View>
       </View>
