@@ -30,8 +30,9 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   const [exchangeVariations, setExchangeVariations] = useState<Record<string, Record<string, any>>>({})
   const [lastUpdateTime, setLastUpdateTime] = useState<Record<string, Date>>({})
   const fetchedExchangesRef = useRef<Set<string>>(new Set())
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
 
-  // Função para buscar variações de uma exchange
+  // Função otimizada para buscar variações de uma exchange
   const fetchExchangeVariations = useCallback(async (exchangeId: string) => {
     const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
     
@@ -39,51 +40,93 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       return
     }
 
-    const tokenSymbols = Object.keys(exchange.tokens)
-    
-    // Lista de tokens que NÃO precisam de consulta (stablecoins e moedas fiat)
-    const EXCLUDED_TOKENS = ['USDT', 'BRL', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD']
-    
-    // Filtra tokens que precisam de consulta
-    const tokensToFetch = tokenSymbols.filter(symbol => 
-      !EXCLUDED_TOKENS.includes(symbol.toUpperCase())
-    )
-    
-    // Se não houver tokens para buscar, apenas marca como concluído
-    if (tokensToFetch.length === 0) {
-      setExchangeVariations(prev => ({ ...prev, [exchangeId]: {} }))
-      setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
-      return
+    // Cancela requisição anterior se existir
+    if (abortControllersRef.current.has(exchangeId)) {
+      abortControllersRef.current.get(exchangeId)?.abort()
     }
-    
-    // Busca em lotes de 5 tokens por vez para evitar sobrecarga
-    const BATCH_SIZE = 5
-    const variationsMap: Record<string, any> = {}
-    
-    for (let i = 0; i < tokensToFetch.length; i += BATCH_SIZE) {
-      const batch = tokensToFetch.slice(i, i + BATCH_SIZE)
+
+    // Cria novo AbortController para esta requisição
+    const abortController = new AbortController()
+    abortControllersRef.current.set(exchangeId, abortController)
+
+    try {
+      const tokenSymbols = Object.keys(exchange.tokens)
       
-      const batchPromises = batch.map(symbol =>
-        apiService.getTokenDetails(exchangeId, symbol, config.userId)
-          .catch(error => {
-            console.error(`Error fetching ${symbol}:`, error.message)
-            return null
-          })
-      )
+      // Lista de tokens que NÃO precisam de consulta (stablecoins e moedas fiat)
+      const EXCLUDED_TOKENS = ['USDT', 'BRL', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'EUR', 'USDD']
       
-      const batchResults = await Promise.all(batchPromises)
+      // Filtra e ordena tokens por valor (maiores primeiro)
+      const tokensWithValue = tokenSymbols
+        .filter(symbol => !EXCLUDED_TOKENS.includes(symbol.toUpperCase()))
+        .map(symbol => ({
+          symbol,
+          value: (exchange.tokens[symbol] as any)?.total_value_usd || 0
+        }))
+        .sort((a, b) => b.value - a.value)
       
-      // Processa resultados do lote
-      batchResults.forEach((tokenData, index) => {
-        if (tokenData && tokenData.change) {
-          const symbol = batch[index]
-          variationsMap[symbol] = tokenData.change
+      const tokensToFetch = tokensWithValue.map(t => t.symbol)
+      
+      // Se não houver tokens para buscar, apenas marca como concluído
+      if (tokensToFetch.length === 0) {
+        setExchangeVariations(prev => ({ ...prev, [exchangeId]: {} }))
+        setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
+        return
+      }
+      
+      // Limita a 10 tokens mais valiosos se houver muitos
+      const tokensLimited = tokensToFetch.slice(0, 10)
+      
+      // Busca em lotes de 3 tokens por vez (reduzido de 5 para evitar timeout)
+      const BATCH_SIZE = 3
+      const variationsMap: Record<string, any> = {}
+      
+      for (let i = 0; i < tokensLimited.length; i += BATCH_SIZE) {
+        // Verifica se foi cancelado
+        if (abortController.signal.aborted) {
+          console.log(`Fetch cancelled for ${exchangeId}`)
+          return
         }
-      })
+
+        const batch = tokensLimited.slice(i, i + BATCH_SIZE)
+        
+        const batchPromises = batch.map(symbol =>
+          apiService.getTokenDetails(exchangeId, symbol, config.userId)
+            .catch(error => {
+              // Ignora erros de timeout para não bloquear os outros
+              if (!error.message.includes('aborted')) {
+                console.error(`Error fetching ${symbol}:`, error.message)
+              }
+              return null
+            })
+        )
+        
+        const batchResults = await Promise.all(batchPromises)
+        
+        // Processa resultados do lote
+        batchResults.forEach((tokenData, index) => {
+          if (tokenData && tokenData.change) {
+            const symbol = batch[index]
+            variationsMap[symbol] = tokenData.change
+          }
+        })
+
+        // Atualiza parcialmente a cada lote (feedback visual progressivo)
+        if (Object.keys(variationsMap).length > 0) {
+          setExchangeVariations(prev => ({ 
+            ...prev, 
+            [exchangeId]: { ...prev[exchangeId], ...variationsMap }
+          }))
+        }
+      }
+      
+      setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error(`Error fetching variations for ${exchangeId}:`, error)
+      }
+    } finally {
+      abortControllersRef.current.delete(exchangeId)
     }
-    
-    setExchangeVariations(prev => ({ ...prev, [exchangeId]: variationsMap }))
-    setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
   }, [data])
 
   // Auto-refresh das variações a cada 2 minutos para TODAS as exchanges expandidas
@@ -106,12 +149,27 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       })
     }, 2 * 60 * 1000) // 2 minutos
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      // Cancela todas as requisições pendentes ao desmontar
+      abortControllersRef.current.forEach(controller => controller.abort())
+      abortControllersRef.current.clear()
+    }
   }, [expandedExchanges, fetchExchangeVariations])
 
   // Toggle de expansão/colapso individual de exchanges
   const toggleExpandExchange = useCallback(async (exchangeId: string) => {
     const isCurrentlyExpanded = expandedExchanges.has(exchangeId)
+    
+    // Se está colapsando, cancela requisição pendente
+    if (isCurrentlyExpanded) {
+      const controller = abortControllersRef.current.get(exchangeId)
+      if (controller) {
+        controller.abort()
+        abortControllersRef.current.delete(exchangeId)
+      }
+      setLoadingVariations(prev => prev === exchangeId ? null : prev)
+    }
     
     setExpandedExchanges(prev => {
       const newSet = new Set(prev)
@@ -413,46 +471,40 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                           onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
                           activeOpacity={0.7}
                         >
-                          {/* Linha Superior: Symbol + Valor Total */}
+                          {/* Linha 1: [TOKEN] Quantidade → Valor Total (direita) */}
                           <View style={styles.tokenTopRow}>
-                            <View style={[
-                              styles.tokenSymbolBadge,
-                              { 
-                                backgroundColor: colors.primaryLight + '20',
-                                borderColor: colors.primary + '40',
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                              }
-                            ]}>
-                              <Text style={[styles.tokenSymbol, { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }]}>
-                                {symbol}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                              <View style={[
+                                styles.tokenSymbolBadge,
+                                { 
+                                  backgroundColor: colors.primaryLight + '20',
+                                  borderColor: colors.primary + '40',
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                  marginRight: 8,
+                                }
+                              ]}>
+                                <Text style={[styles.tokenSymbol, { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }]}>
+                                  {symbol}
+                                </Text>
+                              </View>
+                              <Text style={[styles.tokenAmount, { color: colors.textSecondary, fontSize: 12 }]}>
+                                {hideValue(apiService.formatTokenAmount(token.amount))}
                               </Text>
                             </View>
-                            <Text style={[styles.tokenValue, { color: colors.text, fontSize: 14, fontWeight: '500' }]}>
+                            <Text style={[styles.tokenValue, { color: colors.text, fontSize: 14, fontWeight: '600' }]}>
                               {hideValue(apiService.formatUSD(valueUSD))}
                             </Text>
                           </View>
                           
-                          {/* Linha do Meio: Quantidade + Preço Unitário */}
-                          <View style={styles.tokenMiddleRow}>
-                            <Text style={[styles.tokenAmount, { color: colors.textSecondary, fontSize: 10 }]}>
-                              {hideValue(apiService.formatTokenAmount(token.amount))}
-                            </Text>
+                          {/* Linha 2: Preço unitário → Variações (direita) */}
+                          <View style={styles.tokenBottomRow}>
                             {priceUSD > 0 && (
-                              <>
-                                <Text style={[styles.tokenPriceSeparator, { color: colors.textSecondary, fontSize: 10, marginHorizontal: 4 }]}>
-                                  •
-                                </Text>
-                                <Text style={[styles.tokenPrice, { color: colors.textSecondary, fontSize: 10 }]}>
-                                  {hideValue(apiService.formatUSD(priceUSD))}
-                                </Text>
-                              </>
+                              <Text style={[styles.tokenPrice, { color: colors.textSecondary, fontSize: 11 }]}>
+                                {hideValue(apiService.formatUSD(priceUSD))}
+                              </Text>
                             )}
-                          </View>
-                          
-                          {/* Linha Inferior: Variações */}
-                          {variations.length > 0 && (
-                            <View style={styles.tokenBottomRow}>
+                            {variations.length > 0 && (
                               <View style={styles.variationsContainer}>
                                 {variations.map((variation, idx) => {
                                   const isPositive = variation.value >= 0
@@ -466,7 +518,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                                           paddingHorizontal: 6,
                                           paddingVertical: 2,
                                           borderRadius: 4,
-                                          marginRight: idx < variations.length - 1 ? 4 : 0,
+                                          marginLeft: idx === 0 ? 0 : 4,
                                         }
                                       ]}
                                     >
@@ -484,8 +536,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                                   )
                                 })}
                               </View>
-                            </View>
-                          )}
+                            )}
+                          </View>
                         </TouchableOpacity>
                       )
                     })}
@@ -757,7 +809,7 @@ const styles = StyleSheet.create({
   },
   tokenBottomRow: {
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   tokenBottomLeft: {
