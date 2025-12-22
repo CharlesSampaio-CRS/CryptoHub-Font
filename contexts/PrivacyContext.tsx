@@ -24,7 +24,7 @@ interface PrivacyProviderProps {
 const PRIVACY_KEY = '@privacy_values_hidden'
 
 export const PrivacyProvider = ({ children }: PrivacyProviderProps) => {
-  const [valuesHidden, setValuesHidden] = useState(true) // Valores ocultos por padrão
+  const [valuesHidden, setValuesHidden] = useState(true) // Valores sempre ocultos ao iniciar
 
   // Carregar preferência ao iniciar
   useEffect(() => {
@@ -36,6 +36,9 @@ export const PrivacyProvider = ({ children }: PrivacyProviderProps) => {
       const saved = await AsyncStorage.getItem(PRIVACY_KEY)
       if (saved !== null) {
         setValuesHidden(JSON.parse(saved))
+      } else {
+        // Se não houver preferência salva, mantém oculto (padrão)
+        setValuesHidden(true)
       }
     } catch (error) {
       console.error('Error loading privacy preference:', error)

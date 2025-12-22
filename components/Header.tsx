@@ -6,12 +6,41 @@ import { useLanguage } from "../contexts/LanguageContext"
 import { usePrivacy } from "../contexts/PrivacyContext"
 import { LogoIcon } from "./LogoIcon"
 
-// Globe Icon (idioma)
-const GlobeIcon = ({ color }: { color: string }) => (
+// Languages/Hiragana Icon (idioma) - Estilo Lucide
+const LanguagesIcon = ({ color }: { color: string }) => (
   <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    {/* Caractere "A" */}
     <Path
-      d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+      d="M4 5h7M7 5v12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M10 9H4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Caractere japonês/asiático */}
+    <Path
+      d="M14 5h6M17 5v12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14 12h6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14 17h6"
       stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
@@ -139,7 +168,7 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
           onPress={() => setLanguage(language === 'pt-BR' ? 'en-US' : 'pt-BR')}
           activeOpacity={0.7}
         >
-          <GlobeIcon color={colors.text} />
+          <LanguagesIcon color={colors.text} />
           <Text style={styles.flagEmoji}>{language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}</Text>
         </TouchableOpacity>
 
