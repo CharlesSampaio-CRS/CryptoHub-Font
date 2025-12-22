@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from "react-native"
 import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react"
 import { LinearGradient } from "expo-linear-gradient"
 import { apiService } from "@/services/api"
@@ -376,8 +376,24 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                           <Text style={styles.logoFallback}>💰</Text>
                         )}
                       </View>
-                      <View>
-                        <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.exchangeNameRow}>
+                          <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
+                          {(exchange as any).status === 'inactive' && (exchange as any).inactive_reason && (
+                            <TouchableOpacity 
+                              onPress={() => {
+                                Alert.alert(
+                                  '⚠️ Exchange Inativa',
+                                  (exchange as any).inactive_reason,
+                                  [{ text: 'OK', style: 'default' }]
+                                )
+                              }}
+                              style={styles.infoIconButton}
+                            >
+                              <Text style={[styles.infoIconText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>ℹ️</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
                         <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>
                           {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
                         </Text>
@@ -687,6 +703,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "400",
     marginBottom: 2,
+  },
+  exchangeNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  infoIconButton: {
+    padding: 2,
+    marginLeft: 4,
+  },
+  infoIconText: {
+    fontSize: 16,
   },
   assetsCount: {
     fontSize: 11,

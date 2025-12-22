@@ -137,6 +137,23 @@ const LinkedExchangeCard = memo(({
             {formattedDate}
           </Text>
         </View>
+        
+        {/* Mostrar motivo da inativação se existir */}
+        {!isActive && linkedExchange.inactive_reason && (
+          <View style={[styles.infoBox, { 
+            backgroundColor: colors.isDark ? '#7F1D1D' : '#FEE2E2',
+            borderColor: colors.isDark ? '#DC2626' : '#EF4444'
+          }]}>
+            <View style={[styles.infoIconContainer, { backgroundColor: colors.isDark ? '#DC2626' : '#EF4444' }]}>
+              <Text style={styles.infoIconYellow}>!</Text>
+            </View>
+            <Text style={[styles.infoText, { 
+              color: colors.isDark ? '#FCA5A5' : '#DC2626' 
+            }]}>
+              {linkedExchange.inactive_reason}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Footer com status e delete */}
@@ -319,7 +336,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   }, [])
 
   useEffect(() => {
-    fetchExchanges()
+    fetchExchanges(true) // SEMPRE força refresh para pegar ícones atualizados
   }, [fetchExchanges])
 
   // Atualiza exchanges quando trocar de aba (força refresh para pegar dados atualizados do banco)
@@ -2024,9 +2041,25 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  infoIconContainer: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  infoIconYellow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   infoText: {
     fontSize: 12,
+    flex: 1,
   },
   emptyState: {
     alignItems: "center",
