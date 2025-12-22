@@ -98,7 +98,7 @@ const lightColors: ThemeColors = {
   // Component Specific
   card: '#ffffff',
   cardBorder: '#e5e7eb',
-  input: '#f9fafb',
+  input: '#ffffff',
   inputBorder: '#d1d5db',
   badge: '#f3f4f6',
   badgeBorder: '#d1d5db',

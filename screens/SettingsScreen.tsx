@@ -493,30 +493,35 @@ export function SettingsScreen() {
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                     Use este IP para whitelist nas exchanges
                   </Text>
-                  <View style={[styles.ipContainer, { backgroundColor: colors.primaryLight, borderWidth: 1, borderColor: colors.primary + '40' }]}>
-                    <Text style={[styles.ipText, { color: colors.primary }]}>{deviceIp}</Text>
+                  <View style={styles.ipRow}>
+                    <View style={[styles.ipContainer, { backgroundColor: colors.surfaceSecondary, borderWidth: 0.5, borderColor: colors.border, flex: 1 }]}>
+                      <Text style={[styles.ipText, { color: colors.text }]}>{deviceIp}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={[styles.copyButton, { backgroundColor: colors.primary }]}
+                      onPress={handleCopyIp}
+                      activeOpacity={0.7}
+                      disabled={deviceIp === 'Carregando...' || deviceIp === 'Não disponível'}
+                    >
+                      <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <Path 
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" 
+                          stroke={colors.textInverse} 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    </TouchableOpacity>
                   </View>
                 </View>
-                <TouchableOpacity 
-                  style={[styles.copyButton, { backgroundColor: colors.primary }]}
-                  onPress={handleCopyIp}
-                  activeOpacity={0.7}
-                  disabled={deviceIp === 'Carregando...' || deviceIp === 'Não disponível'}
-                >
-                  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <Path 
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" 
-                      stroke={colors.textInverse} 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </TouchableOpacity>
               </View>
-              <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
-                <Text style={[styles.infoText, { color: colors.primary }]}>
-                  💡 Ao criar APIs nas exchanges, adicione este IP na whitelist para maior segurança
+              <View style={[styles.infoBox, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+                <View style={styles.infoIconContainer}>
+                  <Text style={styles.infoIconYellow}>i</Text>
+                </View>
+                <Text style={[styles.infoText, { color: colors.text }]}>
+                  Ao criar APIs nas exchanges, adicione este IP na whitelist para maior segurança
                 </Text>
               </View>
             </View>
@@ -933,32 +938,56 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   ipContainer: {
-    marginTop: 12,
     padding: 12,
     borderRadius: 8,
+    opacity: 0.8,
+  },
+  ipRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12,
   },
   ipText: {
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+    fontSize: 14,
+    fontWeight: "500",
+    letterSpacing: 0.3,
   },
   copyButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
   },
   infoBox: {
     marginTop: 16,
     padding: 12,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
+    opacity: 0.8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  infoIconContainer: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#FFA500",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoIconYellow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   infoText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 11,
+    fontWeight: "300",
+    lineHeight: 16,
+    flex: 1,
   },
   deleteAccountButton: {
     flexDirection: "row",

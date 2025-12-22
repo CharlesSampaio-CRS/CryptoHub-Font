@@ -197,6 +197,16 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
         )}
       </View>
 
+      {/* Info sobre variações */}
+      <View style={[styles.infoBox, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+        <View style={styles.infoIconContainer}>
+          <Text style={styles.infoIconYellow}>i</Text>
+        </View>
+        <Text style={[styles.infoText, { color: colors.text }]}>
+          As variações são consultadas nas corretoras
+        </Text>
+      </View>
+
       {/* Toggle de Filtro */}
       <View style={styles.filtersContainer}>
         <TouchableOpacity 
@@ -629,12 +639,54 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderWidth: 0,
   },
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 0.5,
+    opacity: 0.8,
+  },
+  infoIconContainer: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#FFA500",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoIconYellow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  infoText: {
+    fontSize: 10,
+    fontWeight: "300",
+    flex: 1,
+    lineHeight: 14,
+  },
+  tokensTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   tokensTitle: {
     fontSize: 12,
     fontWeight: "400",
-    marginBottom: 12,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    opacity: 0.6,
+  },
+  infoButton: {
+    padding: 4,
+  },
+  infoIcon: {
+    fontSize: 14,
     opacity: 0.6,
   },
   lastUpdate: {

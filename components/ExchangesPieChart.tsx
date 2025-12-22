@@ -7,9 +7,9 @@ import { useBalance } from '../contexts/BalanceContext'
 import { usePrivacy } from '../contexts/PrivacyContext'
 
 const { width } = Dimensions.get('window')
-const CHART_SIZE = Math.min(width - 80, 220)
+const CHART_SIZE = Math.min(width - 80, 180)
 const RADIUS = CHART_SIZE / 2
-const STROKE_WIDTH = 20
+const STROKE_WIDTH = 18
 
 // Paleta de cores frias e harmoniosas (azuis, cinzas, tons gelados)
 const EXCHANGE_COLORS = [
@@ -280,12 +280,12 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   content: {
-    gap: 20,
+    gap: 16,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '400',
-    letterSpacing: -0.3,
+    letterSpacing: 0.2,
   },
   chartContainer: {
     alignItems: 'center',
@@ -299,40 +299,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centerLabel: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '300',
     letterSpacing: -1,
   },
   centerValue: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
     marginTop: 4,
   },
   centerPercentage: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '400',
     marginTop: 2,
   },
   legend: {
-    gap: 12,
+    gap: 10,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   exchangeIconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   exchangeIcon: {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
   },
   legendColor: {
     width: 12,
@@ -346,12 +346,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   legendName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '400',
     flex: 1,
   },
   legendPercentage: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '400',
   },
   selectedIndicator: {
