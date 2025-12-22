@@ -191,6 +191,40 @@ const translations = {
     'common.refresh': 'Atualizar',
     'common.yes': 'Sim',
     'common.no': 'Não',
+    'common.warning': 'Aviso',
+    'common.attention': 'Atenção',
+    'common.ok': 'OK',
+    
+    // Error Messages
+    'error.cameraAccess': 'Não foi possível acessar a câmera',
+    'error.loadExchanges': 'Não foi possível carregar suas exchanges',
+    'error.loadTokens': 'Não foi possível carregar os tokens',
+    'error.createStrategy': 'Não foi possível criar a estratégia',
+    'error.connectExchange': 'Não foi possível conectar a exchange',
+    'error.updateExchangeStatus': 'Não foi possível atualizar o status da exchange',
+    'error.disconnectExchange': 'Não foi possível desconectar a exchange',
+    'error.deleteExchange': 'Não foi possível deletar a exchange',
+    'error.pasteClipboard': 'Não foi possível colar da área de transferência',
+    'error.fillAllFields': 'Por favor, preencha todos os campos',
+    'error.fillApiKeys': 'Por favor, preencha API Key e API Secret',
+    'error.passphraseRequired': 'Esta exchange requer uma Passphrase',
+    'error.loginFailed': 'Falha ao fazer login',
+    'error.biometricFailed': 'Falha na autenticação biométrica',
+    'error.unknownError': 'Erro desconhecido',
+    'error.invalidResponse': 'Formato de resposta inválido',
+    
+    // Success Messages
+    'success.strategyCreated': 'Estratégia criada com sucesso!',
+    'success.pastedClipboard': 'Colado!',
+    'success.textPasted': 'Texto colado da área de transferência',
+    
+    // Warning Messages
+    'warning.noTokensAvailable': 'Esta exchange não possui tokens disponíveis',
+    'warning.emptyClipboard': 'Área vazia',
+    'warning.noClipboardText': 'Não há texto na área de transferência',
+    
+    // Exchange Alerts
+    'alert.exchangeInactive': 'Exchange Inativa',
     
     // Loading Progress
     'loading.title': 'Preparando tudo para você',
@@ -390,6 +424,40 @@ const translations = {
     'common.refresh': 'Refresh',
     'common.yes': 'Yes',
     'common.no': 'No',
+    'common.warning': 'Warning',
+    'common.attention': 'Attention',
+    'common.ok': 'OK',
+    
+    // Error Messages
+    'error.cameraAccess': 'Could not access the camera',
+    'error.loadExchanges': 'Could not load your exchanges',
+    'error.loadTokens': 'Could not load tokens',
+    'error.createStrategy': 'Could not create strategy',
+    'error.connectExchange': 'Could not connect exchange',
+    'error.updateExchangeStatus': 'Could not update exchange status',
+    'error.disconnectExchange': 'Could not disconnect exchange',
+    'error.deleteExchange': 'Could not delete exchange',
+    'error.pasteClipboard': 'Could not paste from clipboard',
+    'error.fillAllFields': 'Please fill all fields',
+    'error.fillApiKeys': 'Please fill API Key and API Secret',
+    'error.passphraseRequired': 'This exchange requires a Passphrase',
+    'error.loginFailed': 'Login failed',
+    'error.biometricFailed': 'Biometric authentication failed',
+    'error.unknownError': 'Unknown error',
+    'error.invalidResponse': 'Invalid response format',
+    
+    // Success Messages
+    'success.strategyCreated': 'Strategy created successfully!',
+    'success.pastedClipboard': 'Pasted!',
+    'success.textPasted': 'Text pasted from clipboard',
+    
+    // Warning Messages
+    'warning.noTokensAvailable': 'This exchange has no tokens available',
+    'warning.emptyClipboard': 'Empty clipboard',
+    'warning.noClipboardText': 'No text in clipboard',
+    
+    // Exchange Alerts
+    'alert.exchangeInactive': 'Inactive Exchange',
     
     // Loading Progress
     'loading.title': 'Getting everything ready',

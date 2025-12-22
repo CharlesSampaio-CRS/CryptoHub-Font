@@ -372,10 +372,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         // Atualizar balances com cache:false
         await refreshOnExchangeChange()
       } else {
-        alert(data.error || 'Falha ao conectar exchange')
+        alert(data.error || t('error.connectExchange'))
       }
     } catch (err) {
-      alert('Não foi possível conectar a exchange')
+      alert(t('error.connectExchange'))
     }
   }, [fetchExchanges, refreshOnExchangeChange])
 
@@ -419,7 +419,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           ex.exchange_id === exchangeId ? { ...ex, status: currentStatus as 'active' | 'inactive' } : ex
         )
       )
-      alert("Não foi possível atualizar o status da exchange")
+      alert(t("error.updateExchangeStatus"))
     }
   }, [toggleExchangeId, toggleExchangeNewStatus, refreshOnExchangeChange])
 
@@ -461,10 +461,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         
         // Em React Native, não precisamos de window.dispatchEvent
       } else {
-        alert(data.error || 'Falha ao desconectar exchange')
+        alert(data.error || t('error.disconnectExchange'))
       }
     } catch (err) {
-      alert('Não foi possível desconectar a exchange')
+      alert(t('error.disconnectExchange'))
     }
   }, [confirmExchangeId, fetchExchanges, refreshOnExchangeChange])
 
@@ -507,10 +507,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         // Atualizar balances com cache:false
         await refreshOnExchangeChange()
       } else {
-        alert(data.error || 'Falha ao deletar exchange')
+        alert(data.error || t('error.deleteExchange'))
       }
     } catch (err) {
-      alert('Não foi possível deletar a exchange')
+      alert(t('error.deleteExchange'))
     }
   }, [confirmExchangeId, fetchExchanges, refreshOnExchangeChange])
 
@@ -596,26 +596,26 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         else if (field === 'apiSecret') setApiSecret(text.trim())
         else if (field === 'passphrase') setPassphrase(text.trim())
         
-        Alert.alert('✅ Colado!', 'Texto colado da área de transferência')
+        Alert.alert(`✅ ${t('success.pastedClipboard')}`, t('success.textPasted'))
       } else {
-        Alert.alert('⚠️ Área vazia', 'Não há texto na área de transferência')
+        Alert.alert(`⚠️ ${t('warning.emptyClipboard')}`, t('warning.noClipboardText'))
       }
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível colar da área de transferência')
+      Alert.alert(t('common.error'), t('error.pasteClipboard'))
     }
-  }, [])
+  }, [t])
 
   const handleLinkExchange = useCallback(async () => {
     if (!selectedExchange) return
     
     
     if (!apiKey.trim() || !apiSecret.trim()) {
-      alert('Por favor, preencha API Key e API Secret')
+      alert(t('error.fillApiKeys'))
       return
     }
 
     if (selectedExchange.requires_passphrase && !passphrase.trim()) {
-      alert('Esta exchange requer uma Passphrase')
+      alert(t('error.passphraseRequired'))
       return
     }
 
@@ -656,15 +656,15 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
         
       } else {
         console.error('❌ Falha ao linkar exchange:', data.error)
-        alert(data.error || 'Falha ao conectar exchange')
+        alert(data.error || t('error.connectExchange'))
       }
     } catch (err) {
       console.error('❌ Erro ao linkar exchange:', err)
-      alert('Não foi possível conectar a exchange')
+      alert(t('error.connectExchange'))
     } finally {
       setConnecting(false)
     }
-  }, [selectedExchange, apiKey, apiSecret, passphrase, closeConnectModal, fetchExchanges, refreshOnExchangeChange])
+  }, [selectedExchange, apiKey, apiSecret, passphrase, closeConnectModal, fetchExchanges, refreshOnExchangeChange, t])
 
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({

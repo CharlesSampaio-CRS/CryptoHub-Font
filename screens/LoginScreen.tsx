@@ -13,6 +13,7 @@ import {
 import Svg, { Path, Circle, Line, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode } from 'react-native-svg'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { LinearGradient } from 'expo-linear-gradient'
 import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
 
@@ -101,6 +102,7 @@ const AppleIcon = ({ color = "#000000" }: { color?: string }) => (
 
 export function LoginScreen({ navigation }: LoginScreenProps) {
   const { colors, isDark } = useTheme()
+  const { t } = useLanguage()
   const {
     login,
     loginWithBiometric,
@@ -121,7 +123,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos')
+      Alert.alert(t('common.error'), t('error.fillAllFields'))
       return
     }
 
@@ -129,7 +131,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       await login(email, password)
     } catch (error: any) {
       console.error('❌ Erro no login:', error)
-      Alert.alert('Erro', error.message || 'Falha ao fazer login')
+      Alert.alert(t('common.error'), error.message || t('error.loginFailed'))
     }
   }
 
@@ -137,7 +139,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await loginWithBiometric()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha na autenticação biométrica')
+      Alert.alert(t('common.error'), error.message || t('error.biometricFailed'))
     }
   }
 

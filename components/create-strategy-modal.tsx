@@ -128,7 +128,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       setExchanges(response.exchanges || [])
     } catch (error) {
       console.error("Error loading exchanges:", error)
-      Alert.alert("Erro", "Não foi possível carregar suas exchanges")
+      Alert.alert(t("common.error"), t("error.loadExchanges"))
     } finally {
       setLoadingExchanges(false)
     }
@@ -187,17 +187,17 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
         } else {
           console.warn("⚠️ Exchange has no available tokens")
           setTokens([])
-          Alert.alert("Aviso", "Esta exchange não possui tokens disponíveis")
+          Alert.alert(t("common.warning"), t("warning.noTokensAvailable"))
         }
       } else {
         console.warn("⚠️ Invalid response format or no tokens")
         setTokens([])
-        Alert.alert("Aviso", "Formato de resposta inválido")
+        Alert.alert(t("common.warning"), t("error.invalidResponse"))
       }
     } catch (error) {
       console.error("❌ Error loading available tokens:", error)
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
-      Alert.alert("Erro", `Não foi possível carregar os tokens: ${errorMessage}`)
+      const errorMessage = error instanceof Error ? error.message : t("error.unknownError")
+      Alert.alert(t("common.error"), `${t("error.loadTokens")}: ${errorMessage}`)
       setTokens([])
     } finally {
       setLoadingTokens(false)
@@ -207,7 +207,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
   // Busca token específico na API
   const handleCreateStrategy = async () => {
     if (!selectedTemplate || !selectedExchange || !token.trim()) {
-      Alert.alert("Atenção", "Preencha todos os campos")
+      Alert.alert(t("common.attention"), t("error.fillAllFields"))
       return
     }
 
@@ -233,13 +233,13 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
       
       // Aguarda um pouco para o modal fechar antes de recarregar
       setTimeout(() => {
-        Alert.alert("Sucesso", `Estratégia criada com sucesso!\n\nToken: ${token}`)
+        Alert.alert(t("common.success"), `${t("success.strategyCreated")}\n\nToken: ${token}`)
         onSuccess(strategyId)
       }, 300)
     } catch (error: any) {
       console.error("Error creating strategy:", error)
       setLoading(false)
-      Alert.alert("Erro", error.message || "Não foi possível criar a estratégia")
+      Alert.alert(t("common.error"), error.message || t("error.createStrategy"))
     }
   }
 

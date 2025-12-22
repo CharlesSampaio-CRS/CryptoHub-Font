@@ -31,14 +31,14 @@ export function QRScanner({ visible, onClose, onScan, title }: QRScannerProps) {
       
       if (status !== 'granted') {
         Alert.alert(
-          'Permissão necessária',
+          t('common.attention'),
           'É necessário permitir o acesso à câmera para escanear QR codes.',
-          [{ text: 'OK', onPress: onClose }]
+          [{ text: t('common.ok'), onPress: onClose }]
         )
       }
     } catch (error) {
       console.error('Error requesting camera permission:', error)
-      Alert.alert('Erro', 'Não foi possível acessar a câmera')
+      Alert.alert(t('common.error'), t('error.cameraAccess'))
       onClose()
     }
   }

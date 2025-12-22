@@ -383,9 +383,9 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                             <TouchableOpacity 
                               onPress={() => {
                                 Alert.alert(
-                                  '⚠️ Exchange Inativa',
+                                  `⚠️ ${t('alert.exchangeInactive')}`,
                                   (exchange as any).inactive_reason,
-                                  [{ text: 'OK', style: 'default' }]
+                                  [{ text: t('common.ok'), style: 'default' }]
                                 )
                               }}
                               style={styles.infoIconButton}
