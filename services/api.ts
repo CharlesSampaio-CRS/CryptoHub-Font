@@ -175,7 +175,7 @@ export const apiService = {
       const response = await fetchWithTimeout(url, {
         method: 'GET',
         cache: 'default'
-      }, 5000); // 5s timeout para token individual
+      }, 15000); // 15s timeout (aumentado de 5s) para tokens que demoram mais
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);

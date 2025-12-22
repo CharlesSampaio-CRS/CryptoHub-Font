@@ -41,25 +41,46 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
 
     const tokenSymbols = Object.keys(exchange.tokens)
     
-    // Busca detalhes de todos os tokens em paralelo
-    const tokenDetailsPromises = tokenSymbols.map(symbol =>
-      apiService.getTokenDetails(exchangeId, symbol, config.userId)
-        .catch(error => {
-          console.error(`Error fetching ${symbol}:`, error.message)
-          return null
-        })
+    // Lista de tokens que NÃO precisam de consulta (stablecoins e moedas fiat)
+    const EXCLUDED_TOKENS = ['USDT', 'BRL', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD']
+    
+    // Filtra tokens que precisam de consulta
+    const tokensToFetch = tokenSymbols.filter(symbol => 
+      !EXCLUDED_TOKENS.includes(symbol.toUpperCase())
     )
     
-    const tokenDetailsArray = await Promise.all(tokenDetailsPromises)
+    // Se não houver tokens para buscar, apenas marca como concluído
+    if (tokensToFetch.length === 0) {
+      setExchangeVariations(prev => ({ ...prev, [exchangeId]: {} }))
+      setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
+      return
+    }
     
-    // Organiza os dados: { 'BTC': { '1h': {...}, '4h': {...}, '24h': {...} } }
+    // Busca em lotes de 5 tokens por vez para evitar sobrecarga
+    const BATCH_SIZE = 5
     const variationsMap: Record<string, any> = {}
-    tokenDetailsArray.forEach((tokenData, index) => {
-      if (tokenData && tokenData.change) {
-        const symbol = tokenSymbols[index]
-        variationsMap[symbol] = tokenData.change
-      }
-    })
+    
+    for (let i = 0; i < tokensToFetch.length; i += BATCH_SIZE) {
+      const batch = tokensToFetch.slice(i, i + BATCH_SIZE)
+      
+      const batchPromises = batch.map(symbol =>
+        apiService.getTokenDetails(exchangeId, symbol, config.userId)
+          .catch(error => {
+            console.error(`Error fetching ${symbol}:`, error.message)
+            return null
+          })
+      )
+      
+      const batchResults = await Promise.all(batchPromises)
+      
+      // Processa resultados do lote
+      batchResults.forEach((tokenData, index) => {
+        if (tokenData && tokenData.change) {
+          const symbol = batch[index]
+          variationsMap[symbol] = tokenData.change
+        }
+      })
+    }
     
     setExchangeVariations(prev => ({ ...prev, [exchangeId]: variationsMap }))
     setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
@@ -102,21 +123,36 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       return newSet
     })
     
-    // Se está expandindo e ainda não buscou as variações, busca em background
-    if (!isCurrentlyExpanded && !fetchedExchangesRef.current.has(exchangeId)) {
-      fetchedExchangesRef.current.add(exchangeId)
+    // Se está expandindo, verifica se precisa buscar variações
+    if (!isCurrentlyExpanded) {
+      const hasFetched = fetchedExchangesRef.current.has(exchangeId)
+      const hasVariations = exchangeVariations[exchangeId]
+      const lastUpdate = lastUpdateTime[exchangeId]
       
-      // Busca variações em background sem bloquear a UI
-      setLoadingVariations(exchangeId)
-      fetchExchangeVariations(exchangeId)
-        .catch(error => {
-          console.error('Error loading price variations:', error)
-        })
-        .finally(() => {
-          setLoadingVariations(null)
-        })
+      // Só busca se:
+      // 1. Nunca buscou antes OU
+      // 2. Não tem variações em cache OU  
+      // 3. Cache é muito antigo (> 5 minutos)
+      const shouldFetch = !hasFetched || 
+                         !hasVariations || 
+                         !lastUpdate ||
+                         (Date.now() - lastUpdate.getTime() > 5 * 60 * 1000)
+      
+      if (shouldFetch) {
+        fetchedExchangesRef.current.add(exchangeId)
+        
+        // Busca variações em background sem bloquear a UI
+        setLoadingVariations(exchangeId)
+        fetchExchangeVariations(exchangeId)
+          .catch(error => {
+            console.error('Error loading price variations:', error)
+          })
+          .finally(() => {
+            setLoadingVariations(null)
+          })
+      }
     }
-  }, [expandedExchanges, fetchExchangeVariations])
+  }, [expandedExchanges, fetchExchangeVariations, exchangeVariations, lastUpdateTime])
 
   const toggleZeroBalanceExchanges = useCallback(() => {
     setHideZeroBalanceExchanges(prev => !prev)
