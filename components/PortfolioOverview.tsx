@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { memo } from "react"
+import { memo, useState, useEffect } from "react"
 import { LinearGradient } from "expo-linear-gradient"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
@@ -16,6 +16,14 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const { data, loading, error, refreshing, refresh } = useBalance()
   const { hideValue } = usePrivacy()
   const { evolutionData, currentPeriod } = usePortfolio()
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
+
+  // Atualiza o timestamp local quando os dados do balance mudam
+  useEffect(() => {
+    if (data?.timestamp) {
+      setLastUpdateTime(new Date())
+    }
+  }, [data?.timestamp])
 
   if (loading) {
     return <SkeletonPortfolioOverview />
@@ -33,34 +41,14 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const formattedValue = apiService.formatUSD(totalValue)
   
   
-  // Formata o timestamp de última atualização
+  // Formata o timestamp de última atualização usando o state local
   const formatLastUpdated = () => {
-    if (!data.timestamp) return ''
+    if (!lastUpdateTime) return ''
     
-    // Garante que timestamp está em milissegundos
-    let timestamp: string | number = data.timestamp
-    if (typeof timestamp === 'number' && timestamp < 10000000000) {
-      // Se for menor que isso, provavelmente está em segundos
-      timestamp = timestamp * 1000
-    }
-    
-    // Cria a data e ajusta para horário local do Brasil (UTC-3)
-    const lastUpdate = new Date(timestamp)
-    
-    // Pega a hora e minuto locais (JavaScript já faz a conversão de UTC para local)
-    const hours = lastUpdate.getHours()
-    const minutes = lastUpdate.getMinutes()
-    
-    // Formata com zero à esquerda
-    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-    
-    // Calcula diferença de tempo
-    const now = new Date()
-    const diffMs = now.getTime() - lastUpdate.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    
-    // Sempre mostra "Atualizado em: HH:MM"
-    if (diffMins < 60) return `Atualizado em: ${timeStr}`
+    const timeStr = lastUpdateTime.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })
     
     return `Atualizado em: ${timeStr}`
   }

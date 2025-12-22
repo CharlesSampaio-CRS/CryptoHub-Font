@@ -6,12 +6,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Platform,
 } from "react-native"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { apiService } from "@/services/api"
+import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 import { config } from "@/lib/config"
 
 interface TokenDetailsModalProps {
@@ -212,7 +212,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
 
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <AnimatedLogoIcon size={40} />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                   {t('common.loading')}
                 </Text>

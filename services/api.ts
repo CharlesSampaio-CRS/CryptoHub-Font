@@ -162,6 +162,34 @@ export const apiService = {
   },
 
   /**
+   * 🪙 Busca detalhes de um token específico com variações de preço
+   * @param exchangeId MongoDB _id da exchange
+   * @param symbol Símbolo do token (ex: BTC, ETH)
+   * @param userId ID do usuário
+   * @returns Promise com detalhes do token incluindo variações
+   */
+  async getTokenDetails(exchangeId: string, symbol: string, userId: string): Promise<any> {
+    try {
+      const url = `${API_BASE_URL}/exchanges/${exchangeId}/token/${symbol}?user_id=${userId}&include_variations=true`;
+      
+      const response = await fetchWithTimeout(url, {
+        method: 'GET',
+        cache: 'default'
+      }, 5000); // 5s timeout para token individual
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching token ${symbol} details:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Busca todas as exchanges disponíveis para conexão
    * @param userId ID do usuário
    * @param forceRefresh Força atualização sem cache
