@@ -80,8 +80,6 @@ const translations = {
     'settings.activated': 'Ativado',
     'settings.deactivated': 'Desativado',
     'settings.biometricEnabled': 'ativado com sucesso',
-    'settings.biometricDisabled': 'desativado com sucesso',
-    'settings.biometricError': 'Falha ao configurar biometria',
     
     // Strategy Screen
     'strategy.title': 'Estratégias',
@@ -278,6 +276,18 @@ const translations = {
     'settings.infoSectionTitle': 'Informações',
     'settings.accountSection': 'Conta',
     'settings.deleteAccount': 'Excluir Conta',
+    'settings.biometricDisabled': 'desativado com sucesso',
+    // Removed duplicate 'settings.biometricEnabled'
+    'settings.biometricError': 'Falha ao configurar biometria',
+    'settings.deleteAccountTitle': '⚠️ Confirmar Exclusão',
+    'settings.deleteAccountWarning': 'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nTem certeza absoluta que deseja excluir sua conta?',
+    'settings.deleteAccountConfirm': 'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nDigite "EXCLUIR" para confirmar a exclusão da conta:',
+    'settings.deleteAccountSuccess': 'Conta excluída com sucesso',
+    'settings.deleteAccountButton': 'Excluir',
+    'settings.cancel': 'Cancelar',
+    
+    // Profile
+    'profile.logoutError': 'Não foi possível realizar o logout',
   },
   'en-US': {
     // Navigation
@@ -545,6 +555,15 @@ const translations = {
     'settings.infoSectionTitle': 'Information',
     'settings.accountSection': 'Account',
     'settings.deleteAccount': 'Delete Account',
+    'settings.deleteAccountTitle': '⚠️ Confirm Deletion',
+    'settings.deleteAccountWarning': 'WARNING: This action is IRREVERSIBLE!\n\nAre you absolutely sure you want to delete your account?',
+    'settings.deleteAccountConfirm': 'WARNING: This action is IRREVERSIBLE!\n\nType "DELETE" to confirm account deletion:',
+    'settings.deleteAccountSuccess': 'Account deleted successfully',
+    'settings.deleteAccountButton': 'Delete',
+    'settings.cancel': 'Cancel',
+    
+    // Profile
+    'profile.logoutError': 'Could not complete logout',
   }
 }
 

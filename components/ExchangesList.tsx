@@ -286,7 +286,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
         <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         {availableExchangesCount > 0 && onAddExchange && (
           <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={onAddExchange}>
-            <Text style={[styles.addButtonText, { color: colors.primary }]}>+ Adicionar</Text>
+            <Text style={[styles.addButtonText, { color: colors.primary }]}>{t('exchanges.addButton')}</Text>
           </TouchableOpacity>
         )}
       </View>

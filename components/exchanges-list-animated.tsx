@@ -158,6 +158,7 @@ function ExchangeItem({
 export function ExchangesListAnimated() {
   // 🔥 USA O CONTEXTO ao invés de fetch próprio (evita chamadas duplicadas)
   const { data, loading, error } = useBalance()
+  const { t } = useLanguage()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
 
   if (loading) {
@@ -187,7 +188,7 @@ export function ExchangesListAnimated() {
       <View style={styles.header}>
         <Text style={styles.title}>Exchanges</Text>
         <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Adicionar</Text>
+          <Text style={styles.addButtonText}>{t('exchanges.addButton')}</Text>
         </TouchableOpacity>
       </View>
 
