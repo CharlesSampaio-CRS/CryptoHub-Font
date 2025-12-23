@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, Dimensions, TouchableWithoutFeedback } from "react-native"
-import { memo, useState, useEffect, useMemo } from "react"
+import { View, Text, StyleSheet, Dimensions, TouchableWithoutFeedback, Animated } from "react-native"
+import { memo, useState, useEffect, useMemo, useRef } from "react"
 import { LineChart } from "react-native-chart-kit"
 import { LinearGradient } from "expo-linear-gradient"
 import { useLanguage } from "@/contexts/LanguageContext"
@@ -21,6 +21,24 @@ export const QuickChart = memo(function QuickChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<7 | 15 | 30>(7) // Período padrão: 7 dias
   const [isChangingPeriod, setIsChangingPeriod] = useState(false)
   const [previousData, setPreviousData] = useState<any>(null)
+  const opacityAnim = useRef(new Animated.Value(1)).current
+
+  // Anima opacidade quando muda período
+  useEffect(() => {
+    if (isChangingPeriod) {
+      Animated.timing(opacityAnim, {
+        toValue: 0.4,
+        duration: 200,
+        useNativeDriver: true,
+      }).start()
+    } else {
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [isChangingPeriod])
 
   // Busca novos dados quando o período mudar
   useEffect(() => {
@@ -133,7 +151,8 @@ export const QuickChart = memo(function QuickChart() {
     return `$${val.toFixed(2)}`
   }
 
-  if (loading) {
+  // Mostra skeleton apenas no loading inicial (sem dados anteriores)
+  if (loading && !previousData) {
     return <SkeletonChart />
   }
   
@@ -149,6 +168,11 @@ export const QuickChart = memo(function QuickChart() {
           <View style={styles.headerContainer}>
             <View style={styles.titleSection}>
               <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
+              {isChangingPeriod && (
+                <View style={styles.loadingIndicator}>
+                  <AnimatedLogoIcon size={16} />
+                </View>
+              )}
             </View>
           
             {/* Botões de período */}
@@ -184,7 +208,7 @@ export const QuickChart = memo(function QuickChart() {
               </Text>
             </View>
           ) : (
-            <View style={styles.chartWrapper}>
+            <Animated.View style={[styles.chartWrapper, { opacity: opacityAnim }]}>
               <LineChart
               data={chartData}
               width={screenWidth - 64}
@@ -318,17 +342,7 @@ export const QuickChart = memo(function QuickChart() {
                 )
               }}
             />
-            
-            {/* Overlay de loading durante troca de período */}
-            {isChangingPeriod && (
-              <View style={styles.loadingOverlay}>
-                <AnimatedLogoIcon size={48} />
-                <Text style={[styles.loadingText, { color: '#ffffff' }]}>
-                  Carregando dados...
-                </Text>
-              </View>
-            )}
-          </View>
+          </Animated.View>
           )}
         </LinearGradient>
       </View>
@@ -362,6 +376,12 @@ const styles = StyleSheet.create({
   titleSection: {
     flex: 1,
     gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingIndicator: {
+    marginLeft: 8,
+    opacity: 0.6,
   },
   titleContainer: {
     flexDirection: "row",
@@ -421,18 +441,6 @@ const styles = StyleSheet.create({
   },
   chartWrapper: {
     position: "relative",
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 16,
-    gap: 12,
   },
   loadingContainer: {
     height: 240,
