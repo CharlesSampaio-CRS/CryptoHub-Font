@@ -90,7 +90,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       for (let i = 0; i < tokensLimited.length; i += BATCH_SIZE) {
         // Verifica se foi cancelado
         if (abortController.signal.aborted) {
-          console.log(`Fetch cancelled for ${exchangeId}`)
           return
         }
 
@@ -100,9 +99,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           apiService.getTokenDetails(exchangeId, symbol, config.userId)
             .catch(error => {
               // Ignora erros de timeout para não bloquear os outros
-              if (!error.message.includes('aborted')) {
-                console.error(`Error fetching ${symbol}:`, error.message)
-              }
               return null
             })
         )
@@ -128,9 +124,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       
       setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        console.error(`Error fetching variations for ${exchangeId}:`, error)
-      }
+      // Silently handle errors
     } finally {
       abortControllersRef.current.delete(exchangeId)
     }
@@ -168,8 +162,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   useEffect(() => {
     // Só executa quando: dados prontos + não loading + não buscou ainda
     if (!loading && data?.exchanges && data.exchanges.length > 0 && !hasLoadedOrders && !loadingOrders) {
-      console.log('📋 [OpenOrders] ⚡ Iniciando busca OTIMIZADA de ordens (delay 200ms)')
-      
       // Delay mínimo para garantir render da lista
       const timer = setTimeout(() => {
         fetchOpenOrdersCount()
@@ -182,8 +174,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   // ⏰ Atualização automática a cada 5 minutos
   useEffect(() => {
     if (hasLoadedOrders && data?.exchanges && data.exchanges.length > 0) {
-      console.log('📋 [OpenOrders] ⏰ Configurando atualização automática (5 minutos)')
-      
       // Limpa interval anterior se existir
       if (ordersIntervalRef.current) {
         clearInterval(ordersIntervalRef.current)
@@ -191,7 +181,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
 
       // Configura novo interval de 5 minutos (300000ms)
       ordersIntervalRef.current = setInterval(() => {
-        console.log('📋 [OpenOrders] 🔄 Atualização automática (5 minutos)')
         fetchOpenOrdersCount()
       }, 5 * 60 * 1000) // 5 minutos
 
@@ -206,23 +195,16 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
 
   const fetchOpenOrdersCount = async () => {
     if (!data?.exchanges || data.exchanges.length === 0) {
-      console.log('📋 [OpenOrders] ❌ Nenhuma exchange disponível')
       return
     }
 
     setLoadingOrders(true)
-    console.log('📋 [OpenOrders] � Buscando ordens para', data.exchanges.length, 'exchanges EM PARALELO')
-    console.log('📋 [OpenOrders] 📋 Exchanges:', data.exchanges.map((e: any) => e.name).join(', '))
     
     // ⚡ BUSCA EM PARALELO - Todas ao mesmo tempo!
     const promises = data.exchanges.map(async (exchange: any) => {
       try {
-        console.log('📋 [OpenOrders] 🔍', exchange.name, '- Iniciando...')
-        
         const response = await apiService.getOpenOrders(config.userId, exchange.exchange_id)
         const count = response.count || response.total_orders || 0
-        
-        console.log('📋 [OpenOrders] ✅', exchange.name, '→', count, 'ordens')
         
         // ⚡ Atualiza estado IMEDIATAMENTE para esta exchange
         setOpenOrdersCount(prev => ({
@@ -232,8 +214,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
         
         return { exchangeId: exchange.exchange_id, count, success: true }
       } catch (error: any) {
-        console.error('📋 [OpenOrders] ❌', exchange.name, '- Erro:', error?.message || error)
-        
         // Define 0 mesmo com erro
         setOpenOrdersCount(prev => ({
           ...prev,
@@ -302,8 +282,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
         // Busca variações em background sem bloquear a UI
         setLoadingVariations(exchangeId)
         fetchExchangeVariations(exchangeId)
-          .catch(error => {
-            console.error('Error loading price variations:', error)
+          .catch(() => {
+            // Silently handle errors
           })
           .finally(() => {
             setLoadingVariations(null)

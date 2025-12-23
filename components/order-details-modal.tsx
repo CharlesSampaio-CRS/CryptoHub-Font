@@ -14,14 +14,6 @@ export function OrderDetailsModal({ visible, onClose, order }: OrderDetailsModal
   const { colors } = useTheme()
   const { t } = useLanguage()
 
-  // Debug: Log dos dados recebidos
-  console.log('📋 [OrderDetailsModal] Dados recebidos:', {
-    visible,
-    hasOrder: !!order,
-    orderKeys: order ? Object.keys(order) : [],
-    orderData: order
-  })
-
   if (!order) return null
 
   const getOrderTypeColor = (type: string) => {
