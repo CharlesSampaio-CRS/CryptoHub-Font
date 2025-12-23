@@ -4,12 +4,14 @@ import { apiService } from "@/services/api"
 import { typography, fontWeights } from "@/lib/typography"
 import { Exchange } from "@/types/api"
 import { TokenDetailsModal } from "./token-details-modal"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 interface TokensListProps {
   exchange: Exchange
 }
 
 export function TokensList({ exchange }: TokensListProps) {
+  const { t } = useLanguage()
   const [selectedToken, setSelectedToken] = useState<string | null>(null)
   const [modalVisible, setModalVisible] = useState(false)
   
@@ -60,14 +62,14 @@ export function TokensList({ exchange }: TokensListProps) {
   if (tokens.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Nenhum token com saldo disponível</Text>
+        <Text style={styles.emptyText}>{t('token.noBalance')}</Text>
       </View>
     )
   }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Tokens em {exchange.name}</Text>
+      <Text style={styles.title}>{t('token.tokensIn')} {exchange.name}</Text>
       
       {tokens.map(([symbol, token]) => {
         const amount = parseFloat(token.amount)
@@ -118,7 +120,7 @@ export function TokensList({ exchange }: TokensListProps) {
 
             <View style={styles.tokenDetails}>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Quantidade:</Text>
+                <Text style={styles.detailLabel}>{t('token.amount')}</Text>
                 <Text style={styles.detailValue}>
                   {apiService.formatTokenAmount(token.amount)}
                 </Text>
@@ -129,7 +131,7 @@ export function TokensList({ exchange }: TokensListProps) {
       })}
 
       <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>Total em {exchange.name}</Text>
+        <Text style={styles.totalLabel}>{t('token.totalIn')} {exchange.name}</Text>
         <Text style={styles.totalValue}>
           {apiService.formatUSD(parseFloat(exchange.total_usd))}
         </Text>

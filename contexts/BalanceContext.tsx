@@ -124,7 +124,7 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchBalances])
 
-  // 📊 Lazy load: Busca detalhes de UMA exchange específica
+  // Lazy load: Busca detalhes de UMA exchange específica
   const fetchExchangeDetails = useCallback(async (exchangeId: string) => {
     try {
       const details = await apiService.getExchangeDetails(config.userId, exchangeId, true)

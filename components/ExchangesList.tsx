@@ -251,19 +251,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
     const failCount = results.filter(r => !r.success).length
     const totalOrders = results.reduce((sum, r) => sum + r.count, 0)
     
-    console.log('📋 [OpenOrders] 🎯 CONCLUÍDO!')
-    console.log('📋 [OpenOrders] ✅ Sucesso:', successCount, '| ❌ Falha:', failCount)
-    console.log('📋 [OpenOrders] 📊 Total de ordens:', totalOrders)
-    console.log('📋 [OpenOrders] 📋 Exchanges com ordens:', 
-      results
-        .filter(r => r.count > 0)
-        .map(r => {
-          const ex = data.exchanges.find((e: any) => e.exchange_id === r.exchangeId)
-          return `${ex?.name}: ${r.count}`
-        })
-        .join(', ') || 'Nenhuma'
-    )
-    
     // Atualiza timestamp da última atualização
     setLastOrdersUpdate(new Date())
     setLoadingOrders(false)
@@ -541,7 +528,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                                 style={[styles.ordersBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}
                               >
                                 <Text style={[styles.ordersBadgeText, { color: colors.primary }]}>
-                                  📊 {t('orders.badge')}: {count}
+                                  {t('orders.badge')}: {count}
                                 </Text>
                               </TouchableOpacity>
                             ) : null
@@ -593,7 +580,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                     <View style={styles.loadingVariationsContainer}>
                       <AnimatedLogoIcon size={16} />
                       <Text style={[styles.lastUpdate, { color: colors.textSecondary, marginBottom: 0 }]}>
-                        Carregando variações...
+                        {t('token.loadingVariations')}
                       </Text>
                     </View>
                   ) : lastUpdateTime[exchange.exchange_id] ? (

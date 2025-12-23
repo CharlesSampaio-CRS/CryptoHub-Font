@@ -220,6 +220,11 @@ const translations = {
     'token.lastUpdate': 'Última atualização',
     'token.pair': 'Par',
     'token.noData': 'Dados não disponíveis',
+    'token.loadingVariations': 'Carregando variações...',
+    'token.tokensIn': 'Tokens em',
+    'token.totalIn': 'Total em',
+    'token.amount': 'Quantidade:',
+    'token.noBalance': 'Nenhum token com saldo disponível',
     
     // Common
     'common.close': 'Fechar',
@@ -569,6 +574,11 @@ const translations = {
     'token.lastUpdate': 'Last update',
     'token.pair': 'Pair',
     'token.noData': 'Data not available',
+    'token.loadingVariations': 'Loading variations...',
+    'token.tokensIn': 'Tokens in',
+    'token.totalIn': 'Total in',
+    'token.amount': 'Amount:',
+    'token.noBalance': 'No tokens with available balance',
     
     // Common
     'common.close': 'Close',

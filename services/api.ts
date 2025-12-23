@@ -126,14 +126,6 @@ export const apiService = {
     }
   },
 
-  /**
-   * 📊 LAZY LOAD: Busca detalhes completos (tokens) de UMA exchange específica
-   * Chamado quando usuário expande o card da exchange
-   * @param userId ID do usuário
-   * @param exchangeId MongoDB _id da exchange
-   * @param includeVariations Se true, inclui variações de preço
-   * @returns Promise com detalhes completos da exchange
-   */
   async getExchangeDetails(userId: string, exchangeId: string, includeVariations: boolean = false): Promise<any> {
     try {
       const timestamp = Date.now();
