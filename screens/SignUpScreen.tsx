@@ -13,7 +13,9 @@ import {
 import Svg, { Path } from 'react-native-svg'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
+import { LogoIcon } from '@/components/LogoIcon'
 
 interface SignUpScreenProps {
   navigation: any
@@ -50,6 +52,7 @@ const AppleIcon = ({ color = "#000000" }: { color?: string }) => (
 
 export function SignUpScreen({ navigation }: SignUpScreenProps) {
   const { colors, isDark } = useTheme()
+  const { t } = useLanguage()
   const {
     register,
     registerWithGoogle,
@@ -66,25 +69,25 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos')
+      Alert.alert(t('common.error'), t('signup.fillAllFields'))
       return
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem')
+      Alert.alert(t('common.error'), t('signup.passwordMismatch'))
       return
     }
 
     if (password.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres')
+      Alert.alert(t('common.error'), t('signup.passwordTooShort'))
       return
     }
 
     try {
       await register(email, password, name)
-      Alert.alert('Sucesso', 'Conta criada com sucesso!')
+      Alert.alert(t('common.success'), t('signup.accountCreated'))
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao criar conta')
+      Alert.alert(t('common.error'), error.message || t('signup.createAccountFailed'))
     }
   }
 
@@ -92,7 +95,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     try {
       await registerWithGoogle()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao cadastrar com Google')
+      Alert.alert(t('common.error'), error.message || t('signup.googleSignupFailed'))
     }
   }
 
@@ -100,7 +103,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     try {
       await registerWithApple()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao cadastrar com Apple')
+      Alert.alert(t('common.error'), error.message || t('signup.appleSignupFailed'))
     }
   }
 
@@ -132,9 +135,9 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       fontWeight: '400',
     },
     logo: {
-      fontSize: 48,
       marginBottom: 16,
-      textAlign: 'center',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     title: {
       fontSize: 18,
@@ -296,17 +299,19 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
 
-          <Text style={styles.logo}>🚀</Text>
-          <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Comece sua jornada hoje</Text>
+          <View style={styles.logo}>
+            <LogoIcon size={48} />
+          </View>
+          <Text style={styles.title}>{t('signup.title')}</Text>
+          <Text style={styles.subtitle}>{t('signup.subtitle')}</Text>
         </View>
 
         <View style={styles.formContainer}>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Nome completo</Text>
+          <Text style={styles.label}>{t('signup.nameLabel')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="João Silva"
+            placeholder={t('signup.namePlaceholder')}
             placeholderTextColor={colors.textSecondary}
             value={name}
             onChangeText={setName}
@@ -317,10 +322,10 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t('signup.emailLabel')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="seu@email.com"
+            placeholder={t('signup.emailPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
@@ -332,11 +337,11 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Senha</Text>
+          <Text style={styles.label}>{t('signup.passwordLabel')}</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="Mínimo 6 caracteres"
+              placeholder={t('signup.passwordPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={password}
               onChangeText={setPassword}
@@ -350,18 +355,18 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
               onPress={() => setShowPassword(!showPassword)}
             >
               <Text style={styles.showPasswordText}>
-                {showPassword ? 'Ocultar' : 'Mostrar'}
+                {showPassword ? t('signup.hidePassword') : t('signup.showPassword')}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Confirmar senha</Text>
+          <Text style={styles.label}>{t('signup.confirmPasswordLabel')}</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="Digite a senha novamente"
+              placeholder={t('signup.confirmPasswordPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -375,7 +380,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               <Text style={styles.showPasswordText}>
-                {showConfirmPassword ? 'Ocultar' : 'Mostrar'}
+                {showConfirmPassword ? t('signup.hidePassword') : t('signup.showPassword')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -383,9 +388,9 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
 
         <View style={styles.termsContainer}>
           <Text style={styles.termsText}>
-            Ao criar uma conta, você concorda com nossos{'\n'}
-            <Text style={styles.termsLink}>Termos de Serviço</Text> e{' '}
-            <Text style={styles.termsLink}>Política de Privacidade</Text>
+            {t('signup.termsText')}{'\n'}
+            <Text style={styles.termsLink}>{t('signup.termsOfService')}</Text> {t('signup.and')}{' '}
+            <Text style={styles.termsLink}>{t('signup.privacyPolicy')}</Text>
           </Text>
         </View>
 
@@ -401,13 +406,13 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
           {isLoading ? (
             <AnimatedLogoIcon size={24} />
           ) : (
-            <Text style={styles.registerButtonText}>Criar Conta</Text>
+            <Text style={styles.registerButtonText}>{t('signup.createButton')}</Text>
           )}
         </TouchableOpacity>
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>ou cadastre-se com</Text>
+          <Text style={styles.dividerText}>{t('signup.orSignUpWith')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -418,7 +423,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             disabled={isLoading}
           >
             <GoogleIcon />
-            <Text style={styles.socialButtonText}>Google</Text>
+            <Text style={styles.socialButtonText}>{t('signup.google')}</Text>
           </TouchableOpacity>
 
           {Platform.OS === 'ios' && (
@@ -429,16 +434,16 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             >
               <AppleIcon color={isDark ? '#000000' : '#ffffff'} />
               <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>
-                Apple
+                {t('signup.apple')}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
           <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Já tem uma conta?</Text>
+            <Text style={styles.loginText}>{t('signup.alreadyHaveAccount')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Entrar</Text>
+              <Text style={styles.loginLink}>{t('signup.signIn')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -314,7 +314,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
             </Text>
             {hideZeroBalanceExchanges && data && data.exchanges.length > filteredExchanges.length && (
               <Text style={[styles.hiddenCount, { color: colors.textSecondary }]}>
-                ({data.exchanges.length - filteredExchanges.length} ocultas)
+                ({data.exchanges.length - filteredExchanges.length} {t('exchanges.hidden')})
               </Text>
             )}
           </View>

@@ -74,13 +74,13 @@ export function SettingsScreen() {
     try {
       if (isBiometricEnabled) {
         await disableBiometric()
-        Alert.alert('✓', `${biometricType} desativado com sucesso`)
+        Alert.alert('✓', `${biometricType} ${t('settings.biometricDisabled')}`)
       } else {
         await enableBiometric()
-        Alert.alert('✓', `${biometricType} ativado com sucesso`)
+        Alert.alert('✓', `${biometricType} ${t('settings.biometricEnabled')}`)
       }
     } catch (error) {
-      Alert.alert('Erro', 'Falha ao configurar biometria')
+      Alert.alert(t('common.error'), t('settings.biometricError'))
     }
   }
 
@@ -701,7 +701,7 @@ export function SettingsScreen() {
                     onPress={() => setDeleteAccountModalVisible(false)}
                   >
                     <Text style={[styles.deleteAccountCancelButtonText, { color: colors.primary }]}>
-                      Cancelar
+                      {t('settings.cancel')}
                     </Text>
                   </TouchableOpacity>
 
@@ -709,31 +709,28 @@ export function SettingsScreen() {
                     style={[styles.deleteAccountConfirmButton, { backgroundColor: colors.surface, borderColor: colors.danger }]}
                     onPress={async () => {
                       if (Platform.OS === 'web') {
-                        const confirmed = window.confirm(
-                          'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n' +
-                          'Digite "EXCLUIR" para confirmar a exclusão da conta:'
-                        )
+                        const confirmed = window.confirm(t('settings.deleteAccountConfirm'))
                         if (confirmed) {
                           // Aqui você implementaria a lógica de exclusão
                           setDeleteAccountModalVisible(false)
-                          Alert.alert('✓', 'Conta excluída com sucesso')
+                          Alert.alert('✓', t('settings.deleteAccountSuccess'))
                         }
                       } else {
                         Alert.alert(
-                          '⚠️ Confirmar Exclusão',
-                          'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nTem certeza absoluta que deseja excluir sua conta?',
+                          t('settings.deleteAccountTitle'),
+                          t('settings.deleteAccountWarning'),
                           [
                             {
-                              text: 'Cancelar',
+                              text: t('settings.cancel'),
                               style: 'cancel'
                             },
                             {
-                              text: 'Excluir',
+                              text: t('settings.deleteAccountButton'),
                               style: 'destructive',
                               onPress: async () => {
                                 // Aqui você implementaria a lógica de exclusão
                                 setDeleteAccountModalVisible(false)
-                                Alert.alert('✓', 'Conta excluída com sucesso')
+                                Alert.alert('✓', t('settings.deleteAccountSuccess'))
                               }
                             }
                           ]

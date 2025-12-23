@@ -42,7 +42,7 @@ export function ProfileScreen() {
                 routes: [{ name: 'Login' as never }]
               })
             } catch (error) {
-              Alert.alert(t('common.error'), 'Não foi possível realizar o logout')
+              Alert.alert(t('common.error'), t('profile.logoutError'))
             }
           }
         }
