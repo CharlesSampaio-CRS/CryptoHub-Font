@@ -1,15 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Image } from "react-native"
-import { useEffect, useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useBalance } from "@/contexts/BalanceContext"
 import { apiService } from "@/services/api"
-import { BalanceResponse } from "@/types/api"
-import { config } from "@/lib/config"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 // Mapeamento dos nomes das exchanges para os arquivos de imagem
 const exchangeLogos: Record<string, any> = {
   "Binance": require("@/assets/binance.png"),
   "NovaDAX": require("@/assets/novadax.png"),
   "MEXC": require("@/assets/mexc.png"),
-  "Coinbase": require("@/assets/coinbase.jpeg"),
+  "Coinbase": require("@/assets/coinbase.png"),
+  "CoinEx": require("@/assets/coinex.png"),
+  "Bitget": require("@/assets/bitget.png"),
   "Kraken": require("@/assets/kraken.png"),
   "Bybit": require("@/assets/bybit.png"),
   "Gate.io": require("@/assets/gateio.png"),
@@ -30,6 +32,7 @@ function ExchangeItem({
   isExpanded: boolean
   onToggle: () => void 
 }) {
+  const { t } = useLanguage()
   const animatedHeight = useRef(new Animated.Value(0)).current
   const tokenCount = Object.keys(exchange.tokens).length
   const balance = parseFloat(exchange.total_usd)
@@ -77,7 +80,7 @@ function ExchangeItem({
             <View>
               <Text style={styles.exchangeName}>{exchange.name}</Text>
               <Text style={styles.assetsCount}>
-                {tokenCount} {tokenCount === 1 ? 'ativo' : 'ativos'}
+                {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
               </Text>
             </View>
           </View>
@@ -153,34 +156,17 @@ function ExchangeItem({
 }
 
 export function ExchangesListAnimated() {
-  const [data, setData] = useState<BalanceResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // 🔥 USA O CONTEXTO ao invés de fetch próprio (evita chamadas duplicadas)
+  const { data, loading, error } = useBalance()
+  const { t } = useLanguage()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetchBalances()
-  }, [])
-
-  const fetchBalances = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await apiService.getBalances(config.userId)
-      setData(response)
-    } catch (err) {
-      setError("Erro ao carregar exchanges")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Exchanges</Text>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size={40} color="#3b82f6" />
         </View>
       </View>
     )
@@ -202,7 +188,7 @@ export function ExchangesListAnimated() {
       <View style={styles.header}>
         <Text style={styles.title}>Exchanges</Text>
         <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Adicionar</Text>
+          <Text style={styles.addButtonText}>{t('exchanges.addButton')}</Text>
         </TouchableOpacity>
       </View>
 

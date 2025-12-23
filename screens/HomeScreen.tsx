@@ -1,18 +1,33 @@
-import { StyleSheet, ScrollView, SafeAreaView, Animated } from "react-native"
-import { useRef, useState, useMemo, useCallback, memo } from "react"
+import { StyleSheet, ScrollView, SafeAreaView, Animated, RefreshControl } from "react-native"
+import { useRef, useState, useMemo, useCallback, memo, useEffect } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
-import { QuickChart } from "../components/QuickChart"
 import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
+import { OpenOrdersModal } from "../components/open-orders-modal"
+import { OrderDetailsModal } from "../components/order-details-modal"
 import { useTheme } from "../contexts/ThemeContext"
+import { useBalance } from "../contexts/BalanceContext"
+import { usePortfolio } from "../contexts/PortfolioContext"
 import { mockNotifications } from "../types/notifications"
+import { QuickChart } from "../components/QuickChart"
+import { ExchangesPieChart } from "../components/ExchangesPieChart"
+import { apiService } from "../services/api"
+import { config } from "../lib/config"
 
-export const HomeScreen = memo(function HomeScreen() {
+export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
+  const { refresh: refreshBalance, refreshing } = useBalance()
+  const { refreshEvolution } = usePortfolio()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
+  const [availableExchangesCount, setAvailableExchangesCount] = useState(0)
+  const [openOrdersModalVisible, setOpenOrdersModalVisible] = useState(false)
+  const [orderDetailsModalVisible, setOrderDetailsModalVisible] = useState(false)
+  const [selectedExchangeId, setSelectedExchangeId] = useState<string>("")
+  const [selectedExchangeName, setSelectedExchangeName] = useState<string>("")
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const lastScrollY = useRef(0)
 
   const unreadCount = useMemo(() => 
@@ -20,13 +35,53 @@ export const HomeScreen = memo(function HomeScreen() {
     []
   )
 
+  useEffect(() => {
+    loadAvailableExchanges()
+  }, [])
+
+  const loadAvailableExchanges = async () => {
+    try {
+      const data = await apiService.getAvailableExchanges(config.userId)
+      setAvailableExchangesCount(data.exchanges?.length || 0)
+    } catch (error) {
+      console.error('Error loading available exchanges:', error)
+    }
+  }
+
   const onNotificationsPress = useCallback(() => {
     setNotificationsModalVisible(true)
   }, [])
 
+  const onProfilePress = useCallback(() => {
+    navigation?.navigate('Profile')
+  }, [navigation])
+
+  const onAddExchange = useCallback(() => {
+    navigation?.navigate('Exchanges', { openTab: 'available' })
+  }, [navigation])
+
   const onModalClose = useCallback(() => {
     setNotificationsModalVisible(false)
   }, [])
+
+  const onOpenOrdersPress = useCallback((exchangeId: string, exchangeName: string) => {
+    setSelectedExchangeId(exchangeId)
+    setSelectedExchangeName(exchangeName)
+    setOpenOrdersModalVisible(true)
+  }, [])
+
+  const onSelectOrder = useCallback((order: any) => {
+    setSelectedOrder(order)
+    setOrderDetailsModalVisible(true)
+  }, [])
+
+  // Refresh completo: balances + evolution
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refreshBalance(),
+      refreshEvolution()
+    ])
+  }, [refreshBalance, refreshEvolution])
 
   const handleScroll = useMemo(() => Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -52,6 +107,7 @@ export const HomeScreen = memo(function HomeScreen() {
       <Header 
         hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}
+        onProfilePress={onProfilePress}
         unreadCount={unreadCount}
       />
       <Animated.ScrollView
@@ -61,15 +117,48 @@ export const HomeScreen = memo(function HomeScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         removeClippedSubviews={true}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <PortfolioOverview />
         <QuickChart />
-        <ExchangesList />
+        <ExchangesPieChart />
+        <ExchangesList 
+          onAddExchange={onAddExchange}
+          availableExchangesCount={availableExchangesCount}
+          onOpenOrdersPress={onOpenOrdersPress}
+        />
       </Animated.ScrollView>
 
       <NotificationsModal 
         visible={notificationsModalVisible}
         onClose={onModalClose}
+      />
+
+      <OpenOrdersModal
+        visible={openOrdersModalVisible}
+        onClose={() => setOpenOrdersModalVisible(false)}
+        exchangeId={selectedExchangeId}
+        exchangeName={selectedExchangeName}
+        userId={config.userId}
+        onSelectOrder={onSelectOrder}
+      />
+
+      <OrderDetailsModal
+        visible={orderDetailsModalVisible}
+        onClose={() => {
+          setOrderDetailsModalVisible(false)
+          // Reabre o modal de lista quando fechar os detalhes
+          setOpenOrdersModalVisible(true)
+        }}
+        order={selectedOrder}
       />
     </SafeAreaView>
   )
@@ -83,7 +172,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 50,
+    padding: 16,
+    paddingBottom: 100,
+    gap: 16,
   },
 })

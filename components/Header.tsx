@@ -1,17 +1,127 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native"
 import { useEffect, useRef, memo } from "react"
+import Svg, { Path, Circle } from "react-native-svg"
+import { typography, fontWeights } from "../lib/typography"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
+import { usePrivacy } from "../contexts/PrivacyContext"
+import { LogoIcon } from "./LogoIcon"
+
+// Languages/Hiragana Icon (idioma) - Estilo Lucide
+const LanguagesIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    {/* Caractere "A" */}
+    <Path
+      d="M4 5h7M7 5v12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M10 9H4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Caractere japonês/asiático */}
+    <Path
+      d="M14 5h6M17 5v12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14 12h6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14 17h6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
+// Eye Icon (valores visíveis)
+const EyeIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+  </Svg>
+)
+
+// Eye Off Icon (valores ocultos)
+const EyeOffIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M3 3l18 18M10.5 10.677a2.5 2.5 0 0 0 3.323 3.323"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M7.362 7.561C5.68 8.74 4.279 10.42 3 12.5c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.85M12 5c.87 0 1.71.09 2.52.26M19.82 15.13C21.16 13.73 22.27 12.23 23 12.5c-.73-1.84-1.84-3.34-3.18-4.37"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
+// Bell Icon (notificações)
+const BellIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
 
 interface HeaderProps {
   hideIcons?: boolean
   onNotificationsPress?: () => void
+  onProfilePress?: () => void
   unreadCount?: number
 }
 
-export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, unreadCount = 0 }: HeaderProps) {
+// User Icon (perfil)
+const UserIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="7" r="4" stroke={color} strokeWidth="2" />
+  </Svg>
+)
+
+export const Header = memo(function Header({ hideIcons = false, onNotificationsPress, onProfilePress, unreadCount = 0 }: HeaderProps) {
   const { colors } = useTheme()
-  const { t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
+  const { valuesHidden, toggleValuesVisibility } = usePrivacy()
   const iconOpacity = useRef(new Animated.Value(1)).current
   const iconScale = useRef(new Animated.Value(1)).current
   
@@ -32,9 +142,12 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
   
   return (
     <View style={[styles.header, { backgroundColor: colors.background }]}>
-      <View>
-        <Text style={[styles.title, { color: colors.text }]}>CryptoHub</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
+      <View style={styles.headerContent}>
+        <LogoIcon size={24} />
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { color: colors.text }]}>MeX</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
+        </View>
       </View>
 
       <Animated.View 
@@ -47,19 +160,45 @@ export const Header = memo(function Header({ hideIcons = false, onNotificationsP
         ]}
         pointerEvents={hideIcons ? "none" : "auto"}
       >
+        {/* Language Toggle - Globe + Flag */}
+        <TouchableOpacity
+          style={[
+            styles.languageToggle,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          onPress={() => setLanguage(language === 'pt-BR' ? 'en-US' : 'pt-BR')}
+          activeOpacity={0.7}
+        >
+          <LanguagesIcon color={colors.text} />
+          <Text style={styles.flagEmoji}>{language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={toggleValuesVisibility}
+        >
+          {valuesHidden ? (
+            <EyeOffIcon color={colors.text} />
+          ) : (
+            <EyeIcon color={colors.text} />
+          )}
+        </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={onNotificationsPress}
         >
-          <Text style={styles.iconText}>🔔</Text>
+          <BellIcon color={colors.text} />
           {unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={styles.iconText}>⚙️</Text>
+        <TouchableOpacity 
+          style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={onProfilePress}
+        >
+          <UserIcon color={colors.text} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -74,32 +213,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
+  },
   title: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
-    fontWeight: "300",
+    fontWeight: fontWeights.light,
+  },
+  flagEmoji: {
+    fontSize: typography.caption,
   },
   actions: {
     flexDirection: "row",
     gap: 6,
   },
+  languageToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 0.5,
+  },
   iconButton: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 7,
+    borderRadius: 16,
     borderWidth: 0.5,
     position: "relative",
-  },
-  iconText: {
-    fontSize: 13,
-    opacity: 0.5,
   },
   badge: {
     position: "absolute",
@@ -115,8 +271,9 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: "#ffffff",
-    fontSize: 9,
-    fontWeight: "600",
-    lineHeight: 16,
+    fontSize: typography.micro,
+    fontWeight: fontWeights.medium,
+    textAlign: "center",
+    includeFontPadding: false,
   },
 })

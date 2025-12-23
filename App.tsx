@@ -1,38 +1,166 @@
 import { NavigationContainer } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { StatusBar } from "expo-status-bar"
+import { ActivityIndicator, View, LogBox } from "react-native"
+import { useEffect, useRef, useState } from "react"
+import Svg, { Path, Rect, Circle } from "react-native-svg"
+
+// Desabilitar warnings de desenvolvimento
+if (__DEV__) {
+  LogBox.ignoreAllLogs(true) // Ignora todos os logs em desenvolvimento
+}
+
 import { HomeScreen } from "./screens/HomeScreen"
 import { ExchangesScreen } from "./screens/ExchangesScreen"
 import { StrategyScreen } from "./screens/StrategyScreen"
+import { SettingsScreen } from "./screens/SettingsScreen"
 import { ProfileScreen } from "./screens/ProfileScreen"
+import { LoginScreen } from "./screens/LoginScreen"
+import { SignUpScreen } from "./screens/SignUpScreen"
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
-import { BalanceProvider } from "./contexts/BalanceContext"
+import { BalanceProvider, useBalance } from "./contexts/BalanceContext"
+import { AuthProvider, useAuth } from "./contexts/AuthContext"
+import { PrivacyProvider } from "./contexts/PrivacyContext"
+import { PortfolioProvider, usePortfolio } from "./contexts/PortfolioContext"
+import { LoadingProgress } from "./components/LoadingProgress"
+import { MaintenanceScreen } from "./components/MaintenanceScreen"
 
 const Tab = createBottomTabNavigator()
+const Stack = createNativeStackNavigator()
 
-function AppNavigator() {
+// DataLoader - monitora quando os dados estão prontos e notifica
+function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDataReady: () => void }) {
+  const { data: balanceData, loading: balanceLoading, error: balanceError, refresh: refreshBalance } = useBalance()
+  const { evolutionData: portfolioData, loading: portfolioLoading, error: portfolioError, refreshEvolution } = usePortfolio()
+  const hasCalledRef = useRef(false)
+  const hasRefreshedRef = useRef(false)
+  const [showMaintenance, setShowMaintenance] = useState(false)
+
+  // Força refresh quando monta (após login)
+  useEffect(() => {
+    if (!hasRefreshedRef.current) {
+      hasRefreshedRef.current = true
+      
+      Promise.all([
+        refreshBalance(),
+        refreshEvolution()
+      ]).catch(err => {
+        console.error('❌ Erro ao fazer refresh inicial:', err)
+      })
+    }
+  }, [refreshBalance, refreshEvolution])
+
+  // Detecta erros críticos de API (ambos com erro ao mesmo tempo = API offline)
+  const isCriticalError = balanceError !== null && portfolioError !== null && 
+                          !balanceLoading && !portfolioLoading
+
+  useEffect(() => {
+    // Se erro crítico detectado, mostra tela de manutenção
+    if (isCriticalError && !showMaintenance) {
+      setShowMaintenance(true)
+      hasCalledRef.current = true
+      onDataReady()
+      return
+    }
+
+    // Aguarda os dados estarem prontos (não loading E dados existem)
+    const balanceReady = !balanceLoading && (balanceData !== null || balanceError !== null)
+    const portfolioReady = !portfolioLoading && (portfolioData !== null || portfolioError !== null)
+
+    // Chama onDataReady quando:
+    // 1. AMBOS terminaram de carregar (sucesso OU erro)
+    // 2. Ainda não foi chamado
+    if (balanceReady && portfolioReady && !hasCalledRef.current) {
+      hasCalledRef.current = true
+      onDataReady()
+    }
+  }, [balanceLoading, portfolioLoading, balanceData, portfolioData, balanceError, portfolioError, onDataReady, isCriticalError, showMaintenance])
+
+  // Timeout de segurança: se demorar mais de 10 segundos, finaliza o loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!hasCalledRef.current) {
+        hasCalledRef.current = true
+        onDataReady()
+      }
+    }, 10000) // 10 segundos
+
+    return () => clearTimeout(timeout)
+  }, [onDataReady])
+
+  // Reset quando desmonta (logout)
+  useEffect(() => {
+    return () => {
+      hasCalledRef.current = false
+      hasRefreshedRef.current = false
+      setShowMaintenance(false)
+    }
+  }, [])
+
+  // Função de retry
+  const handleRetry = async () => {
+    setShowMaintenance(false)
+    hasCalledRef.current = false
+    
+    // Tenta recarregar os dados
+    try {
+      await Promise.all([
+        refreshBalance(),
+        refreshEvolution()
+      ])
+    } catch (error) {
+      console.error('❌ Erro ao tentar reconectar:', error)
+    }
+  }
+
+  // Se erro crítico, mostra tela de manutenção
+  if (showMaintenance) {
+    return <MaintenanceScreen onRetry={handleRetry} />
+  }
+
+  return <>{children}</>
+}
+
+// Auth Stack (Login/SignUp)
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+    </Stack.Navigator>
+  )
+}
+
+// Main App Tabs (após login)
+function MainTabs() {
   const { t } = useLanguage()
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
   
   return (
-    <NavigationContainer>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <Tab.Navigator
+    <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
-            height: 70,
-            paddingBottom: 10,
-            paddingTop: 10,
+            borderTopWidth: 0.5,
+            height: 56,
+            paddingBottom: 6,
+            paddingTop: 6,
+            elevation: 0,
+            shadowOpacity: 0,
           },
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: "400",
+            marginTop: -2,
+          },
+          tabBarIconStyle: {
+            marginTop: 2,
           },
         }}
       >
@@ -61,14 +189,59 @@ function AppNavigator() {
           }}
         />
         <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            tabBarLabel: 'Config',
+            tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
+          }}
+        />
+        <Tab.Screen
           name="Profile"
           component={ProfileScreen}
           options={{
-            tabBarLabel: t('nav.profile'),
-            tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
+            tabBarButton: () => null,
           }}
         />
       </Tab.Navigator>
+  )
+}
+
+// App Navigator - decide entre Auth ou Main baseado no login
+function AppNavigator() {
+  const { isAuthenticated, isLoading, isLoadingData, setLoadingDataComplete, user } = useAuth()
+  const { colors, isDark } = useTheme()
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    )
+  }
+
+  return (
+    <NavigationContainer>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      {isAuthenticated && !isLoadingData ? (
+        // Só mostra MainTabs quando COMPLETAMENTE pronto (autenticado + dados carregados)
+        <MainTabs />
+      ) : (
+        // Mantém AuthStack durante login E carregamento para não desmontar LoginScreen
+        <>
+          <AuthStack />
+          
+          {/* DataLoader monitora em segundo plano DURANTE o carregamento após login */}
+          {isAuthenticated && isLoadingData && (
+            <DataLoader onDataReady={setLoadingDataComplete}>
+              <View />
+            </DataLoader>
+          )}
+        </>
+      )}
+      
+      {/* LoadingProgress aparece sobre qualquer tela quando isLoadingData = true */}
+      <LoadingProgress visible={isLoadingData} />
     </NavigationContainer>
   )
 }
@@ -77,9 +250,15 @@ export default function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
-        <BalanceProvider>
-          <AppNavigator />
-        </BalanceProvider>
+        <AuthProvider>
+          <PrivacyProvider>
+            <BalanceProvider>
+              <PortfolioProvider>
+                <AppNavigator />
+              </PortfolioProvider>
+            </BalanceProvider>
+          </PrivacyProvider>
+        </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>
   )
@@ -87,32 +266,39 @@ export default function App() {
 
 // Simple icon components
 const HomeIcon = ({ color }: { color: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke={color} strokeWidth="2" />
-  </svg>
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke={color} strokeWidth="1.8" />
+  </Svg>
 )
 
 const ExchangeIcon = ({ color }: { color: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke={color} strokeWidth="2" />
-  </svg>
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <Path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke={color} strokeWidth="1.8" />
+  </Svg>
 )
 
 const RobotIcon = ({ color }: { color: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <rect x="5" y="11" width="14" height="10" rx="2" stroke={color} strokeWidth="2" />
-    <circle cx="9" cy="16" r="1" fill={color} />
-    <circle cx="15" cy="16" r="1" fill={color} />
-    <path d="M9 19h6" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    <path d="M12 3v5" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    <circle cx="12" cy="3" r="1" fill={color} />
-    <path d="M5 14h2M17 14h2" stroke={color} strokeWidth="2" strokeLinecap="round" />
-  </svg>
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <Rect x="5" y="11" width="14" height="10" rx="2" stroke={color} strokeWidth="1.8" />
+    <Circle cx="9" cy="16" r="1" fill={color} />
+    <Circle cx="15" cy="16" r="1" fill={color} />
+    <Path d="M9 19h6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <Path d="M12 3v5" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <Circle cx="12" cy="3" r="1" fill={color} />
+    <Path d="M5 14h2M17 14h2" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+  </Svg>
 )
 
-const ProfileIcon = ({ color }: { color: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="8" r="4" stroke={color} strokeWidth="2" />
-    <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke={color} strokeWidth="2" />
-  </svg>
+const SettingsIcon = ({ color }: { color: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <Circle cx="6" cy="12" r="2" stroke={color} strokeWidth="1.8" />
+    <Circle cx="18" cy="6" r="2" stroke={color} strokeWidth="1.8" />
+    <Circle cx="18" cy="18" r="2" stroke={color} strokeWidth="1.8" />
+    <Path
+      d="M8 12h13M3 12h2M8 6h8M3 18h12"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </Svg>
 )

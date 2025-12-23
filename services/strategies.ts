@@ -1,4 +1,6 @@
-const API_BASE_URL = "https://automatic-anfg.onrender.com/api/v1"
+import { config } from "@/lib/config"
+
+const API_BASE_URL = config.apiBaseUrl
 
 export interface Strategy {
   _id?: string  // MongoDB format
@@ -109,6 +111,7 @@ class StrategiesService {
 
     if (!response.ok) {
       const error = await response.json()
+      console.error("❌ Erro na resposta da API:", error)
       throw new Error(error.error || "Failed to create strategy")
     }
 
@@ -212,8 +215,6 @@ class StrategiesService {
       url += `?user_id=${userId}`
     }
     
-    console.log("🗑️ DELETE request to:", url)
-    
     const response = await fetch(url, {
       method: "DELETE",
     })
@@ -229,8 +230,6 @@ class StrategiesService {
       console.error("❌ Delete failed:", errorMessage)
       throw new Error(errorMessage)
     }
-    
-    console.log("✅ Delete request successful")
   }
 
   /**
@@ -279,7 +278,11 @@ class StrategiesService {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`
       }
       
-      console.error(`❌ Error fetching stats for strategy ${strategyId}:`, errorMessage)
+      // Apenas loga erro se não for 404 (estratégia nova sem stats ainda)
+      if (response.status !== 404) {
+        console.error(`❌ Error fetching stats for strategy ${strategyId}:`, errorMessage)
+      }
+      
       throw new Error(errorMessage)
     }
 
@@ -290,8 +293,9 @@ class StrategiesService {
    * Busca todas as execuções do usuário (agregadas de todas as estratégias)
    * Nota: A API não tem endpoint específico para execuções, então buscamos
    * a última execução de cada estratégia via stats
+   * @param skipStrategyIds - IDs de estratégias para pular (ex: recém-criadas)
    */
-  async getUserExecutions(userId: string): Promise<Execution[]> {
+  async getUserExecutions(userId: string, skipStrategyIds: Set<string> = new Set()): Promise<Execution[]> {
     try {
       // Primeiro busca todas as estratégias do usuário
       const strategies = await this.getUserStrategies(userId)
@@ -300,6 +304,11 @@ class StrategiesService {
       const executionsPromises = strategies.map(async (strategy) => {
         const strategyId = strategy._id || strategy.id
         if (!strategyId) return null
+        
+        // Pula estratégias recém-criadas (sem stats ainda)
+        if (skipStrategyIds.has(strategyId)) {
+          return null
+        }
 
         try {
           const statsResponse = await this.getStrategyStats(strategyId, userId)
@@ -325,7 +334,13 @@ class StrategiesService {
 
           return execution
         } catch (error: any) {
-          console.warn(`⚠️ Failed to load executions for strategy ${strategyId} (${strategy.token}):`, error.message || error)
+          // Apenas loga se não for erro 404 (estratégia nova sem execuções)
+          const errorMsg = error.message || ''
+          const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
+          
+          if (!is404) {
+            console.warn(`⚠️ Failed to load executions for strategy ${strategyId} (${strategy.token}):`, error.message || error)
+          }
           return null
         }
       })

@@ -1,17 +1,24 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, ScrollView, Modal, Pressable, TextInput, Alert } from "react-native"
-import { useEffect, useState, useMemo } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, Pressable, TextInput, Alert, KeyboardAvoidingView, Platform, Clipboard, SafeAreaView } from "react-native"
+import { useEffect, useState, useMemo, useCallback, memo } from "react"
 import { apiService } from "@/services/api"
 import { AvailableExchange, LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useBalance } from "@/contexts/BalanceContext"
+import { QRScanner } from "./QRScanner"
+import { LogoIcon } from "./LogoIcon"
+import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
+import Svg, { Path } from "react-native-svg"
 
 // Mapeamento dos logos locais das exchanges
 const exchangeLogos: Record<string, any> = {
   "binance": require("@/assets/binance.png"),
   "novadax": require("@/assets/novadax.png"),
   "mexc": require("@/assets/mexc.png"),
-  "coinbase": require("@/assets/coinbase.jpeg"),
+  "coinbase": require("@/assets/coinbase.png"),
+  "coinex": require("@/assets/coinex.png"),
+  "bitget": require("@/assets/bitget.png"),
   "kraken": require("@/assets/kraken.png"),
   "bybit": require("@/assets/bybit.png"),
   "gate.io": require("@/assets/gateio.png"),
@@ -19,14 +26,263 @@ const exchangeLogos: Record<string, any> = {
   "okx": require("@/assets/okx.png"),
 }
 
-export function ExchangesManager() {
+interface ExchangesManagerProps {
+  initialTab?: 'available' | 'linked'
+}
+
+// Subcomponente memoizado para renderizar cada card de exchange
+const LinkedExchangeCard = memo(({ 
+  linkedExchange, 
+  index, 
+  colors, 
+  t, 
+  onToggle, 
+  onDelete,
+  onPress
+}: { 
+  linkedExchange: any
+  index: number
+  colors: any
+  t: any
+  onToggle: (id: string, status: string, name: string) => void
+  onDelete: (id: string, name: string) => void
+  onPress: () => void
+}) => {
+  const exchangeNameLower = linkedExchange.name.toLowerCase()
+  const localIcon = exchangeLogos[exchangeNameLower]
+  const exchangeId = linkedExchange.exchange_id
+  const isActive = linkedExchange.status === 'active'
+
+  // Themed styles for toggle
+  const themedToggleStyles = useMemo(() => ({
+    toggleButton: { backgroundColor: colors.toggleInactive },
+    toggleButtonActive: { backgroundColor: colors.toggleActive },
+    toggleThumb: { backgroundColor: colors.toggleThumb },
+  }), [colors])
+  
+  // Memoizar a formatação da data
+  const formattedDate = useMemo(() => {
+    return new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')
+  }, [linkedExchange.linked_at])
+
+  const themedStyles = useMemo(() => ({
+    card: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    statusDotActive: {
+      backgroundColor: colors.primary,
+    },
+    statusDotInactive: {
+      backgroundColor: colors.danger,
+    },
+  }), [colors])
+
+  return (
+    <TouchableOpacity 
+      key={exchangeId + '_' + index} 
+      style={[styles.card, themedStyles.card]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.cardLeft}>
+          <View style={styles.iconContainer}>
+            {localIcon ? (
+              <Image 
+                source={localIcon} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : linkedExchange.icon ? (
+              <Image 
+                source={{ uri: linkedExchange.icon }} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={styles.iconText}>🔗</Text>
+            )}
+          </View>
+          <View style={styles.exchangeNameContainer}>
+            <Text style={[styles.exchangeName, { color: colors.text }]}>
+              {linkedExchange.name}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity 
+          style={[
+            styles.toggleButton, 
+            themedToggleStyles.toggleButton,
+            isActive && themedToggleStyles.toggleButtonActive
+          ]}
+          onPress={(e) => {
+            e.stopPropagation()
+            onToggle(exchangeId, linkedExchange.status, linkedExchange.name)
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={[
+            styles.toggleThumb, 
+            themedToggleStyles.toggleThumb,
+            isActive && styles.toggleThumbActive
+          ]} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.cardDetails}>
+        <View style={styles.detailRow}>
+          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('exchanges.connectedAt')}</Text>
+          <Text style={[styles.detailValue, { color: colors.text }]}>
+            {formattedDate}
+          </Text>
+        </View>
+        
+        {/* Mostrar motivo da inativação se existir */}
+        {!isActive && linkedExchange.inactive_reason && (
+          <View style={[styles.infoBox, { 
+            backgroundColor: colors.isDark ? '#7F1D1D' : '#FEE2E2',
+            borderColor: colors.isDark ? '#DC2626' : '#EF4444'
+          }]}>
+            <View style={[styles.infoIconContainer, { backgroundColor: colors.isDark ? '#DC2626' : '#EF4444' }]}>
+              <Text style={styles.infoIconYellow}>!</Text>
+            </View>
+            <Text style={[styles.infoText, { 
+              color: colors.isDark ? '#FCA5A5' : '#DC2626' 
+            }]}>
+              {linkedExchange.inactive_reason}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Footer com status e delete */}
+      <View style={styles.exchangeFooter}>
+        <View style={[
+          styles.statusBadge,
+          isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
+        ]}>
+          
+          <View style={[
+            styles.statusDot,
+            isActive ? themedStyles.statusDotActive : themedStyles.statusDotInactive
+          ]} />
+          <Text style={[
+            styles.statusText,
+            { color: colors.text }
+          ]}>
+            {isActive ? t('strategy.active') : t('strategy.inactive')}
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={(e) => {
+            e.stopPropagation()
+            onDelete(exchangeId, linkedExchange.name)
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteIcon}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  )
+})
+
+LinkedExchangeCard.displayName = 'LinkedExchangeCard'
+
+// Subcomponente memoizado para exchanges disponíveis
+const AvailableExchangeCard = memo(({ 
+  exchange, 
+  isLinked, 
+  colors, 
+  t, 
+  onConnect,
+  onPress
+}: { 
+  exchange: any
+  isLinked: boolean
+  colors: any
+  t: any
+  onConnect: (exchange: any) => void
+  onPress: () => void
+}) => {
+  const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
+  
+  const themedStyles = useMemo(() => ({
+    card: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+  }), [colors])
+
+  return (
+    <TouchableOpacity 
+      key={exchange._id} 
+      style={[styles.card, themedStyles.card]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.cardLeft}>
+          <View style={styles.iconContainer}>
+            {localIcon ? (
+              <Image 
+                source={localIcon} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : exchange.icon ? (
+              <Image 
+                source={{ uri: exchange.icon }} 
+                style={styles.exchangeIcon}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={styles.iconText}>🔗</Text>
+            )}
+          </View>
+          <View>
+            <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
+          </View>
+        </View>
+        {isLinked ? (
+          <View style={[styles.connectedBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+            <Text style={[styles.connectedBadgeText, { color: colors.success }]}>✓ Conectada</Text>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.connectButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
+            onPress={(e) => {
+              e.stopPropagation()
+              onConnect(exchange)
+            }}
+          >
+            <Text style={[styles.connectButtonText, { color: colors.primary }]}>{t('exchanges.connect')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      {exchange.requires_passphrase && (
+        <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
+          <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  )
+})
+
+AvailableExchangeCard.displayName = 'AvailableExchangeCard'
+
+export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
+  const { refreshOnExchangeChange, data: balanceData } = useBalance()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'available' | 'linked'>('linked')
+  const [activeTab, setActiveTab] = useState<'available' | 'linked'>(initialTab)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   
   // Modal de conexão
@@ -36,6 +292,8 @@ export function ExchangesManager() {
   const [apiSecret, setApiSecret] = useState('')
   const [passphrase, setPassphrase] = useState('')
   const [connecting, setConnecting] = useState(false)
+  const [qrScannerVisible, setQrScannerVisible] = useState(false)
+  const [currentScanField, setCurrentScanField] = useState<'apiKey' | 'apiSecret' | 'passphrase' | null>(null)
   
   // Modal de confirmação (delete/disconnect)
   const [confirmModalVisible, setConfirmModalVisible] = useState(false)
@@ -48,27 +306,24 @@ export function ExchangesManager() {
   const [toggleExchangeId, setToggleExchangeId] = useState<string>('')
   const [toggleExchangeName, setToggleExchangeName] = useState<string>('')
   const [toggleExchangeNewStatus, setToggleExchangeNewStatus] = useState<string>('')
+  
+  // Modal de detalhes da exchange
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
+  const [detailsExchange, setDetailsExchange] = useState<any>(null)
+  const [detailsType, setDetailsType] = useState<'linked' | 'available'>('linked')
+  const [detailsFullData, setDetailsFullData] = useState<any>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
-  useEffect(() => {
-    fetchExchanges()
-  }, [])
-
-  const fetchExchanges = async (forceRefresh: boolean = false) => {
+  const fetchExchanges = useCallback(async (forceRefresh: boolean = false) => {
     try {
       setLoading(true)
       setError(null)
       
-      console.log('🔄 Fetching exchanges... forceRefresh:', forceRefresh)
       
       const [availableData, linkedData] = await Promise.all([
         apiService.getAvailableExchanges(config.userId, forceRefresh),
         apiService.getLinkedExchanges(config.userId, forceRefresh)
       ])
-      
-      console.log('✅ Exchanges fetched:', {
-        available: availableData.exchanges?.length || 0,
-        linked: linkedData.exchanges?.length || 0
-      })
       
       setAvailableExchanges(availableData.exchanges || [])
       setLinkedExchanges(linkedData.exchanges || [])
@@ -78,9 +333,20 @@ export function ExchangesManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleConnect = async (exchangeId: string, exchangeName: string) => {
+  useEffect(() => {
+    fetchExchanges(true) // SEMPRE força refresh para pegar ícones atualizados
+  }, [fetchExchanges])
+
+  // Atualiza exchanges quando trocar de aba (força refresh para pegar dados atualizados do banco)
+  useEffect(() => {
+    if (activeTab === 'available') {
+      fetchExchanges(true) // força refresh sem cache
+    }
+  }, [activeTab, fetchExchanges])
+
+  const handleConnect = useCallback(async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
     try {
@@ -99,41 +365,38 @@ export function ExchangesManager() {
 
       const data = await response.json()
 
-      if (response.ok && data.success) {
-        console.log('🔗 Exchange conectada, atualizando dados...')
-        
+      if (response.ok && data.success) {        
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
-        await new Promise(resolve => setTimeout(resolve, 500))
-        window.dispatchEvent(new Event('balancesUpdated'))
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
       } else {
-        alert(data.error || 'Falha ao conectar exchange')
+        alert(data.error || t('error.connectExchange'))
       }
     } catch (err) {
-      alert('Não foi possível conectar a exchange')
+      alert(t('error.connectExchange'))
     }
-  }
+  }, [fetchExchanges, refreshOnExchangeChange])
 
   // Mostra modal de confirmação para toggle
-  const toggleExchange = (exchangeId: string, currentStatus: string, exchangeName: string) => {
+  const toggleExchange = useCallback((exchangeId: string, currentStatus: string, exchangeName: string) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
     
     setToggleExchangeId(exchangeId)
     setToggleExchangeName(exchangeName)
     setToggleExchangeNewStatus(newStatus)
     setConfirmToggleModalVisible(true)
-  }
+  }, [])
 
   // Executa o toggle após confirmação
-  const confirmToggle = async () => {
+  const confirmToggle = useCallback(async () => {
     const exchangeId = toggleExchangeId
     const newStatus = toggleExchangeNewStatus
     const currentStatus = toggleExchangeNewStatus === 'active' ? 'inactive' : 'active'
     
     setConfirmToggleModalVisible(false)
     
-    console.log(`🔄 Toggling exchange ${exchangeId}: ${currentStatus} → ${newStatus}`)
     
     // Atualização otimista
     setLinkedExchanges(prev =>
@@ -143,10 +406,11 @@ export function ExchangesManager() {
     )
 
     try {
-      console.log(`🔄 Status da exchange atualizado: ${exchangeId} → ${newStatus}`)
       
-      await new Promise(resolve => setTimeout(resolve, 500))
-      window.dispatchEvent(new Event('balancesUpdated'))
+      // Atualizar balances com cache:false (toggle afeta quais exchanges são incluídas)
+      await refreshOnExchangeChange()
+      
+      // Em React Native, não precisamos de window.dispatchEvent
     } catch (error) {
       console.error("Error toggling exchange:", error)
       // Reverte em caso de erro
@@ -155,19 +419,19 @@ export function ExchangesManager() {
           ex.exchange_id === exchangeId ? { ...ex, status: currentStatus as 'active' | 'inactive' } : ex
         )
       )
-      alert("Não foi possível atualizar o status da exchange")
+      alert(t("error.updateExchangeStatus"))
     }
-  }
+  }, [toggleExchangeId, toggleExchangeNewStatus, refreshOnExchangeChange])
 
-  const handleDisconnect = (exchangeId: string, exchangeName: string) => {
+  const handleDisconnect = useCallback((exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     setConfirmExchangeId(exchangeId)
     setConfirmExchangeName(exchangeName)
     setConfirmAction('disconnect')
     setConfirmModalVisible(true)
-  }
+  }, [])
 
-  const confirmDisconnect = async () => {
+  const confirmDisconnect = useCallback(async () => {
     setConfirmModalVisible(false)
     
     
@@ -188,31 +452,31 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🔌 Exchange desconectada, atualizando dados...')
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
         
-        // Aguardar 500ms para garantir que a API processou
-        await new Promise(resolve => setTimeout(resolve, 500))
-        window.dispatchEvent(new Event('balancesUpdated'))
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
+        
+        // Em React Native, não precisamos de window.dispatchEvent
       } else {
-        alert(data.error || 'Falha ao desconectar exchange')
+        alert(data.error || t('error.disconnectExchange'))
       }
     } catch (err) {
-      alert('Não foi possível desconectar a exchange')
+      alert(t('error.disconnectExchange'))
     }
-  }
+  }, [confirmExchangeId, fetchExchanges, refreshOnExchangeChange])
 
-  const handleDelete = (exchangeId: string, exchangeName: string) => {
+  const handleDelete = useCallback((exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     setConfirmExchangeId(exchangeId)
     setConfirmExchangeName(exchangeName)
     setConfirmAction('delete')
     setConfirmModalVisible(true)
-  }
+  }, [])
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     setConfirmModalVisible(false)
     
     
@@ -233,53 +497,125 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🗑️ Exchange deletada, atualizando dados...')
         
         // Pequeno delay para garantir que o backend processou
         await new Promise(resolve => setTimeout(resolve, 500))
         
         // Recarregar lista de exchanges sem cache
         await fetchExchanges(true)
-        window.dispatchEvent(new Event('balancesUpdated'))
+        
+        // Atualizar balances com cache:false
+        await refreshOnExchangeChange()
       } else {
-        alert(data.error || 'Falha ao deletar exchange')
+        alert(data.error || t('error.deleteExchange'))
       }
     } catch (err) {
-      alert('Não foi possível deletar a exchange')
+      alert(t('error.deleteExchange'))
     }
-  }
+  }, [confirmExchangeId, fetchExchanges, refreshOnExchangeChange])
 
-  const toggleMenu = (exchangeId: string) => {
+  const toggleMenu = useCallback((exchangeId: string) => {
     setOpenMenuId(openMenuId === exchangeId ? null : exchangeId)
-  }
+  }, [openMenuId])
 
-  const openConnectModal = (exchange: AvailableExchange) => {
+  const openConnectModal = useCallback((exchange: AvailableExchange) => {
     setSelectedExchange(exchange)
     setApiKey('')
     setApiSecret('')
     setPassphrase('')
+    setConnecting(false) // Reset loading state
     setConnectModalVisible(true)
-  }
+  }, [])
 
-  const closeConnectModal = () => {
+  const closeConnectModal = useCallback(() => {
     setConnectModalVisible(false)
     setSelectedExchange(null)
     setApiKey('')
     setApiSecret('')
     setPassphrase('')
-  }
+    setQrScannerVisible(false)
+    setCurrentScanField(null)
+    setConnecting(false) // Reset loading state
+  }, [])
 
-  const handleLinkExchange = async () => {
+  // Funções para modal de detalhes
+  const openDetailsModal = useCallback(async (exchange: any, type: 'linked' | 'available') => {
+    setDetailsExchange(exchange)
+    setDetailsType(type)
+    setDetailsModalVisible(true)
+    setLoadingDetails(true)
+    setDetailsFullData(null)
+    
+    try {
+      // Busca detalhes completos da exchange
+      const exchangeId = type === 'linked' ? exchange.exchange_id : exchange._id
+      const fullData = await apiService.getExchangeFullDetails(exchangeId, true, true)
+      setDetailsFullData(fullData)
+    } catch (error) {
+      console.error('❌ Error loading exchange details:', error)
+      // Continua mostrando o modal com os dados básicos
+    } finally {
+      setLoadingDetails(false)
+    }
+  }, [])
+
+  const closeDetailsModal = useCallback(() => {
+    setDetailsModalVisible(false)
+    setDetailsExchange(null)
+    setDetailsFullData(null)
+    setLoadingDetails(false)
+  }, [])
+
+  const handleOpenQRScanner = useCallback((field: 'apiKey' | 'apiSecret' | 'passphrase') => {
+    setCurrentScanField(field)
+    setQrScannerVisible(true)
+  }, [])
+
+  const handleQRScanned = useCallback((data: string) => {
+    // Tenta parsear JSON se for um QR code estruturado
+    try {
+      const parsed = JSON.parse(data)
+      if (parsed.apiKey) setApiKey(parsed.apiKey)
+      if (parsed.apiSecret) setApiSecret(parsed.apiSecret)
+      if (parsed.passphrase) setPassphrase(parsed.passphrase)
+    } catch {
+      // Se não for JSON, coloca o texto no campo atual
+      if (currentScanField === 'apiKey') setApiKey(data)
+      else if (currentScanField === 'apiSecret') setApiSecret(data)
+      else if (currentScanField === 'passphrase') setPassphrase(data)
+    }
+    setQrScannerVisible(false)
+    setCurrentScanField(null)
+  }, [currentScanField])
+
+  const handlePasteFromClipboard = useCallback(async (field: 'apiKey' | 'apiSecret' | 'passphrase') => {
+    try {
+      const text = await Clipboard.getString()
+      if (text) {
+        if (field === 'apiKey') setApiKey(text.trim())
+        else if (field === 'apiSecret') setApiSecret(text.trim())
+        else if (field === 'passphrase') setPassphrase(text.trim())
+        
+        Alert.alert(`✅ ${t('success.pastedClipboard')}`, t('success.textPasted'))
+      } else {
+        Alert.alert(`⚠️ ${t('warning.emptyClipboard')}`, t('warning.noClipboardText'))
+      }
+    } catch (error) {
+      Alert.alert(t('common.error'), t('error.pasteClipboard'))
+    }
+  }, [t])
+
+  const handleLinkExchange = useCallback(async () => {
     if (!selectedExchange) return
     
     
     if (!apiKey.trim() || !apiSecret.trim()) {
-      alert('Por favor, preencha API Key e API Secret')
+      alert(t('error.fillApiKeys'))
       return
     }
 
     if (selectedExchange.requires_passphrase && !passphrase.trim()) {
-      alert('Esta exchange requer uma Passphrase')
+      alert(t('error.passphraseRequired'))
       return
     }
 
@@ -307,41 +643,126 @@ export function ExchangesManager() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        console.log('🔗 Exchange linkada, atualizando dados...')
         closeConnectModal()
         
         // Pequeno delay para garantir que o backend processou
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 300))
         
-        // Recarregar lista de exchanges sem cache
-        await fetchExchanges(true)
-        window.dispatchEvent(new Event('balancesUpdated'))
+        // Atualizar exchanges e balances em paralelo para ser mais rápido
+        await Promise.all([
+          fetchExchanges(true),
+          refreshOnExchangeChange()
+        ])
+        
       } else {
-        alert(data.error || 'Falha ao conectar exchange')
+        console.error('❌ Falha ao linkar exchange:', data.error)
+        alert(data.error || t('error.connectExchange'))
       }
     } catch (err) {
-      alert('Não foi possível conectar a exchange')
+      console.error('❌ Erro ao linkar exchange:', err)
+      alert(t('error.connectExchange'))
     } finally {
       setConnecting(false)
     }
-  }
+  }, [selectedExchange, apiKey, apiSecret, passphrase, closeConnectModal, fetchExchanges, refreshOnExchangeChange, t])
 
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
     container: { backgroundColor: colors.background },
-    card: { backgroundColor: colors.surface, borderColor: colors.border },
+    card: { backgroundColor: colors.card, borderColor: colors.cardBorder },
     modal: { backgroundColor: colors.surface },
-    input: { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
-    button: { backgroundColor: colors.primary },
-    tabActive: { backgroundColor: colors.primary },
-    tabInactive: { backgroundColor: colors.surfaceSecondary },
+    modalContent: { backgroundColor: colors.surface },
+    menuModal: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+    menuDivider: { backgroundColor: colors.border },
+    
+    // Text colors
+    menuItemDanger: { color: colors.danger },
+    loadingText: { color: colors.textSecondary },
+    errorText: { color: colors.danger },
+    retryButtonText: { color: colors.textInverse },
+    
+    // Tabs
+    tab: { backgroundColor: colors.tabInactive, borderColor: colors.border },
+    tabInactive: { backgroundColor: colors.tabInactive, borderColor: colors.border },
+    tabActive: { backgroundColor: colors.tabActive, borderColor: colors.tabActive },
+    tabText: { color: colors.tabText },
+    tabTextActive: { color: colors.tabTextActive },
+    
+    // Status
+    statusTextActive: { color: colors.primary },
+    statusTextInactive: { color: colors.danger },
+    statusActive: { color: colors.primary },
+    statusInactive: { color: colors.danger },
+    exchangeCountry: { color: colors.textSecondary },
+    
+    // Toggle
+    toggleButton: { backgroundColor: colors.toggleInactive },
+    toggleButtonActive: { backgroundColor: colors.toggleActive },
+    toggleThumb: { backgroundColor: colors.toggleThumb },
+    
+    // Details
+    detailLabel: { color: colors.textSecondary },
+    
+    // Connected Badge
+    connectedBadge: { 
+      backgroundColor: colors.primaryLight + '20',
+      borderColor: colors.primary 
+    },
+    
+    // Connect Button
+    connectButtonText: { color: colors.primary },
+    
+    // Info Box
+    infoBox: { 
+      backgroundColor: colors.infoLight,
+      borderColor: colors.primary + '40'
+    },
+    infoText: { color: colors.primary },
+    
+    // Empty State
+    emptyText: { color: colors.textSecondary },
+    
+    // Primary Button
+    primaryButtonText: { color: colors.primary },
+    
+    // Exchange Info
+    exchangeInfo: { backgroundColor: colors.surfaceSecondary },
+    
+    // Modal Exchange Country
+    modalExchangeCountry: { color: colors.textSecondary },
+    
+    // Input
+    input: { 
+      backgroundColor: colors.input,
+      borderColor: colors.inputBorder,
+      color: colors.text 
+    },
+    inputWithIcons: { 
+      backgroundColor: colors.input,
+      borderColor: colors.inputBorder,
+      color: colors.text 
+    },
+    inputHint: { color: colors.primaryLight },
+    
+    // Cancel Button
+    cancelButton: { 
+      backgroundColor: colors.surfaceSecondary,
+      borderColor: colors.border 
+    },
+    cancelButtonText: { color: colors.textSecondary },
+    
+    // Submit Button
+    submitButtonText: { color: colors.primary },
+    
+    // Confirm Modal
+    confirmModalContent: { backgroundColor: colors.surface },
   }), [colors])
 
   if (loading) {
     return (
       <View style={[styles.container, themedStyles.container]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <AnimatedLogoIcon size={48} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Carregando exchanges...</Text>
         </View>
       </View>
@@ -352,7 +773,7 @@ export function ExchangesManager() {
     return (
       <View style={[styles.container, themedStyles.container]}>
         <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
-        <TouchableOpacity style={[styles.retryButton, themedStyles.button]} onPress={() => fetchExchanges(true)}>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={() => fetchExchanges(true)}>
           <Text style={styles.retryButtonText}>Tentar Novamente</Text>
         </TouchableOpacity>
       </View>
@@ -360,13 +781,21 @@ export function ExchangesManager() {
   }
 
   return (
-    <Pressable style={[styles.container, themedStyles.container]} onPress={() => setOpenMenuId(null)}>
+    <View style={[styles.container, themedStyles.container]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-          {linkedExchanges.length} {t('exchanges.connected').toLowerCase()}{linkedExchanges.length !== 1 ? 's' : ''}
-        </Text>
+        <View style={styles.headerContent}>
+          <LogoIcon size={24} />
+          <View style={styles.headerText}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('exchanges.manage')}</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {activeTab === 'linked' 
+                ? `${linkedExchanges.length} ${linkedExchanges.length === 1 ? t('exchanges.connectedSingular') : t('exchanges.connectedPlural')}`
+                : `${availableExchanges.length} ${availableExchanges.length === 1 ? t('exchanges.availableSingular') : t('exchanges.availablePlural')}`
+              }
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Tabs */}
@@ -375,22 +804,26 @@ export function ExchangesManager() {
           style={[styles.tab, activeTab === 'linked' ? themedStyles.tabActive : themedStyles.tabInactive]}
           onPress={() => setActiveTab('linked')}
         >
-          <Text style={[styles.tabText, activeTab === 'linked' && { color: '#ffffff' }, activeTab !== 'linked' && { color: colors.textSecondary }]}>
-            {t('exchanges.connected')} ({linkedExchanges.length})
+          <Text style={[styles.tabText, activeTab === 'linked' ? themedStyles.tabTextActive : themedStyles.tabText]}>
+            {t('exchanges.connected')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'available' ? themedStyles.tabActive : themedStyles.tabInactive]}
           onPress={() => setActiveTab('available')}
         >
-          <Text style={[styles.tabText, activeTab === 'available' && { color: '#ffffff' }, activeTab !== 'available' && { color: colors.textSecondary }]}>
-            {t('exchanges.available')} ({availableExchanges.length})
+          <Text style={[styles.tabText, activeTab === 'available' ? themedStyles.tabTextActive : themedStyles.tabText]}>
+            {t('exchanges.available')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={true}
+      >
         {activeTab === 'linked' ? (
           linkedExchanges.length === 0 ? (
             <View style={styles.emptyState}>
@@ -400,162 +833,48 @@ export function ExchangesManager() {
                 {t('exchanges.connectModal')}
               </Text>
               <TouchableOpacity
-                style={[styles.primaryButton, themedStyles.button]}
+                style={[styles.primaryButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
                 onPress={() => setActiveTab('available')}
               >
                 <Text style={styles.primaryButtonText}>{t('exchanges.viewAvailable')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.list}>
-              {linkedExchanges.map((linkedExchange, index) => {
-                const exchangeNameLower = linkedExchange.name.toLowerCase()
-                const localIcon = exchangeLogos[exchangeNameLower]
-                const exchangeId = linkedExchange.exchange_id
-                const isActive = linkedExchange.status === 'active'
-                
-                return (
-                  <View key={exchangeId + '_' + index} style={[styles.card, themedStyles.card]}>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardLeft}>
-                        <View style={styles.iconContainer}>
-                          {localIcon ? (
-                            <Image 
-                              source={localIcon} 
-                              style={styles.exchangeIcon}
-                              resizeMode="contain"
-                            />
-                          ) : linkedExchange.icon ? (
-                            <Image 
-                              source={{ uri: linkedExchange.icon }} 
-                              style={styles.exchangeIcon}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Text style={styles.iconText}>🔗</Text>
-                          )}
-                        </View>
-                        <View style={styles.exchangeNameContainer}>
-                          <Text style={[styles.exchangeName, { color: colors.text }]}>
-                            {linkedExchange.name}
-                          </Text>
-                          <Text style={[styles.exchangeCountry, { color: colors.textSecondary }]}>
-                            {linkedExchange.country}
-                          </Text>
-                        </View>
-                      </View>
-                      <TouchableOpacity 
-                        style={[styles.toggleButton, isActive && styles.toggleButtonActive]}
-                        onPress={() => toggleExchange(exchangeId, linkedExchange.status, linkedExchange.name)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.toggleThumb, isActive && styles.toggleThumbActive]} />
-                      </TouchableOpacity>
-                    </View>
-                    
-                    <View style={styles.cardDetails}>
-                      <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('exchanges.connectedAt')}</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                          {new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Footer com status e delete */}
-                    <View style={styles.exchangeFooter}>
-                      <View style={[
-                        styles.statusBadge,
-                        isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
-                      ]}>
-                        <View style={[
-                          styles.statusDot,
-                          isActive ? styles.statusDotActive : styles.statusDotInactive
-                        ]} />
-                        <Text style={[
-                          styles.statusText,
-                          isActive ? styles.statusTextActive : styles.statusTextInactive
-                        ]}>
-                          {isActive ? t('strategy.active') : t('strategy.inactive')}
-                        </Text>
-                      </View>
-                      
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDelete(exchangeId, linkedExchange.name)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.deleteIcon}>🗑️</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
+            <>
+              {linkedExchanges.map((linkedExchange, index) => (
+                <LinkedExchangeCard
+                  key={linkedExchange.exchange_id + '_' + index}
+                  linkedExchange={linkedExchange}
+                  index={index}
+                  colors={colors}
+                  t={t}
+                  onToggle={toggleExchange}
+                  onDelete={handleDelete}
+                  onPress={() => openDetailsModal(linkedExchange, 'linked')}
+                />
+              ))}
+            </>
           )
         ) : (
-          <View style={styles.list}>
+          <>
             {availableExchanges.map((exchange) => {
               const isLinked = linkedExchanges.some(
                 linked => linked.exchange_id === exchange._id
               )
               
               return (
-                <View key={exchange._id} style={[styles.card, themedStyles.card]}>
-                  <View style={styles.cardHeader}>
-                    <View style={styles.cardLeft}>
-                      <View style={styles.iconContainer}>
-                        {(() => {
-                          const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
-                          
-                          if (localIcon) {
-                            return (
-                              <Image 
-                                source={localIcon} 
-                                style={styles.exchangeIcon}
-                                resizeMode="contain"
-                              />
-                            )
-                          } else if (exchange.icon) {
-                            return (
-                              <Image 
-                                source={{ uri: exchange.icon }} 
-                                style={styles.exchangeIcon}
-                                resizeMode="contain"
-                              />
-                            )
-                          } else {
-                            return <Text style={styles.iconText}>🔗</Text>
-                          }
-                        })()}
-                      </View>
-                      <View>
-                        <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
-                        <Text style={[styles.exchangeCountry, { color: colors.textSecondary }]}>{exchange.pais_de_origem}</Text>
-                      </View>
-                    </View>
-                    {isLinked ? (
-                      <View style={[styles.connectedBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-                        <Text style={[styles.connectedBadgeText, { color: colors.success }]}>✓ Conectada</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity 
-                        style={[styles.connectButton, themedStyles.button]}
-                        onPress={() => openConnectModal(exchange)}
-                      >
-                        <Text style={styles.connectButtonText}>{t('exchanges.connect')}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  {exchange.requires_passphrase && (
-                    <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
-                      <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
-                    </View>
-                  )}
-                </View>
+                <AvailableExchangeCard
+                  key={exchange._id}
+                  exchange={exchange}
+                  isLinked={isLinked}
+                  colors={colors}
+                  t={t}
+                  onConnect={openConnectModal}
+                  onPress={() => openDetailsModal(exchange, 'available')}
+                />
               )
             })}
-          </View>
+          </>
         )}
       </ScrollView>
 
@@ -563,7 +882,7 @@ export function ExchangesManager() {
       <Modal
         visible={!!openMenuId}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setOpenMenuId(null)}
       >
         <Pressable 
@@ -628,16 +947,20 @@ export function ExchangesManager() {
         onRequestClose={closeConnectModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, themedStyles.modal]}>
-            {/* Header do Modal */}
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('exchanges.connectModal')}</Text>
-              <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
-                <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.safeArea}
+          >
+            <View style={[styles.modalContent, themedStyles.modal]}>
+              {/* Header do Modal */}
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>{t('exchanges.connectModal')}</Text>
+                <TouchableOpacity onPress={closeConnectModal} style={styles.closeButton}>
+                  <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
 
-            {selectedExchange && (
+              {selectedExchange && (
               <>
                 {/* Info da Exchange */}
                 <View style={styles.exchangeInfo}>
@@ -666,7 +989,6 @@ export function ExchangesManager() {
                   </View>
                   <View>
                     <Text style={[styles.modalExchangeName, { color: colors.text }]}>{selectedExchange.nome}</Text>
-                    <Text style={[styles.modalExchangeCountry, { color: colors.textSecondary }]}>{selectedExchange.pais_de_origem}</Text>
                   </View>
                 </View>
 
@@ -674,29 +996,71 @@ export function ExchangesManager() {
                 <View style={styles.form}>
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: colors.text }]}>API Key *</Text>
-                    <TextInput
-                      style={[styles.input, themedStyles.input]}
-                      value={apiKey}
-                      onChangeText={setApiKey}
-                      placeholderTextColor={colors.textSecondary}
-                      placeholder="Digite sua API Key"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
+                    <View style={styles.inputWithButtons}>
+                      <TextInput
+                        style={[styles.inputWithIcons, themedStyles.input]}
+                        value={apiKey}
+                        onChangeText={setApiKey}
+                        placeholderTextColor={colors.textSecondary}
+                        placeholder="Digite sua API Key"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <View style={styles.inputActions}>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+                          onPress={() => handlePasteFromClipboard('apiKey')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </Svg>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.primary }]}
+                          onPress={() => handleOpenQRScanner('apiKey')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke={colors.textInverse} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill={colors.textInverse}/>
+                          </Svg>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
 
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: colors.text }]}>API Secret *</Text>
-                    <TextInput
-                      style={[styles.input, themedStyles.input]}
-                      value={apiSecret}
-                      onChangeText={setApiSecret}
-                      placeholder="Digite seu API Secret"
-                      placeholderTextColor={colors.textSecondary}
-                      secureTextEntry
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
+                    <View style={styles.inputWithButtons}>
+                      <TextInput
+                        style={[styles.inputWithIcons, themedStyles.input]}
+                        value={apiSecret}
+                        onChangeText={setApiSecret}
+                        placeholder="Digite seu API Secret"
+                        placeholderTextColor={colors.textSecondary}
+                        secureTextEntry
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <View style={styles.inputActions}>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+                          onPress={() => handlePasteFromClipboard('apiSecret')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke={colors.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </Svg>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.iconButton, { backgroundColor: colors.primary }]}
+                          onPress={() => handleOpenQRScanner('apiSecret')}
+                        >
+                          <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <Path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke={colors.textInverse} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M7 8h2v2H7V8zM15 8h2v2h-2V8zM7 14h2v2H7v-2zM15 14h2v2h-2v-2z" fill={colors.textInverse}/>
+                          </Svg>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
 
                   {selectedExchange.requires_passphrase && (
@@ -729,12 +1093,12 @@ export function ExchangesManager() {
                     <Text style={[styles.cancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.submitButton, themedStyles.button, connecting && styles.submitButtonDisabled]}
+                    style={[styles.submitButton, { backgroundColor: colors.surface, borderColor: colors.primary }, connecting && styles.submitButtonDisabled]}
                     onPress={handleLinkExchange}
                     disabled={connecting}
                   >
                     {connecting ? (
-                      <ActivityIndicator size="small" color="#ffffff" />
+                      <AnimatedLogoIcon size={20} />
                     ) : (
                       <Text style={styles.submitButtonText}>{t('exchanges.connect')}</Text>
                     )}
@@ -742,7 +1106,8 @@ export function ExchangesManager() {
                 </View>
               </>
             )}
-          </View>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -750,115 +1115,656 @@ export function ExchangesManager() {
       <Modal
         visible={confirmToggleModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmToggleModalVisible(false)}
       >
-        <Pressable 
+        <KeyboardAvoidingView 
           style={styles.confirmModalOverlay}
-          onPress={() => setConfirmToggleModalVisible(false)}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable 
-            style={[styles.confirmModalContent, themedStyles.modal]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.confirmModalHeader}>
-              <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
-                {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
-              </Text>
-            </View>
-
-            <View style={styles.confirmModalBody}>
-              <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
-                {toggleExchangeNewStatus === 'active' 
-                  ? `${t('exchanges.activateConfirm')} ${toggleExchangeName}? ${t('exchanges.activateWarning')}`
-                  : `${t('exchanges.deactivateConfirm')} ${toggleExchangeName}? ${t('exchanges.deactivateWarning')}`
-                }
-              </Text>
-            </View>
-
-            <View style={styles.confirmModalActions}>
-              <TouchableOpacity
-                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary }]}
-                onPress={() => setConfirmToggleModalVisible(false)}
-              >
-                <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmSubmitButton, themedStyles.button]}
-                onPress={confirmToggle}
-              >
-                <Text style={styles.confirmSubmitButtonText}>
-                  {toggleExchangeNewStatus === 'active' ? t('exchanges.activate') : t('exchanges.deactivate')}
+          <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.confirmModalContent, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
+                  {toggleExchangeNewStatus === 'active' ? `✅ ${t('exchanges.activate')} ${t('exchanges.title').slice(0, -1)}` : `⏸️ ${t('exchanges.deactivate')} ${t('exchanges.title').slice(0, -1)}`}
                 </Text>
-              </TouchableOpacity>
+                <TouchableOpacity onPress={() => setConfirmToggleModalVisible(false)} style={styles.confirmModalCloseButton}>
+                  <Text style={[styles.confirmModalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Body */}
+              <View style={styles.confirmModalBody}>
+                <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
+                  {toggleExchangeNewStatus === 'active' 
+                    ? `${t('exchanges.activateConfirm')} ${toggleExchangeName}? ${t('exchanges.activateWarning')}`
+                    : `${t('exchanges.deactivateConfirm')} ${toggleExchangeName}? ${t('exchanges.deactivateWarning')}`
+                  }
+                </Text>
+              </View>
+
+              {/* Footer Actions */}
+              <View style={[styles.confirmModalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.surface }]}
+                  onPress={() => setConfirmToggleModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.primary }]}
+                  onPress={confirmToggle}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: '#ffffff' }]}>
+                    {toggleExchangeNewStatus === 'active' ? t('exchanges.activate') : t('exchanges.deactivate')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal de Confirmação (Delete/Disconnect) */}
       <Modal
         visible={confirmModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmModalVisible(false)}
       >
-        <Pressable 
+        <KeyboardAvoidingView 
           style={styles.confirmModalOverlay}
-          onPress={() => setConfirmModalVisible(false)}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable 
-            style={[styles.confirmModalContent, themedStyles.modal]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.confirmModalHeader}>
-              <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
-                {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
-              </Text>
-            </View>
-
-            <View style={styles.confirmModalBody}>
-              <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
-                {confirmAction === 'delete' 
-                  ? `${t('exchanges.deleteConfirm')} ${confirmExchangeName}? ${t('exchanges.deleteWarning')}`
-                  : `${t('exchanges.disconnectConfirm')} ${confirmExchangeName}?`
-                }
-              </Text>
-            </View>
-
-            <View style={styles.confirmModalActions}>
-              <TouchableOpacity
-                style={[styles.confirmCancelButton, { backgroundColor: colors.surfaceSecondary }]}
-                onPress={() => setConfirmModalVisible(false)}
-              >
-                <Text style={[styles.confirmCancelButtonText, { color: colors.text }]}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmSubmitButton, confirmAction === 'delete' ? { backgroundColor: colors.danger } : themedStyles.button]}
-                onPress={() => {
-                  if (confirmAction === 'delete') {
-                    confirmDelete()
-                  } else {
-                    confirmDisconnect()
-                  }
-                }}
-              >
-                <Text style={styles.confirmSubmitButtonText}>
-                  {confirmAction === 'delete' ? t('exchanges.delete') : t('exchanges.disconnect')}
+          <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.confirmModalContent, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
+                  {confirmAction === 'delete' ? '⚠️ Confirmar Exclusão' : '⚠️ Confirmar Desconexão'}
                 </Text>
-              </TouchableOpacity>
+                <TouchableOpacity onPress={() => setConfirmModalVisible(false)} style={styles.confirmModalCloseButton}>
+                  <Text style={[styles.confirmModalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Body */}
+              <View style={styles.confirmModalBody}>
+                <Text style={[styles.confirmModalMessage, { color: colors.textSecondary }]}>
+                  {confirmAction === 'delete' 
+                    ? `${t('exchanges.deleteConfirm')} ${confirmExchangeName}? ${t('exchanges.deleteWarning')}`
+                    : `${t('exchanges.disconnectConfirm')} ${confirmExchangeName}?`
+                  }
+                </Text>
+              </View>
+
+              {/* Footer Actions */}
+              <View style={[styles.confirmModalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.surface }]}
+                  onPress={() => setConfirmModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.confirmModalButton, 
+                    { backgroundColor: confirmAction === 'delete' ? colors.danger : colors.primary }
+                  ]}
+                  onPress={() => {
+                    if (confirmAction === 'delete') {
+                      confirmDelete()
+                    } else {
+                      confirmDisconnect()
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: '#ffffff' }]}>
+                    {confirmAction === 'delete' ? t('exchanges.delete') : t('exchanges.disconnect')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
-    </Pressable>
+
+      {/* Modal de Detalhes da Exchange */}
+      <Modal
+        visible={detailsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeDetailsModal}
+      >
+        <KeyboardAvoidingView 
+          style={styles.confirmModalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.detailsModalContent, { backgroundColor: colors.card }]}>
+              {/* Header */}
+              <View style={[styles.confirmModalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmModalTitle, { color: colors.text }]}>
+                  {detailsType === 'linked' ? '🔗 Exchange Conectada' : '🌐 Detalhes da Exchange'}
+                </Text>
+                <TouchableOpacity onPress={closeDetailsModal} style={styles.confirmModalCloseButton}>
+                  <Text style={[styles.confirmModalCloseIcon, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Body */}
+              <ScrollView style={styles.detailsModalScroll} showsVerticalScrollIndicator={true}>
+                {detailsExchange && (
+                  <View style={styles.detailsModalBody}>
+                    {/* Ícone e Nome da Exchange */}
+                    <View style={[styles.detailsHeader, { backgroundColor: colors.surfaceSecondary }]}>
+                      <View style={styles.detailsIconContainer}>
+                        {(() => {
+                          const exchangeName = detailsType === 'linked' 
+                            ? detailsExchange.name?.toLowerCase() 
+                            : detailsExchange.nome?.toLowerCase()
+                          const localIcon = exchangeLogos[exchangeName]
+                          const iconUrl = detailsType === 'linked' 
+                            ? detailsExchange.icon 
+                            : detailsExchange.icon
+                          
+                          if (localIcon) {
+                            return (
+                              <Image 
+                                source={localIcon} 
+                                style={styles.detailsExchangeIcon}
+                                resizeMode="contain"
+                              />
+                            )
+                          } else if (iconUrl) {
+                            return (
+                              <Image 
+                                source={{ uri: iconUrl }} 
+                                style={styles.detailsExchangeIcon}
+                                resizeMode="contain"
+                              />
+                            )
+                          }
+                          return <Text style={styles.detailsIconText}>🔗</Text>
+                        })()}
+                      </View>
+                      <View style={styles.detailsHeaderText}>
+                        <Text style={[styles.detailsExchangeName, { color: colors.text }]}>
+                          {detailsType === 'linked' ? detailsExchange.name : detailsExchange.nome}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Informações */}
+                    <View style={styles.detailsSection}>
+                      <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                         Informações Gerais
+                      </Text>
+                      
+                      {loadingDetails ? (
+                        <View style={styles.detailsLoadingContainer}>
+                          <AnimatedLogoIcon size={32} />
+                          <Text style={[styles.detailsLoadingText, { color: colors.textSecondary }]}>
+                            Carregando detalhes...
+                          </Text>
+                        </View>
+                      ) : (
+                        <>
+                          {detailsType === 'linked' ? (
+                            <>
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Nome:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {detailsExchange.name}
+                                </Text>
+                              </View>
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Exchange ID:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]} numberOfLines={1}>
+                                  {detailsExchange.exchange_id}
+                                </Text>
+                              </View>
+                              
+                              {detailsFullData?.ccxt_id && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    CCXT ID:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsFullData.ccxt_id}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {(detailsExchange.country || detailsFullData?.pais_de_origem) && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    País:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsExchange.country || detailsFullData?.pais_de_origem || 'N/A'}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {(detailsExchange.url || detailsFullData?.url) && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Website:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.primary }]} numberOfLines={1}>
+                                    {detailsExchange.url || detailsFullData?.url}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Conectada em:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {new Date(detailsExchange.linked_at).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </Text>
+                              </View>
+                              
+                              {detailsExchange.updated_at && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Última atualização:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {new Date(detailsExchange.updated_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.reconnected_at && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Reconectada em:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.success }]}>
+                                    {new Date(detailsExchange.reconnected_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.disconnected_at && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Desconectada em:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.danger }]}>
+                                    {new Date(detailsExchange.disconnected_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Status:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {detailsExchange.status === 'active' ? 'Ativa ✓' : 'Inativa ✗'}
+                                </Text>
+                              </View>
+                            </>
+                          ) : (
+                            <>
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Nome:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                  {detailsExchange.nome}
+                                </Text>
+                              </View>
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Exchange ID:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: colors.text }]} numberOfLines={1}>
+                                  {detailsExchange._id}
+                                </Text>
+                              </View>
+                              
+                              {detailsFullData?.ccxt_id && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    CCXT ID:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsFullData.ccxt_id}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.pais_de_origem && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    País de Origem:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.text }]}>
+                                    {detailsExchange.pais_de_origem}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              {detailsExchange.url && (
+                                <View style={styles.detailsInfoRow}>
+                                  <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                    Website:
+                                  </Text>
+                                  <Text style={[styles.detailsInfoValue, { color: colors.primary }]} numberOfLines={1}>
+                                    {detailsExchange.url}
+                                  </Text>
+                                </View>
+                              )}
+                              
+                              <View style={styles.detailsInfoRow}>
+                                <Text style={[styles.detailsInfoLabel, { color: colors.textSecondary }]}>
+                                  Requer Passphrase:
+                                </Text>
+                                <Text style={[styles.detailsInfoValue, { color: detailsExchange.requires_passphrase ? colors.primary : colors.textSecondary }]}>
+                                  {detailsExchange.requires_passphrase ? 'Sim ✓' : 'Não'}
+                                </Text>
+                              </View>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </View>
+
+                    {/* Recursos (se disponível) */}
+                    {detailsType === 'available' && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          ⚡ Recursos
+                        </Text>
+                        <View style={[styles.detailsFeatureBox, { backgroundColor: colors.surfaceSecondary }]}>
+                          <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                            • Trading de criptomoedas
+                          </Text>
+                          <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                            • API para integração
+                          </Text>
+                          <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                            • Suporte a múltiplas moedas
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Taxas (Fees) */}
+                    {detailsFullData?.fees && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          💰 Taxas
+                        </Text>
+                        
+                        {detailsFullData.fees.trading && (
+                          <View style={[styles.detailsFeesBox, { backgroundColor: colors.surfaceSecondary }]}>
+                            <Text style={[styles.detailsFeesTitle, { color: colors.text }]}>Trading:</Text>
+                            
+                            {detailsFullData.fees.trading.maker !== undefined && detailsFullData.fees.trading.maker !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Maker:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.trading.maker === 'number'
+                                    ? `${(detailsFullData.fees.trading.maker * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.trading.maker)}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.trading.taker !== undefined && detailsFullData.fees.trading.taker !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Taker:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.trading.taker === 'number'
+                                    ? `${(detailsFullData.fees.trading.taker * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.trading.taker)}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.trading.percentage !== undefined && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Tipo:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {detailsFullData.fees.trading.percentage ? 'Percentual' : 'Fixo'}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.trading.tierBased !== undefined && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Por nível:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {detailsFullData.fees.trading.tierBased ? 'Sim' : 'Não'}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                        
+                        {detailsFullData.fees.funding && (
+                          <View style={[styles.detailsFeesBox, { backgroundColor: colors.surfaceSecondary, marginTop: 12 }]}>
+                            <Text style={[styles.detailsFeesTitle, { color: colors.text }]}>Funding:</Text>
+                            
+                            {detailsFullData.fees.funding.withdraw !== undefined && detailsFullData.fees.funding.withdraw !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Retirada:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.funding.withdraw === 'object' 
+                                    ? 'Varia por moeda'
+                                    : typeof detailsFullData.fees.funding.withdraw === 'number'
+                                    ? `${(detailsFullData.fees.funding.withdraw * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.funding.withdraw)}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {detailsFullData.fees.funding.deposit !== undefined && detailsFullData.fees.funding.deposit !== null && (
+                              <View style={styles.detailsFeeRow}>
+                                <Text style={[styles.detailsFeeLabel, { color: colors.textSecondary }]}>
+                                  • Depósito:
+                                </Text>
+                                <Text style={[styles.detailsFeeValue, { color: colors.text }]}>
+                                  {typeof detailsFullData.fees.funding.deposit === 'object' 
+                                    ? 'Varia por moeda'
+                                    : typeof detailsFullData.fees.funding.deposit === 'number'
+                                    ? `${(detailsFullData.fees.funding.deposit * 100).toFixed(4)}%`
+                                    : String(detailsFullData.fees.funding.deposit)}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                        
+                        {/* Mostra estrutura completa se houver mais dados */}
+                        {detailsFullData.fees && !detailsFullData.fees.trading && !detailsFullData.fees.funding && (
+                          <View style={[styles.detailsFeesBox, { backgroundColor: colors.surfaceSecondary }]}>
+                            <Text style={[styles.detailsFeatureText, { color: colors.text }]}>
+                              Estrutura de taxas disponível na exchange
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Mercados (Markets) */}
+                    {detailsFullData?.markets && Object.keys(detailsFullData.markets).length > 0 && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          📈 Mercados Disponíveis
+                        </Text>
+                        <View style={[styles.detailsMarketsBox, { backgroundColor: colors.surfaceSecondary }]}>
+                          <Text style={[styles.detailsMarketsCount, { color: colors.text }]}>
+                            {Object.keys(detailsFullData.markets).length} pares de trading disponíveis
+                          </Text>
+                          <View style={styles.detailsMarketsSample}>
+                            {Object.keys(detailsFullData.markets).slice(0, 5).map((market, index) => (
+                              <View key={index} style={[styles.detailsMarketChip, { backgroundColor: colors.primary + '20', borderColor: colors.primary + '40' }]}>
+                                <Text style={[styles.detailsMarketText, { color: colors.primary }]}>
+                                  {market}
+                                </Text>
+                              </View>
+                            ))}
+                            {Object.keys(detailsFullData.markets).length > 5 && (
+                              <Text style={[styles.detailsMarketsMore, { color: colors.textSecondary }]}>
+                                +{Object.keys(detailsFullData.markets).length - 5} mais
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Capacidades (Has) */}
+                    {detailsFullData?.has && (
+                      <View style={styles.detailsSection}>
+                        <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                          ✨ Capacidades da API
+                        </Text>
+                        <View style={[styles.detailsCapabilitiesBox, { backgroundColor: colors.surfaceSecondary }]}>
+                          {Object.entries(detailsFullData.has)
+                            .filter(([key, value]) => value === true)
+                            .slice(0, 10)
+                            .map(([key, value], index) => (
+                              <View key={index} style={styles.detailsCapabilityRow}>
+                                <Text style={[styles.detailsCapabilityText, { color: colors.text }]}>
+                                  ✓ {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </Text>
+                              </View>
+                            ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Informações de Segurança */}
+                    <View style={styles.detailsSection}>
+                      <Text style={[styles.detailsSectionTitle, { color: colors.text }]}>
+                        🔒 Segurança
+                      </Text>
+                      <View style={[styles.detailsSecurityBox, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
+                        <Text style={[styles.detailsSecurityText, { color: colors.text }]}>
+                          {detailsType === 'linked' 
+                            ? '✓ Suas credenciais estão criptografadas e seguras'
+                            : 'ℹ️ Ao conectar, suas API Keys serão criptografadas'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* Footer Actions */}
+              <View style={[styles.detailsModalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.confirmModalButton, { backgroundColor: colors.surface }]}
+                  onPress={closeDetailsModal}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmModalButtonText, { color: colors.text }]}>
+                    Fechar
+                  </Text>
+                </TouchableOpacity>
+                
+                {detailsType === 'available' && !linkedExchanges.some(
+                  linked => linked.exchange_id === detailsExchange?._id
+                ) && (
+                  <TouchableOpacity
+                    style={[styles.confirmModalButton, { backgroundColor: colors.primary }]}
+                    onPress={() => {
+                      closeDetailsModal()
+                      openConnectModal(detailsExchange)
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.confirmModalButtonText, { color: '#ffffff' }]}>
+                      Conectar
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        visible={qrScannerVisible}
+        onClose={() => {
+          setQrScannerVisible(false)
+          setCurrentScanField(null)
+        }}
+        onScan={handleQRScanned}
+        title={
+          currentScanField === 'apiKey' 
+            ? 'Escanear API Key' 
+            : currentScanField === 'apiSecret'
+            ? 'Escanear API Secret'
+            : 'Escanear Passphrase'
+        }
+      />
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f7ff",
   },
   // Menu Modal Styles
   menuModalOverlay: {
@@ -868,10 +1774,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuModal: {
-    backgroundColor: "#e3f2fd",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#bbdefb",
     minWidth: 200,
     overflow: "hidden",
   },
@@ -890,11 +1794,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   menuItemDanger: {
-    color: "#ef4444",
   },
   menuDivider: {
     height: 1,
-    backgroundColor: "#bbdefb",
   },
   loadingContainer: {
     flex: 1,
@@ -904,16 +1806,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: "#9ca3af",
   },
   errorText: {
     fontSize: 14,
-    color: "#ef4444",
     textAlign: "center",
     padding: 20,
   },
   retryButton: {
-    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -923,62 +1822,66 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#ffffff",
   },
   header: {
-    padding: 20,
-    paddingBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "500",
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: "300",
+    letterSpacing: -0.2,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: "#9ca3af",
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: "300",
   },
   tabs: {
     flexDirection: "row",
     paddingHorizontal: 20,
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: "#ffffff",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e3f2fd",
   },
   tabActive: {
-    backgroundColor: "#3b82f6",
-    borderColor: "#3b82f6",
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "400",
-    color: "#9ca3af",
   },
   tabTextActive: {
-    color: "#ffffff",
   },
   content: {
     flex: 1,
   },
   list: {
     paddingHorizontal: 20,
-    gap: 12,
+    paddingTop: 16,
+    paddingBottom: 100, // Espaço extra no final para o scroll
   },
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e3f2fd",
     marginBottom: 12,
   },
   cardHeader: {
@@ -993,35 +1896,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#ffffff",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#ffffff',
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   iconText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   exchangeIcon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
   },
   exchangeNameContainer: {
     flex: 1,
   },
   exchangeName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "400",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
     alignSelf: "flex-start",
   },
@@ -1041,52 +1944,44 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusDotActive: {
-    backgroundColor: "#3b82f6",
+    // Cor definida dinamicamente via themedStyles
   },
   statusDotInactive: {
-    backgroundColor: "#ef4444",
+    // Cor definida dinamicamente via themedStyles
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
   },
   statusTextActive: {
-    color: "#3b82f6",
   },
   statusTextInactive: {
-    color: "#ef4444",
   },
   exchangeStatus: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11,
+    fontWeight: "400",
   },
   statusActive: {
-    color: "#3b82f6",
   },
   statusInactive: {
-    color: "#ef4444",
   },
   exchangeCountry: {
     fontSize: 12,
-    color: "#6b7280",
   },
   // Toggle Button
   toggleButton: {
     width: 46,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#d4d4d4",
     padding: 2,
     justifyContent: "center",
   },
   toggleButtonActive: {
-    backgroundColor: "#3b82f6",
   },
   toggleThumb: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#ffffff",
   },
   toggleThumbActive: {
     alignSelf: "flex-end",
@@ -1097,71 +1992,74 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
   },
   deleteButton: {
-    padding: 6,
+    padding: 4,
   },
   deleteIcon: {
-    fontSize: 18,
+    fontSize: 16,
   },
   cardDetails: {
     marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e3f2fd",
     gap: 8,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 4,
   },
   detailLabel: {
     fontSize: 12,
-    color: "#6b7280",
   },
   detailValue: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "400",
   },
   connectedBadge: {
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#3b82f6",
   },
   connectedBadgeText: {
     fontSize: 12,
     fontWeight: "400",
-    color: "#3b82f6",
   },
   connectButton: {
-    backgroundColor: "#3b82f6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 2,
   },
   connectButtonText: {
     fontSize: 13,
-    fontWeight: "400",
-    color: "#ffffff",
+    fontWeight: "600",
   },
   infoBox: {
     marginTop: 12,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.2)",
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  infoIconContainer: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  infoIconYellow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   infoText: {
     fontSize: 12,
-    color: "#60a5fa",
+    flex: 1,
   },
   emptyState: {
     alignItems: "center",
@@ -1170,62 +2068,66 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 48,
+    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "400",
     marginBottom: 8,
     textAlign: "center",
   },
   emptyText: {
     fontSize: 14,
-    color: "#9ca3af",
     textAlign: "center",
     marginBottom: 24,
   },
   primaryButton: {
-    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
+    borderWidth: 2,
   },
   primaryButtonText: {
     fontSize: 14,
-    fontWeight: "400",
-    color: "#ffffff",
+    fontWeight: "600",
   },
 
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  safeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   modalContent: {
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: "90%",
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
+    height: "85%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    padding: 20,
+    borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "400",
   },
   closeButton: {
-    padding: 8,
+    padding: 4,
   },
   closeButtonText: {
-    fontSize: 24,
-    color: "#9ca3af",
+    fontSize: 22,
     fontWeight: "300",
   },
   exchangeInfo: {
@@ -1233,17 +2135,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 16,
-    backgroundColor: "#e3f2fd",
     borderRadius: 12,
     marginBottom: 24,
   },
   modalExchangeName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "400",
   },
   modalExchangeCountry: {
-    fontSize: 14,
-    color: "#9ca3af",
+    fontSize: 13,
     marginTop: 2,
   },
   form: {
@@ -1258,16 +2158,38 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   input: {
-    backgroundColor: "#e3f2fd",
     borderRadius: 8,
-    padding: 14,
-    fontSize: 15,
+    padding: 12,
+    fontSize: 14,
     borderWidth: 1,
-    borderColor: "#bbdefb",
+  },
+  inputWithButtons: {
+    position: 'relative',
+  },
+  inputWithIcons: {
+    borderRadius: 8,
+    padding: 12,
+    paddingRight: 96,
+    fontSize: 14,
+    borderWidth: 1,
+  },
+  inputActions: {
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    transform: [{ translateY: -18 }],
+    flexDirection: 'row',
+    gap: 6,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   inputHint: {
     fontSize: 12,
-    color: "#60a5fa",
     marginTop: 4,
   },
   modalActions: {
@@ -1278,30 +2200,26 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: "#e3f2fd",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#bbdefb",
   },
   cancelButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "400",
-    color: "#9ca3af",
   },
   submitButton: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: "#3b82f6",
+    borderWidth: 2,
     alignItems: "center",
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
-    fontSize: 15,
-    fontWeight: "400",
-    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   // Confirm Modal (centralizado)
   confirmModalOverlay: {
@@ -1311,69 +2229,257 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   confirmModalContent: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    borderRadius: 20,
     width: "90%",
-    maxWidth: 400,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
   },
   confirmModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
   },
   confirmModalTitle: {
     fontSize: 18,
-    fontWeight: "400",
-    textAlign: "center",
-    color: "#111827",
+    fontWeight: "500",
+  },
+  confirmModalCloseButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmModalCloseIcon: {
+    fontSize: 24,
+    fontWeight: '300',
   },
   confirmModalBody: {
     padding: 24,
   },
   confirmModalMessage: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "300",
+    lineHeight: 20,
+  },
+  confirmModalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 0.5,
+  },
+  confirmModalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmModalButtonText: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  // Details Modal Styles
+  detailsModalContent: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  detailsModalScroll: {
+    maxHeight: 500,
+  },
+  detailsModalBody: {
+    padding: 20,
+  },
+  detailsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  detailsIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  detailsExchangeIcon: {
+    width: 48,
+    height: 48,
+  },
+  detailsIconText: {
+    fontSize: 28,
+  },
+  detailsHeaderText: {
+    flex: 1,
+    gap: 8,
+  },
+  detailsExchangeName: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  detailsStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  detailsStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  detailsStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  detailsSection: {
+    marginBottom: 24,
+  },
+  detailsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  detailsInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  detailsInfoLabel: {
+    fontSize: 14,
+    fontWeight: '400',
+    flex: 1,
+  },
+  detailsInfoValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1.5,
+    textAlign: 'right',
+  },
+  detailsFeatureBox: {
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  detailsFeatureText: {
+    fontSize: 14,
+    fontWeight: '400',
     lineHeight: 22,
-    textAlign: "center",
-    color: "#374151",
   },
-  confirmModalActions: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+  detailsSecurityBox: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  confirmCancelButton: {
-    flex: 1,
+  detailsSecurityText: {
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 20,
+  },
+  detailsModalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 0.5,
+  },
+  detailsLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 20,
+    justifyContent: 'center',
+  },
+  detailsLoadingText: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  detailsFeesBox: {
+    padding: 12,
+    borderRadius: 8,
+  },
+  detailsFeesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  detailsFeeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  detailsFeeLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  detailsFeeValue: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  detailsMarketsBox: {
     padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRightWidth: 1,
-    borderRightColor: "#e5e7eb",
+    borderRadius: 12,
+    gap: 12,
   },
-  confirmCancelButtonText: {
-    fontSize: 15,
-    fontWeight: "400",
-    color: "#6b7280",
+  detailsMarketsCount: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  confirmSubmitButton: {
-    flex: 1,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f59e0b",
+  detailsMarketsSample: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
   },
-  confirmDeleteButton: {
-    backgroundColor: "#ef4444",
+  detailsMarketChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
   },
-  confirmSubmitButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#ffffff",
+  detailsMarketText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  detailsMarketsMore: {
+    fontSize: 12,
+    fontWeight: '400',
+    paddingVertical: 6,
+  },
+  detailsCapabilitiesBox: {
+    padding: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  detailsCapabilityRow: {
+    paddingVertical: 4,
+  },
+  detailsCapabilityText: {
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 20,
   },
 })

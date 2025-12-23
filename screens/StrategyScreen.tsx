@@ -1,9 +1,13 @@
-import { Text, StyleSheet, ScrollView, SafeAreaView, View, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native"
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Modal, Pressable, RefreshControl, KeyboardAvoidingView, Platform } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { strategiesService, type Strategy as APIStrategy, type Execution } from "../services/strategies"
 import { CreateStrategyModal } from "../components/create-strategy-modal"
+import { StrategyDetailsModal } from "@/components/StrategyDetailsModal"
+import { LogoIcon } from "../components/LogoIcon"
+import { AnimatedLogoIcon } from "../components/AnimatedLogoIcon"
 
 interface Strategy {
   id: string
@@ -47,19 +51,19 @@ export function StrategyScreen() {
   const [toggleStrategyId, setToggleStrategyId] = useState<string>("")
   const [toggleStrategyName, setToggleStrategyName] = useState<string>("")
   const [toggleStrategyNewStatus, setToggleStrategyNewStatus] = useState<boolean>(false)
+  
+  // Modal de detalhes da estratégia
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null)
+  
+  // Ref para rastrear IDs de estratégias recém-criadas (sem stats ainda)
+  const newlyCreatedStrategyIds = useRef<Set<string>>(new Set())
 
-  // Load strategies and executions from API
-  useEffect(() => {
-    loadStrategies()
-    loadExecutions()
-  }, [])
-
-  const loadStrategies = async () => {
+  const loadStrategies = useCallback(async (skipStats: boolean = false) => {
     try {
       setLoading(true)
       const apiStrategies = await strategiesService.getUserStrategies(USER_ID)
       
-      console.log("📊 Loaded strategies from API:", apiStrategies.length)
       
       // Transform API data to local format - Filter out invalid strategies
       const validStrategies = apiStrategies.filter(apiStrategy => {
@@ -68,17 +72,26 @@ export function StrategyScreen() {
           console.warn("⚠️ Strategy without _id or id:", apiStrategy)
           return false
         }
-        console.log("✅ Valid strategy ID:", strategyId, "Token:", apiStrategy.token)
         return true
       })
 
       // Load stats in parallel with Promise.allSettled to not block on failures
-      const statsPromises = validStrategies.map(apiStrategy => {
-        const strategyId = apiStrategy._id || apiStrategy.id || ""
-        return strategiesService.getStrategyStats(strategyId, USER_ID)
-      })
-
-      const statsResults = await Promise.allSettled(statsPromises)
+      // Pula busca de stats se for logo após criar estratégia (não terá dados ainda)
+      let statsResults: PromiseSettledResult<any>[] = []
+      
+      if (!skipStats) {
+        const statsPromises = validStrategies.map(apiStrategy => {
+          const strategyId = apiStrategy._id || apiStrategy.id || ""
+          
+          // Pula stats de estratégias recém-criadas (ainda não têm execuções)
+          if (newlyCreatedStrategyIds.current.has(strategyId)) {
+            return Promise.resolve(null)
+          }
+          
+          return strategiesService.getStrategyStats(strategyId, USER_ID)
+        })
+        statsResults = await Promise.allSettled(statsPromises)
+      }
 
       // Transform with preloaded stats
       const transformedStrategies: Strategy[] = validStrategies.map((apiStrategy, index) => {
@@ -87,22 +100,35 @@ export function StrategyScreen() {
         
         // Get stats from parallel load result
         let stats = undefined
-        const statsResult = statsResults[index]
         
-        if (statsResult.status === 'fulfilled') {
-          const statsResponse = statsResult.value
-          stats = {
-            totalExecutions: statsResponse.stats.total_executions,
-            totalBuys: statsResponse.stats.total_buys,
-            totalSells: statsResponse.stats.total_sells,
-            lastExecutionAt: statsResponse.stats.last_execution_at 
-              ? new Date(statsResponse.stats.last_execution_at) 
-              : null,
-            totalPnlUsd: statsResponse.stats.total_pnl_usd,
-            winRate: statsResponse.stats.win_rate,
+        // Se não pulou stats, processa o resultado
+        if (!skipStats && statsResults[index]) {
+          const statsResult = statsResults[index]
+          
+          if (statsResult.status === 'fulfilled' && statsResult.value !== null) {
+            const statsResponse = statsResult.value
+            stats = {
+              totalExecutions: statsResponse.stats.total_executions,
+              totalBuys: statsResponse.stats.total_buys,
+              totalSells: statsResponse.stats.total_sells,
+              lastExecutionAt: statsResponse.stats.last_execution_at 
+                ? new Date(statsResponse.stats.last_execution_at) 
+                : null,
+              totalPnlUsd: statsResponse.stats.total_pnl_usd,
+              winRate: statsResponse.stats.win_rate,
+            }
+          } else if (statsResult.status === 'fulfilled' && statsResult.value === null) {
+            // Estratégia recém-criada - stats serão undefined
+          } else if (statsResult.status === 'rejected') {
+            // Apenas loga warning se não for erro 404 (estratégia nova)
+            const errorMsg = statsResult.reason?.message || ''
+            const is404 = errorMsg.includes('404') || errorMsg.includes('Not Found')
+            
+            if (!is404) {
+              console.warn(`⚠️ Failed to load stats for strategy ${strategyId} (${apiStrategy.token}):`, statsResult.reason?.message || statsResult.reason)
+            }
+            // Stats ficam undefined para estratégias novas
           }
-        } else {
-          console.warn(`⚠️ Failed to load stats for strategy ${strategyId} (${apiStrategy.token}):`, statsResult.reason?.message || statsResult.reason)
         }
         
         return {
@@ -125,19 +151,24 @@ export function StrategyScreen() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [])
 
-  const loadExecutions = async () => {
+  const loadExecutions = useCallback(async () => {
     try {
-      console.log("🔄 Loading executions from API...")
-      const apiExecutions = await strategiesService.getUserExecutions(USER_ID)
-      console.log("📊 Loaded executions:", apiExecutions.length)
+      // Passa a lista de estratégias recém-criadas para pular
+      const apiExecutions = await strategiesService.getUserExecutions(USER_ID, newlyCreatedStrategyIds.current)
       setExecutions(apiExecutions)
     } catch (error) {
       console.error("Error loading executions:", error)
       setExecutions([])
     }
-  }
+  }, [])
+
+  // Load strategies and executions from API on mount
+  useEffect(() => {
+    loadStrategies()
+    loadExecutions()
+  }, [loadStrategies, loadExecutions])
 
   const toggleStrategy = useCallback((id: string) => {
     const strategyToToggle = strategies.find(s => s.id === id)
@@ -175,7 +206,6 @@ export function StrategyScreen() {
     // Update on server
     try {
       await strategiesService.updateStrategy(id, { is_active: newIsActive })
-      console.log(`✅ Strategy ${id} toggled to ${newIsActive}`)
     } catch (error) {
       console.error("Error toggling strategy:", error)
       // Rollback on error
@@ -199,7 +229,6 @@ export function StrategyScreen() {
     setConfirmStrategyName("")
 
     try {
-      console.log("🔄 Deleting strategy:", id)
       
       // Optimistic update - remove from UI immediately
       setStrategies(prev => prev.filter(s => s.id !== id))
@@ -207,7 +236,6 @@ export function StrategyScreen() {
       // Call API with user_id parameter
       await strategiesService.deleteStrategy(id, USER_ID)
       
-      console.log(`✅ Strategy "${name}" deleted successfully`)
     } catch (error: any) {
       console.error("Error deleting strategy:", error)
       
@@ -222,10 +250,27 @@ export function StrategyScreen() {
     setCreateModalVisible(true)
   }, [])
 
-  const handleStrategyCreated = useCallback(() => {
+  const handleStrategyCreated = useCallback(async (strategyId: string) => {
     setCreateModalVisible(false)
-    loadStrategies() // Reload strategies
-    loadExecutions() // Reload executions
+    
+    // Adiciona o ID da nova estratégia à lista de recém-criadas
+    newlyCreatedStrategyIds.current.add(strategyId)
+    
+    // Limpa o ID após 5 minutos (tempo suficiente para primeira execução)
+    setTimeout(() => {
+      newlyCreatedStrategyIds.current.delete(strategyId)
+    }, 5 * 60 * 1000)
+    
+    try {
+      // Recarrega estratégias (mas pulará stats da recém-criada)
+      await Promise.all([
+        loadStrategies(false), // Não pula todos os stats, só da nova
+        loadExecutions()
+      ])
+    } catch (error) {
+      console.error("Error reloading data after strategy creation:", error)
+      // Não mostra erro para o usuário pois a estratégia já foi criada com sucesso
+    }
   }, [loadStrategies, loadExecutions])
 
   const formatCurrency = useCallback((value: number) => {
@@ -255,19 +300,22 @@ export function StrategyScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>{t('strategy.title')}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {activeTab === "strategies"
-              ? `${strategiesCount} ${strategiesCount === 1 ? t('strategy.strategy') : t('strategy.strategies')}`
-              : `${executionsCount} ${executionsCount === 1 ? t('strategy.execution') : t('strategy.executions')}`
-            }
-          </Text>
+        <View style={styles.headerContent}>
+          <LogoIcon size={24} />
+          <View style={styles.headerText}>
+            <Text style={[styles.title, { color: colors.text }]}>{t('strategy.title')}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {activeTab === "strategies"
+                ? `${strategiesCount} ${strategiesCount === 1 ? t('strategy.strategy') : t('strategy.strategies')}`
+                : `${executionsCount} ${executionsCount === 1 ? t('strategy.execution') : t('strategy.executions')}`
+              }
+            </Text>
+          </View>
         </View>
         
         {activeTab === "strategies" && hasStrategies && (
           <TouchableOpacity
-            style={[styles.newButton, { backgroundColor: colors.primary }]}
+            style={[styles.newButton, { backgroundColor: colors.surface, borderColor: '#3b82f6' }]}
             onPress={handleNewStrategy}
             activeOpacity={0.8}
           >
@@ -335,7 +383,7 @@ export function StrategyScreen() {
       >
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <AnimatedLogoIcon size={48} />
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
               {t('common.loading')}
             </Text>
@@ -343,13 +391,12 @@ export function StrategyScreen() {
         ) : activeTab === "strategies" ? (
           strategies.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📭</Text>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('strategy.empty')}</Text>
               <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
                 {t('strategy.emptyDesc')}
               </Text>
               <TouchableOpacity
-                style={[styles.createButton, { backgroundColor: colors.primary }]}
+                style={[styles.createButton, { backgroundColor: colors.surface, borderColor: '#3b82f6' }]}
                 onPress={handleNewStrategy}
                 activeOpacity={0.8}
               >
@@ -359,9 +406,14 @@ export function StrategyScreen() {
           ) : (
           <View style={styles.strategiesList}>
             {strategies.map((strategy) => (
-              <View
+              <TouchableOpacity
                 key={strategy.id}
                 style={[styles.strategyCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => {
+                  setSelectedStrategyId(strategy.id)
+                  setDetailsModalVisible(true)
+                }}
+                activeOpacity={0.7}
               >
                 <View style={styles.strategyHeader}>
                   <View style={styles.strategyHeaderLeft}>
@@ -377,7 +429,10 @@ export function StrategyScreen() {
                   
                   <TouchableOpacity
                     style={[styles.toggle, strategy.isActive && styles.toggleActive]}
-                    onPress={() => toggleStrategy(strategy.id)}
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      toggleStrategy(strategy.id)
+                    }}
                     activeOpacity={0.7}
                   >
                     <View
@@ -494,37 +549,44 @@ export function StrategyScreen() {
 
                 {/* Footer with Status and Delete */}
                 <View style={[styles.strategyFooter, { borderTopColor: colors.border }]}>
-                  <View style={styles.statusContainer}>
+                  <View style={[
+                    styles.statusContainer,
+                    strategy.isActive 
+                      ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }
+                      : { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }
+                  ]}>
                     <View
                       style={[
                         styles.statusDot,
-                        { backgroundColor: strategy.isActive ? "#10b981" : "#6b7280" },
+                        { backgroundColor: strategy.isActive ? colors.primary : colors.danger },
                       ]}
                     />
-                    <Text style={[styles.statusText, { color: colors.textSecondary }]}>
+                    <Text style={[styles.statusText, { color: colors.text }]}>
                       {strategy.isActive ? t('strategy.active') : t('strategy.inactive')}
                     </Text>
                   </View>
 
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => deleteStrategy(strategy.id, strategy.name)}
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      deleteStrategy(strategy.id, strategy.name)
+                    }}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.deleteIcon}>🗑️</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
           )
         ) : (
           executions.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📭</Text>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhuma execução</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('strategy.noExecutions')}</Text>
               <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
-                As ordens executadas aparecerão aqui
+                {t('strategy.executionsWillAppear')}
               </Text>
             </View>
           ) : (
@@ -631,88 +693,86 @@ export function StrategyScreen() {
       <Modal
         visible={confirmToggleModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmToggleModalVisible(false)}
       >
-        <Pressable
+        <KeyboardAvoidingView 
           style={styles.modalOverlay}
-          onPress={() => setConfirmToggleModalVisible(false)}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable
-            style={[styles.confirmModal, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text style={[styles.confirmTitle, { color: colors.text }]}>
-              {toggleStrategyNewStatus ? t('strategy.activateConfirm') : t('strategy.deactivateConfirm')}
-            </Text>
-            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-              {t('strategy.statusWillChange')}
-            </Text>
-            <View style={styles.confirmButtons}>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
-                onPress={() => setConfirmToggleModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.confirmButtonText, { color: colors.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: toggleStrategyNewStatus ? "#10b981" : "#6b7280" }]}
-                onPress={confirmToggle}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteConfirmButtonText}>
-                  {t('common.confirm')}
-                </Text>
-              </TouchableOpacity>
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.confirmModal, { backgroundColor: colors.card }]}>
+              <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                {toggleStrategyNewStatus ? t('strategy.activateConfirm') : t('strategy.deactivateConfirm')}
+              </Text>
+              <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                {t('strategy.statusWillChange')}
+              </Text>
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity
+                  style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
+                  onPress={() => setConfirmToggleModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmButton, { backgroundColor: colors.primary }]}
+                  onPress={confirmToggle}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.deleteConfirmButtonText}>
+                    {t('common.confirm')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
         visible={confirmDeleteModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConfirmDeleteModalVisible(false)}
       >
-        <Pressable
+        <KeyboardAvoidingView 
           style={styles.modalOverlay}
-          onPress={() => setConfirmDeleteModalVisible(false)}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable
-            style={[styles.confirmModal, { backgroundColor: colors.card }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text style={[styles.confirmTitle, { color: colors.text }]}>
-              {t('strategy.confirmDelete')}
-            </Text>
-            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-              {t('strategy.deleteWarning')}
-            </Text>
-            <View style={styles.confirmButtons}>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
-                onPress={() => setConfirmDeleteModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.confirmButtonText, { color: colors.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.deleteConfirmButton]}
-                onPress={confirmDelete}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteConfirmButtonText}>{t('strategy.delete')}</Text>
-              </TouchableOpacity>
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={[styles.confirmModal, { backgroundColor: colors.card }]}>
+              <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                {t('strategy.confirmDelete')}
+              </Text>
+              <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                {t('strategy.deleteWarning')}
+              </Text>
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity
+                  style={[styles.confirmButton, styles.cancelButton, { borderColor: colors.border }]}
+                  onPress={() => setConfirmDeleteModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.confirmButtonText, { color: colors.text }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmButton, styles.deleteConfirmButton]}
+                  onPress={confirmDelete}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.deleteConfirmButtonText}>{t('strategy.delete')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Create Strategy Modal */}
@@ -721,6 +781,30 @@ export function StrategyScreen() {
         onClose={() => setCreateModalVisible(false)}
         onSuccess={handleStrategyCreated}
         userId={USER_ID}
+      />
+
+      {/* Strategy Details Modal */}
+      <StrategyDetailsModal
+        visible={detailsModalVisible}
+        strategyId={selectedStrategyId}
+        userId={USER_ID}
+        onClose={() => {
+          setDetailsModalVisible(false)
+          setSelectedStrategyId(null)
+        }}
+        onEdit={(strategyId: string) => {
+          // TODO: Implement edit functionality
+        }}
+        onDelete={(strategyId: string) => {
+          // Find strategy name for confirmation
+          const strategy = strategies.find(s => s.id === strategyId)
+          if (strategy) {
+            deleteStrategy(strategyId, strategy.name)
+          }
+        }}
+        onToggleActive={(strategyId: string, currentStatus: boolean) => {
+          toggleStrategy(strategyId)
+        }}
       />
     </SafeAreaView>
   )
@@ -737,6 +821,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerText: {
+    flexDirection: "column",
+  },
   title: {
     fontSize: 18,
     fontWeight: "300",
@@ -751,11 +843,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 2,
   },
   newButtonText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "400",
+    color: "#3b82f6",
+    fontSize: 15,
+    fontWeight: "600",
   },
   scrollView: {
     flex: 1,
@@ -829,7 +922,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleActive: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#6b7280",
   },
   toggleThumb: {
     width: 22,
@@ -882,13 +975,14 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "400",
   },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    alignSelf: "flex-start",
   },
   deleteButton: {
     padding: 8,
@@ -911,8 +1005,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "400",
   },
   // Loading
   loadingContainer: {
@@ -920,9 +1014,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 60,
+    gap: 12,
   },
   loadingText: {
-    marginTop: 12,
     fontSize: 14,
   },
   // Create Button
@@ -931,10 +1025,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 24,
+    borderWidth: 2,
   },
   createButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
+    color: "#3b82f6",
+    fontSize: 15,
     fontWeight: "600",
   },
   // Stats
@@ -1009,6 +1104,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalSafeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   confirmModal: {
     width: "85%",

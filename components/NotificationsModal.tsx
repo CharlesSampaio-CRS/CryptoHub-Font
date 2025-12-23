@@ -1,6 +1,8 @@
 import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable } from "react-native"
 import { useState, useMemo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
+import { typography, fontWeights } from "../lib/typography"
+import { useLanguage } from "../contexts/LanguageContext"
 import { Notification, mockNotifications } from "../types/notifications"
 
 interface NotificationsModalProps {
@@ -10,6 +12,7 @@ interface NotificationsModalProps {
 
 export function NotificationsModal({ visible, onClose }: NotificationsModalProps) {
   const { colors } = useTheme()
+  const { t, language } = useLanguage()
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
 
   const unreadCount = useMemo(() => 
@@ -42,12 +45,13 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (minutes < 1) return 'Agora'
-    if (minutes < 60) return `${minutes}m atrás`
-    if (hours < 24) return `${hours}h atrás`
-    if (days === 1) return 'Ontem'
-    if (days < 7) return `${days}d atrás`
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    if (minutes < 1) return t('notifications.now')
+    if (minutes < 60) return `${minutes}m ${t('notifications.minutesAgo')}`
+    if (hours < 24) return `${hours}h ${t('notifications.hoursAgo')}`
+    if (days === 1) return t('notifications.yesterday')
+    if (days < 7) return `${days}d ${t('notifications.daysAgo')}`
+    const locale = language === 'pt-BR' ? 'pt-BR' : 'en-US'
+    return date.toLocaleDateString(locale, { day: '2-digit', month: 'short' })
   }
 
   const getTypeColor = (type: string) => {
@@ -67,29 +71,30 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
       transparent={true}
       onRequestClose={onClose}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={[styles.modalContent, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
-            <View>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Notificações</Text>
-              {unreadCount > 0 && (
-                <Text style={[styles.unreadText, { color: colors.textSecondary }]}>
-                  {unreadCount} não {unreadCount === 1 ? 'lida' : 'lidas'}
-                </Text>
-              )}
-            </View>
-            <View style={styles.headerActions}>
-              {unreadCount > 0 && (
-                <TouchableOpacity onPress={handleMarkAllAsRead}>
-                  <Text style={styles.markAllButton}>Marcar todas</Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.safeArea}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            {/* Header */}
+            <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
+              <View style={styles.headerTitleContainer}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>{t('notifications.title')}</Text>
+                {unreadCount > 0 && (
+                  <Text style={[styles.unreadText, { color: colors.textSecondary }]}>
+                    {unreadCount} {t('notifications.unread')}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.headerActions}>
+                {unreadCount > 0 && (
+                  <TouchableOpacity onPress={handleMarkAllAsRead}>
+                    <Text style={styles.markAllButton}>{t('notifications.markAll')}</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
                 </TouchableOpacity>
-              )}
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
-              </TouchableOpacity>
+              </View>
             </View>
-          </View>
 
           {/* Notifications List */}
           <ScrollView style={styles.notificationsList} showsVerticalScrollIndicator={false}>
@@ -97,10 +102,10 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>🔔</Text>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                  Nenhuma notificação
+                  {t('notifications.empty')}
                 </Text>
                 <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-                  Você está em dia! Não há notificações no momento.
+                  {t('notifications.emptyMessage')}
                 </Text>
               </View>
             ) : (
@@ -154,8 +159,9 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
               ))
             )}
           </ScrollView>
-        </Pressable>
-      </Pressable>
+          </View>
+        </View>
+      </View>
     </Modal>
   )
 }
@@ -164,17 +170,20 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  safeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   modalContent: {
+    borderRadius: 20,
+    width: "90%",
+    maxHeight: "85%",
     height: "85%",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
   },
   modalHeader: {
     flexDirection: "row",
@@ -183,15 +192,17 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
   },
+  headerTitleContainer: {
+    flex: 1,
+  },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: "300",
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    fontSize: typography.h2,
+    fontWeight: fontWeights.medium,
   },
   unreadText: {
-    fontSize: 13,
-    fontWeight: "300",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
+    marginTop: 4,
   },
   headerActions: {
     flexDirection: "row",
@@ -200,19 +211,15 @@ const styles = StyleSheet.create({
   },
   markAllButton: {
     color: "#3b82f6",
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 4,
   },
   closeButtonText: {
-    fontSize: 20,
-    fontWeight: "300",
-    opacity: 0.6,
+    fontSize: typography.h1,
+    fontWeight: fontWeights.light,
   },
   notificationsList: {
     flex: 1,
@@ -243,12 +250,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   notificationTitle: {
-    fontSize: 15,
-    fontWeight: "300",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.medium,
     flex: 1,
   },
   notificationTitleUnread: {
-    fontWeight: "500",
+    fontWeight: fontWeights.medium,
   },
   unreadDot: {
     width: 8,
@@ -257,8 +264,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#3b82f6",
   },
   notificationMessage: {
-    fontSize: 13,
-    fontWeight: "300",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.light,
     lineHeight: 18,
     marginBottom: 8,
   },
@@ -268,15 +275,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   notificationTime: {
-    fontSize: 12,
-    fontWeight: "300",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
     opacity: 0.6,
   },
   deleteButton: {
     padding: 4,
   },
   deleteButtonText: {
-    fontSize: 14,
+    fontSize: typography.body,
     opacity: 0.5,
   },
   emptyState: {
@@ -291,13 +298,13 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     marginBottom: 8,
   },
   emptyMessage: {
-    fontSize: 14,
-    fontWeight: "300",
+    fontSize: typography.body,
+    fontWeight: fontWeights.light,
     textAlign: "center",
     lineHeight: 20,
   },
