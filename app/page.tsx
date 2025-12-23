@@ -3,7 +3,7 @@
 // import { ExchangesList } from "@/components/exchanges-list"
 // import { QuickChart } from "@/components/quick-chart"
 import { BottomNav } from "@/components/bottom-nav"
-import { Header } from "@/components/header"
+import { Header } from "@/components/Header"
 
 export default function Home() {
   return (
