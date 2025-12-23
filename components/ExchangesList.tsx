@@ -297,7 +297,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           <Text style={styles.infoIconYellow}>i</Text>
         </View>
         <Text style={[styles.infoText, { color: colors.text }]}>
-          As variações são consultadas nas corretoras
+          {t('portfolio.variationsNote')}
         </Text>
       </View>
 
@@ -331,10 +331,45 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           // Mostra todos os tokens da corretora
           let tokens = allTokens
           
-          // Ordenar tokens por valor (maior para menor)
+          // Lista de stablecoins e moedas fiat
+          const STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'USDD', 'BRL', 'EUR', 'USD']
+          
+          // Ordenar tokens: stablecoins por último, depois por variação, depois por valor
           tokens = tokens.sort((a, b) => {
-            const valueA = parseFloat(a[1].value_usd)
-            const valueB = parseFloat(b[1].value_usd)
+            const [symbolA, tokenA] = a
+            const [symbolB, tokenB] = b
+            
+            // Verifica se é stablecoin
+            const isStablecoinA = STABLECOINS.includes(symbolA.toUpperCase())
+            const isStablecoinB = STABLECOINS.includes(symbolB.toUpperCase())
+            
+            // Stablecoins vão para o final
+            if (isStablecoinA && !isStablecoinB) return 1
+            if (!isStablecoinA && isStablecoinB) return -1
+            
+            // Se ambos são ou não são stablecoins, verificar variações
+            const variationsA = exchangeVariations[exchange.exchange_id]?.[symbolA]
+            const variationsB = exchangeVariations[exchange.exchange_id]?.[symbolB]
+            
+            // Verifica se tem alguma variação disponível
+            const hasVariationA = variationsA && (
+              variationsA['1h']?.price_change_percent !== undefined ||
+              variationsA['4h']?.price_change_percent !== undefined ||
+              variationsA['24h']?.price_change_percent !== undefined
+            )
+            const hasVariationB = variationsB && (
+              variationsB['1h']?.price_change_percent !== undefined ||
+              variationsB['4h']?.price_change_percent !== undefined ||
+              variationsB['24h']?.price_change_percent !== undefined
+            )
+            
+            // Tokens com variação vêm primeiro (mas só entre não-stablecoins)
+            if (hasVariationA && !hasVariationB) return -1
+            if (!hasVariationA && hasVariationB) return 1
+            
+            // Se ambos têm ou não têm variação, ordenar por valor
+            const valueA = parseFloat(tokenA.value_usd)
+            const valueB = parseFloat(tokenB.value_usd)
             return valueB - valueA
           })
           
@@ -421,7 +456,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                     }
                   ]}
                 >
-                  <Text style={[styles.tokensTitle, { color: colors.textSecondary }]}>{t('exchanges.tokensAvailable')}:</Text>
                   {isLoadingVariations && !lastUpdateTime[exchange.exchange_id] ? (
                     <View style={styles.loadingVariationsContainer}>
                       <AnimatedLogoIcon size={16} />
@@ -431,7 +465,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                     </View>
                   ) : lastUpdateTime[exchange.exchange_id] ? (
                     <Text style={[styles.lastUpdate, { color: colors.textSecondary }]}>
-                      Atualizado em: {lastUpdateTime[exchange.exchange_id].toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {t('portfolio.updatedAt')}: {lastUpdateTime[exchange.exchange_id].toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   ) : null}
                   {tokens.length === 0 ? (
@@ -791,13 +825,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
-  },
-  tokensTitle: {
-    fontSize: 12,
-    fontWeight: "400",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    opacity: 0.6,
   },
   infoButton: {
     padding: 4,

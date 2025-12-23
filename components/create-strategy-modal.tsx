@@ -181,7 +181,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
         // Remove duplicatas usando Set e garante tipo string[]
         const uniqueTokens = [...new Set<string>(tokenSymbols)].sort()
         
-        
         if (uniqueTokens.length > 0) {
           setTokens(uniqueTokens)
         } else {
@@ -221,7 +220,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
         template: selectedTemplate as "simple" | "conservative" | "aggressive",
         is_active: true,
       }
-      
       
       const createdStrategy = await strategiesService.createStrategy(strategyData)
 
@@ -516,7 +514,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                           }
                         }}
                         onFocus={() => {
-                          
                           // Chama o endpoint para buscar tokens disponíveis
                           if (selectedExchange && tokens.length === 0) {
                             loadTokens()
@@ -632,8 +629,6 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                 ]}
                 onPress={() => {
                   const nextStep = (step + 1) as 1 | 2 | 3
-                  if (nextStep === 3) {
-                  }
                   setStep(nextStep)
                 }}
                 disabled={

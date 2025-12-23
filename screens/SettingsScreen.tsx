@@ -172,7 +172,7 @@ export function SettingsScreen() {
 
         {/* Seção: Segurança */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>SEGURANÇA E PRIVACIDADE</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.securityPrivacySection')}</Text>
           
           <TouchableOpacity 
             style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
@@ -238,7 +238,7 @@ export function SettingsScreen() {
 
         {/* Seção: Sobre */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>INFORMAÇÕES</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.infoSectionTitle')}</Text>
           
           <TouchableOpacity 
             style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
@@ -302,7 +302,7 @@ export function SettingsScreen() {
 
         {/* Seção: Conta */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>CONTA</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.accountSection')}</Text>
           
           <TouchableOpacity 
             style={[styles.deleteAccountButton, { backgroundColor: colors.surface, borderColor: colors.danger }]}
@@ -317,7 +317,7 @@ export function SettingsScreen() {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={[styles.deleteAccountButtonText, { color: colors.danger }]}>Excluir Conta</Text>
+            <Text style={[styles.deleteAccountButtonText, { color: colors.danger }]}>{t('settings.deleteAccount')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -648,7 +648,7 @@ export function SettingsScreen() {
             <View style={[styles.deleteAccountModalContainer, { backgroundColor: colors.card }]}>
               {/* Header */}
               <View style={[styles.deleteAccountModalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.deleteAccountModalTitle, { color: colors.danger }]}>⚠️ Excluir Conta</Text>
+                <Text style={[styles.deleteAccountModalTitle, { color: colors.danger }]}>⚠️ {t('settings.deleteAccount')}</Text>
                 <TouchableOpacity 
                   onPress={() => setDeleteAccountModalVisible(false)} 
                   style={styles.modalCloseButton}

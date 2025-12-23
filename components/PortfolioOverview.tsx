@@ -50,7 +50,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
       minute: '2-digit' 
     })
     
-    return `Atualizado em: ${timeStr}`
+    return `${t('portfolio.updatedAt')}: ${timeStr}`
   }
   
   // Calcula PNL baseado nos dados de evolução
@@ -97,7 +97,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             <Text style={styles.infoIconYellow}>i</Text>
           </View>
           <Text style={[styles.infoText, { color: colors.text }]}>
-            Patrimônio baseado no saldo das corretoras
+            {t('portfolio.basedOnBalance')}
           </Text>
         </View>
 
@@ -143,7 +143,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
           </Text>
           <Text style={[styles.timeframe, { color: colors.textSecondary }]}>
-            Últimos {currentPeriod} dias
+            {t('portfolio.lastDays').replace('{days}', currentPeriod.toString())}
           </Text>
         </View>
       </LinearGradient>

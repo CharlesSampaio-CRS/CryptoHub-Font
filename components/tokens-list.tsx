@@ -12,9 +12,37 @@ export function TokensList({ exchange }: TokensListProps) {
   const [selectedToken, setSelectedToken] = useState<string | null>(null)
   const [modalVisible, setModalVisible] = useState(false)
   
-  const tokens = Object.entries(exchange.tokens).filter(
-    ([_, token]) => parseFloat(token.value_usd) > 0
-  )
+  // Lista de stablecoins e moedas fiat
+  const STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'USDD', 'BRL', 'EUR', 'USD']
+  
+  // Filtra e ordena tokens: stablecoins por último, depois por variação, depois por valor
+  const tokens = Object.entries(exchange.tokens)
+    .filter(([_, token]) => parseFloat(token.value_usd) > 0)
+    .sort((a, b) => {
+      const [symbolA, tokenA] = a
+      const [symbolB, tokenB] = b
+      
+      // Verifica se é stablecoin
+      const isStablecoinA = STABLECOINS.includes(symbolA.toUpperCase())
+      const isStablecoinB = STABLECOINS.includes(symbolB.toUpperCase())
+      
+      // Stablecoins vão para o final
+      if (isStablecoinA && !isStablecoinB) return 1
+      if (!isStablecoinA && isStablecoinB) return -1
+      
+      // Se ambos são ou não são stablecoins, verificar variações
+      const hasVariationA = tokenA.change_1h !== null || tokenA.change_4h !== null || tokenA.change_24h !== null
+      const hasVariationB = tokenB.change_1h !== null || tokenB.change_4h !== null || tokenB.change_24h !== null
+      
+      // Tokens com variação vêm primeiro
+      if (hasVariationA && !hasVariationB) return -1
+      if (!hasVariationA && hasVariationB) return 1
+      
+      // Se ambos têm ou não têm variação, ordenar por valor
+      const valueA = parseFloat(tokenA.value_usd)
+      const valueB = parseFloat(tokenB.value_usd)
+      return valueB - valueA
+    })
 
   const handleTokenPress = (symbol: string) => {
     setSelectedToken(symbol)

@@ -265,6 +265,18 @@ const translations = {
     'login.signUp': 'Cadastre-se',
     'login.googleError': 'Falha ao fazer login com Google',
     'login.appleError': 'Falha ao fazer login com Apple',
+    
+    // Portfolio & Home Additional
+    'portfolio.basedOnBalance': 'Patrimônio baseado no saldo das corretoras',
+    'portfolio.updatedAt': 'Atualizado em',
+    'portfolio.variationsNote': 'As variações são consultadas nas corretoras',
+    'portfolio.lastDays': 'Últimos {days} dias',
+    
+    // Settings Additional
+    'settings.securityPrivacySection': 'Segurança e Privacidade',
+    'settings.infoSectionTitle': 'Informações',
+    'settings.accountSection': 'Conta',
+    'settings.deleteAccount': 'Excluir Conta',
   },
   'en-US': {
     // Navigation
@@ -519,6 +531,18 @@ const translations = {
     'login.signUp': 'Sign Up',
     'login.googleError': 'Failed to sign in with Google',
     'login.appleError': 'Failed to sign in with Apple',
+    
+    // Portfolio & Home Additional
+    'portfolio.basedOnBalance': 'Portfolio based on exchange balances',
+    'portfolio.updatedAt': 'Updated at',
+    'portfolio.variationsNote': 'Variations are retrieved from exchanges',
+    'portfolio.lastDays': 'Last {days} days',
+    
+    // Settings Additional
+    'settings.securityPrivacySection': 'Security Privacy',
+    'settings.infoSectionTitle': 'Information',
+    'settings.accountSection': 'Account',
+    'settings.deleteAccount': 'Delete Account',
   }
 }
 
