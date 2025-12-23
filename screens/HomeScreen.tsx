@@ -4,6 +4,8 @@ import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { ExchangesList } from "../components/ExchangesList"
 import { NotificationsModal } from "../components/NotificationsModal"
+import { OpenOrdersModal } from "../components/open-orders-modal"
+import { OrderDetailsModal } from "../components/order-details-modal"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
 import { usePortfolio } from "../contexts/PortfolioContext"
@@ -21,6 +23,11 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
   const [availableExchangesCount, setAvailableExchangesCount] = useState(0)
+  const [openOrdersModalVisible, setOpenOrdersModalVisible] = useState(false)
+  const [orderDetailsModalVisible, setOrderDetailsModalVisible] = useState(false)
+  const [selectedExchangeId, setSelectedExchangeId] = useState<string>("")
+  const [selectedExchangeName, setSelectedExchangeName] = useState<string>("")
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const lastScrollY = useRef(0)
 
   const unreadCount = useMemo(() => 
@@ -55,6 +62,17 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
 
   const onModalClose = useCallback(() => {
     setNotificationsModalVisible(false)
+  }, [])
+
+  const onOpenOrdersPress = useCallback((exchangeId: string, exchangeName: string) => {
+    setSelectedExchangeId(exchangeId)
+    setSelectedExchangeName(exchangeName)
+    setOpenOrdersModalVisible(true)
+  }, [])
+
+  const onSelectOrder = useCallback((order: any) => {
+    setSelectedOrder(order)
+    setOrderDetailsModalVisible(true)
   }, [])
 
   // Refresh completo: balances + evolution
@@ -115,12 +133,32 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         <ExchangesList 
           onAddExchange={onAddExchange}
           availableExchangesCount={availableExchangesCount}
+          onOpenOrdersPress={onOpenOrdersPress}
         />
       </Animated.ScrollView>
 
       <NotificationsModal 
         visible={notificationsModalVisible}
         onClose={onModalClose}
+      />
+
+      <OpenOrdersModal
+        visible={openOrdersModalVisible}
+        onClose={() => setOpenOrdersModalVisible(false)}
+        exchangeId={selectedExchangeId}
+        exchangeName={selectedExchangeName}
+        userId={config.userId}
+        onSelectOrder={onSelectOrder}
+      />
+
+      <OrderDetailsModal
+        visible={orderDetailsModalVisible}
+        onClose={() => {
+          setOrderDetailsModalVisible(false)
+          // Reabre o modal de lista quando fechar os detalhes
+          setOpenOrdersModalVisible(true)
+        }}
+        order={selectedOrder}
       />
     </SafeAreaView>
   )

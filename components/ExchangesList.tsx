@@ -16,9 +16,10 @@ import { typography, fontWeights } from "@/lib/typography"
 interface ExchangesListProps {
   onAddExchange?: () => void
   availableExchangesCount?: number
+  onOpenOrdersPress?: (exchangeId: string, exchangeName: string) => void
 }
 
-export const ExchangesList = memo(function ExchangesList({ onAddExchange, availableExchangesCount = 0 }: ExchangesListProps) {
+export const ExchangesList = memo(function ExchangesList({ onAddExchange, availableExchangesCount = 0, onOpenOrdersPress }: ExchangesListProps) {
   const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const { data, loading, error } = useBalance()
@@ -30,6 +31,11 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   const [loadingVariations, setLoadingVariations] = useState<string | null>(null)
   const [exchangeVariations, setExchangeVariations] = useState<Record<string, Record<string, any>>>({})
   const [lastUpdateTime, setLastUpdateTime] = useState<Record<string, Date>>({})
+  const [openOrdersCount, setOpenOrdersCount] = useState<Record<string, number>>({})
+  const [loadingOrders, setLoadingOrders] = useState(false)
+  const [hasLoadedOrders, setHasLoadedOrders] = useState(false)
+  const [lastOrdersUpdate, setLastOrdersUpdate] = useState<Date | null>(null)
+  const ordersIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const fetchedExchangesRef = useRef<Set<string>>(new Set())
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
 
@@ -157,6 +163,112 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
       abortControllersRef.current.clear()
     }
   }, [expandedExchanges, fetchExchangeVariations])
+
+  // Busca contagem de ordens abertas - OTIMIZADO para máxima velocidade
+  useEffect(() => {
+    // Só executa quando: dados prontos + não loading + não buscou ainda
+    if (!loading && data?.exchanges && data.exchanges.length > 0 && !hasLoadedOrders && !loadingOrders) {
+      console.log('📋 [OpenOrders] ⚡ Iniciando busca OTIMIZADA de ordens (delay 200ms)')
+      
+      // Delay mínimo para garantir render da lista
+      const timer = setTimeout(() => {
+        fetchOpenOrdersCount()
+      }, 200) // Reduzido de 500ms para 200ms
+
+      return () => clearTimeout(timer)
+    }
+  }, [loading, data?.exchanges, hasLoadedOrders, loadingOrders])
+
+  // ⏰ Atualização automática a cada 5 minutos
+  useEffect(() => {
+    if (hasLoadedOrders && data?.exchanges && data.exchanges.length > 0) {
+      console.log('📋 [OpenOrders] ⏰ Configurando atualização automática (5 minutos)')
+      
+      // Limpa interval anterior se existir
+      if (ordersIntervalRef.current) {
+        clearInterval(ordersIntervalRef.current)
+      }
+
+      // Configura novo interval de 5 minutos (300000ms)
+      ordersIntervalRef.current = setInterval(() => {
+        console.log('📋 [OpenOrders] 🔄 Atualização automática (5 minutos)')
+        fetchOpenOrdersCount()
+      }, 5 * 60 * 1000) // 5 minutos
+
+      return () => {
+        if (ordersIntervalRef.current) {
+          clearInterval(ordersIntervalRef.current)
+          ordersIntervalRef.current = null
+        }
+      }
+    }
+  }, [hasLoadedOrders, data?.exchanges])
+
+  const fetchOpenOrdersCount = async () => {
+    if (!data?.exchanges || data.exchanges.length === 0) {
+      console.log('📋 [OpenOrders] ❌ Nenhuma exchange disponível')
+      return
+    }
+
+    setLoadingOrders(true)
+    console.log('📋 [OpenOrders] � Buscando ordens para', data.exchanges.length, 'exchanges EM PARALELO')
+    console.log('📋 [OpenOrders] 📋 Exchanges:', data.exchanges.map((e: any) => e.name).join(', '))
+    
+    // ⚡ BUSCA EM PARALELO - Todas ao mesmo tempo!
+    const promises = data.exchanges.map(async (exchange: any) => {
+      try {
+        console.log('📋 [OpenOrders] 🔍', exchange.name, '- Iniciando...')
+        
+        const response = await apiService.getOpenOrders(config.userId, exchange.exchange_id)
+        const count = response.count || response.total_orders || 0
+        
+        console.log('📋 [OpenOrders] ✅', exchange.name, '→', count, 'ordens')
+        
+        // ⚡ Atualiza estado IMEDIATAMENTE para esta exchange
+        setOpenOrdersCount(prev => ({
+          ...prev,
+          [exchange.exchange_id]: count
+        }))
+        
+        return { exchangeId: exchange.exchange_id, count, success: true }
+      } catch (error: any) {
+        console.error('📋 [OpenOrders] ❌', exchange.name, '- Erro:', error?.message || error)
+        
+        // Define 0 mesmo com erro
+        setOpenOrdersCount(prev => ({
+          ...prev,
+          [exchange.exchange_id]: 0
+        }))
+        
+        return { exchangeId: exchange.exchange_id, count: 0, success: false, error }
+      }
+    })
+
+    // Aguarda todas as requisições terminarem
+    const results = await Promise.all(promises)
+    
+    const successCount = results.filter(r => r.success).length
+    const failCount = results.filter(r => !r.success).length
+    const totalOrders = results.reduce((sum, r) => sum + r.count, 0)
+    
+    console.log('📋 [OpenOrders] 🎯 CONCLUÍDO!')
+    console.log('📋 [OpenOrders] ✅ Sucesso:', successCount, '| ❌ Falha:', failCount)
+    console.log('📋 [OpenOrders] 📊 Total de ordens:', totalOrders)
+    console.log('📋 [OpenOrders] 📋 Exchanges com ordens:', 
+      results
+        .filter(r => r.count > 0)
+        .map(r => {
+          const ex = data.exchanges.find((e: any) => e.exchange_id === r.exchangeId)
+          return `${ex?.name}: ${r.count}`
+        })
+        .join(', ') || 'Nenhuma'
+    )
+    
+    // Atualiza timestamp da última atualização
+    setLastOrdersUpdate(new Date())
+    setLoadingOrders(false)
+    setHasLoadedOrders(true)
+  }
 
   // Toggle de expansão/colapso individual de exchanges
   const toggleExpandExchange = useCallback(async (exchangeId: string) => {
@@ -415,6 +527,26 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                       <View style={{ flex: 1 }}>
                         <View style={styles.exchangeNameRow}>
                           <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
+                          
+                          {/* Badge de ordens abertas */}
+                          {(() => {
+                            const count = openOrdersCount[exchange.exchange_id]
+                            const hasCallback = !!onOpenOrdersPress
+                            return count > 0 && hasCallback ? (
+                              <TouchableOpacity
+                                onPress={(e) => {
+                                  e.stopPropagation()
+                                  onOpenOrdersPress(exchange.exchange_id, exchange.name)
+                                }}
+                                style={[styles.ordersBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}
+                              >
+                                <Text style={[styles.ordersBadgeText, { color: colors.primary }]}>
+                                  📊 {t('orders.badge')}: {count}
+                                </Text>
+                              </TouchableOpacity>
+                            ) : null
+                          })()}
+                          
                           {(exchange as any).status === 'inactive' && (exchange as any).inactive_reason && (
                             <TouchableOpacity 
                               onPress={() => {
@@ -744,6 +876,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginBottom: 2,
+  },
+  ordersBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+    borderWidth: 1,
+  },
+  ordersBadgeText: {
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.3,
   },
   infoIconButton: {
     padding: 2,

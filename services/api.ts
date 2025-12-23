@@ -448,6 +448,33 @@ export const apiService = {
   },
 
   /**
+   * 📋 Busca ordens abertas de uma exchange específica
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @returns Promise com a lista de ordens abertas
+   */
+  async getOpenOrders(userId: string, exchangeId: string): Promise<any> {
+    try {
+      const url = `${API_BASE_URL}/orders/open?user_id=${userId}&exchange_id=${exchangeId}`;
+      
+      const response = await fetchWithTimeout(url, {
+        method: 'GET',
+        cache: 'no-store' // Sempre busca dados atualizados de ordens
+      }, 15000); // 15s timeout
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching open orders for exchange ${exchangeId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Retorna informações sobre o cache atual
    */
   getCacheInfo() {
