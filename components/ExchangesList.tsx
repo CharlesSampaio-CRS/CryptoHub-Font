@@ -11,6 +11,7 @@ import { TokenDetailsModal } from "./token-details-modal"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 import { config } from "@/lib/config"
 import { getExchangeLogo } from "@/lib/exchange-logos"
+import { typography, fontWeights } from "@/lib/typography"
 
 interface ExchangesListProps {
   onAddExchange?: () => void
@@ -624,8 +625,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     letterSpacing: 0.2,
   },
   addButton: {
@@ -635,8 +636,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   addButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.semibold,
   },
   filtersContainer: {
     paddingHorizontal: 4,
@@ -657,12 +658,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   toggleLabel: {
-    fontSize: 12,
-    fontWeight: "400",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
   },
   hiddenCount: {
-    fontSize: 10,
-    fontWeight: "400",
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
     fontStyle: "italic",
   },
   toggle: {
@@ -731,11 +732,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   logoFallback: {
-    fontSize: 14,
+    fontSize: typography.body,
   },
   exchangeName: {
-    fontSize: 14,
-    fontWeight: "400",
+    fontSize: typography.body,
+    fontWeight: fontWeights.regular,
     marginBottom: 2,
   },
   exchangeNameRow: {
@@ -749,23 +750,23 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   infoIconText: {
-    fontSize: 16,
+    fontSize: typography.h4,
   },
   assetsCount: {
-    fontSize: 11,
-    fontWeight: "400",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
   },
   rightSection: {
     alignItems: "flex-end",
   },
   balance: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     marginBottom: 2,
   },
   change: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   changePositive: {
   },
@@ -777,12 +778,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   errorText: {
-    fontSize: 14,
+    fontSize: typography.body,
     textAlign: "center",
     padding: 20,
   },
   expandIcon: {
-    fontSize: 10,
+    fontSize: typography.micro,
   },
   tokensContainer: {
     borderRadius: 12,
@@ -810,13 +811,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   infoIconYellow: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.bold,
     color: "#FFFFFF",
   },
   infoText: {
-    fontSize: 10,
-    fontWeight: "300",
+    fontSize: typography.micro,
+    fontWeight: fontWeights.light,
     flex: 1,
     lineHeight: 14,
   },
@@ -830,12 +831,12 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   infoIcon: {
-    fontSize: 14,
+    fontSize: typography.body,
     opacity: 0.6,
   },
   lastUpdate: {
-    fontSize: 10,
-    fontWeight: "400",
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
     marginBottom: 12,
     opacity: 0.5,
   },
@@ -846,7 +847,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   noTokensText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     textAlign: "center",
     paddingVertical: 10,
   },
@@ -890,20 +891,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenAmount: {
-    fontSize: 10,
-    fontWeight: "300",
+    fontSize: typography.micro,
+    fontWeight: fontWeights.light,
   },
   tokenPriceSeparator: {
-    fontSize: 11,
-    fontWeight: "400",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
   },
   tokenPrice: {
-    fontSize: 11,
-    fontWeight: "400",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
   },
   tokenValue: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   tokenValueZero: {
     // Applied via inline style
@@ -933,7 +934,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingTokensText: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
 })

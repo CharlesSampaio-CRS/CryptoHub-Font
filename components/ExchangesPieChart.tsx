@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useBalance } from '../contexts/BalanceContext'
 import { usePrivacy } from '../contexts/PrivacyContext'
+import { typography, fontWeights } from '../lib/typography'
 
 const { width } = Dimensions.get('window')
 const CHART_SIZE = Math.min(width - 80, 180)
@@ -210,8 +211,8 @@ export const ExchangesPieChart = memo(function ExchangesPieChart() {
               </>
             ) : (
               <>
-                <Text style={[styles.centerLabel, { color: colors.textSecondary }]}>
-                  {chartData.length}
+                <Text style={[styles.centerPercentage, { color: colors.textSecondary }]}>
+                  100%
                 </Text>
                 <Text style={[styles.centerValue, { color: colors.text }]}>
                   {chartData.length === 1 ? 'Exchange' : 'Exchanges'}
@@ -283,8 +284,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '400',
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     letterSpacing: 0.2,
   },
   chartContainer: {
@@ -299,18 +300,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centerLabel: {
-    fontSize: 28,
-    fontWeight: '300',
+    fontSize: typography.display,
+    fontWeight: fontWeights.light,
     letterSpacing: -1,
   },
   centerValue: {
-    fontSize: 12,
-    fontWeight: '400',
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
     marginTop: 4,
   },
   centerPercentage: {
-    fontSize: 10,
-    fontWeight: '400',
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
     marginTop: 2,
   },
   legend: {
@@ -346,13 +347,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   legendName: {
-    fontSize: 13,
-    fontWeight: '400',
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
     flex: 1,
   },
   legendPercentage: {
-    fontSize: 13,
-    fontWeight: '400',
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   selectedIndicator: {
     width: 8,
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: typography.body,
     textAlign: 'center',
   },
 })

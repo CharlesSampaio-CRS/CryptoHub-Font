@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
+import { typography, fontWeights } from "@/lib/typography"
 import { usePrivacy } from "@/contexts/PrivacyContext"
 import { SkeletonChart } from "./SkeletonLoaders"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
@@ -382,12 +383,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   periodButtonText: {
-    fontSize: 12,
-    fontWeight: "400",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
     letterSpacing: 0.2,
   },
   statsRow: {
@@ -403,15 +404,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   changeText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.semibold,
   },
   changeValue: {
-    fontSize: 11,
-    fontWeight: "500",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.medium,
   },
   hint: {
-    fontSize: 11,
+    fontSize: typography.tiny,
     fontStyle: "italic",
   },
   chart: {
@@ -439,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: typography.body,
     marginTop: 12,
   },
   errorContainer: {
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: typography.body,
     textAlign: "center",
   },
 })

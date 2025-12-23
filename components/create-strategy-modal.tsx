@@ -18,6 +18,7 @@ import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { strategiesService } from "@/services/strategies"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
+import { typography, fontWeights } from "@/lib/typography"
 import { apiService } from "@/services/api"
 import { LinkedExchange } from "@/types/api"
 import { config } from "@/lib/config"
@@ -585,7 +586,7 @@ export function CreateStrategyModal({ visible, onClose, onSuccess, userId }: Cre
                             setTokenSearchQuery("")
                           }}
                         >
-                          <Text style={{ color: colors.textSecondary, fontSize: 18 }}>×</Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: typography.h3 }}>×</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -690,15 +691,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: typography.h2,
+    fontWeight: fontWeights.medium,
   },
   closeButton: {
     padding: 4,
   },
   closeIcon: {
-    fontSize: 24,
-    fontWeight: "300",
+    fontSize: typography.h1,
+    fontWeight: fontWeights.light,
   },
   stepsContainer: {
     flexDirection: "row",
@@ -720,12 +721,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   stepNumber: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: typography.body,
+    fontWeight: fontWeights.medium,
   },
   stepLabel: {
-    fontSize: 11,
-    fontWeight: "300",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.light,
   },
   stepLine: {
     width: 40,
@@ -746,13 +747,13 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   stepTitle: {
-    fontSize: 18,
-    fontWeight: "500",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.medium,
     marginBottom: 8,
   },
   stepDescription: {
-    fontSize: 14,
-    fontWeight: "300",
+    fontSize: typography.body,
+    fontWeight: fontWeights.light,
     marginBottom: 24,
   },
   templatesList: {
@@ -771,13 +772,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   templateName: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.medium,
     marginBottom: 4,
   },
   templateDescription: {
-    fontSize: 12,
-    fontWeight: "300",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
     textAlign: "center",
   },
   loadingContainer: {
@@ -795,13 +796,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
     marginBottom: 6,
   },
   emptyDescription: {
-    fontSize: 13,
-    fontWeight: "300",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.light,
     textAlign: "center",
   },
   exchangesList: {
@@ -813,13 +814,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   exchangeName: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
     marginBottom: 6,
   },
   exchangeStatus: {
-    fontSize: 12,
-    fontWeight: "300",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
   },
   summaryCard: {
     padding: 16,
@@ -833,23 +834,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   summaryLabel: {
-    fontSize: 14,
-    fontWeight: "300",
+    fontSize: typography.body,
+    fontWeight: fontWeights.light,
   },
   summaryValue: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: typography.body,
+    fontWeight: fontWeights.medium,
   },
   input: {
     borderWidth: 0.5,
     borderRadius: 12,
     padding: 14,
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
   },
   loadingText: {
-    fontSize: 14,
-    fontWeight: "300",
+    fontSize: typography.body,
+    fontWeight: fontWeights.light,
     marginTop: 12,
     textAlign: "center",
   },
@@ -869,8 +870,8 @@ const styles = StyleSheet.create({
   searchInputText: {
     flex: 1,
     padding: 12,
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
   },
   searchIconButton: {
     width: 44,
@@ -880,7 +881,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   searchIcon: {
-    fontSize: 18,
+    fontSize: typography.h3,
   },
   searchInput: {
     flex: 1,

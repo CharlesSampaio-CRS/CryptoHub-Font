@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native"
 import { useEffect, useRef, memo } from "react"
 import Svg, { Path, Circle } from "react-native-svg"
+import { typography, fontWeights } from "../lib/typography"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import { usePrivacy } from "../contexts/PrivacyContext"
@@ -221,17 +222,17 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
-    fontWeight: "300",
+    fontWeight: fontWeights.light,
   },
   flagEmoji: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   actions: {
     flexDirection: "row",
@@ -270,8 +271,8 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "500",
+    fontSize: typography.micro,
+    fontWeight: fontWeights.medium,
     textAlign: "center",
     includeFontPadding: false,
   },

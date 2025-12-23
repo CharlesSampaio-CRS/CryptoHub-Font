@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { LinearGradient } from 'expo-linear-gradient'
+import { typography, fontWeights } from '@/lib/typography'
 import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
 
 interface LoginScreenProps {
@@ -180,16 +181,16 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       textAlign: 'center',
     },
     title: {
-      fontSize: 18,
-      fontWeight: '300',
+      fontSize: typography.h3,
+      fontWeight: fontWeights.light,
       letterSpacing: -0.2,
       color: colors.text,
       marginBottom: 8,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 12,
-      fontWeight: '300',
+      fontSize: typography.caption,
+      fontWeight: fontWeights.light,
       color: colors.textSecondary,
       textAlign: 'center',
     },
@@ -201,8 +202,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       marginBottom: 16,
     },
     label: {
-      fontSize: 16,
-      fontWeight: '400',
+      fontSize: typography.h4,
+      fontWeight: fontWeights.regular,
       color: colors.text,
       marginBottom: 8,
     },
@@ -210,7 +211,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       backgroundColor: colors.surface,
       borderRadius: 12,
       padding: 16,
-      fontSize: 16,
+      fontSize: typography.h4,
       color: colors.text,
       borderWidth: 1,
       borderColor: colors.border,
@@ -226,7 +227,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     passwordInput: {
       flex: 1,
       padding: 16,
-      fontSize: 16,
+      fontSize: typography.h4,
       color: colors.text,
     },
     showPasswordButton: {
@@ -234,7 +235,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     showPasswordText: {
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: typography.body,
     },
     forgotPassword: {
       alignSelf: 'flex-end',
@@ -242,8 +243,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     forgotPasswordText: {
       color: '#3b82f6',
-      fontSize: 14,
-      fontWeight: '400',
+      fontSize: typography.body,
+      fontWeight: fontWeights.regular,
     },
     loginButton: {
       borderRadius: 12,
@@ -258,8 +259,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     loginButtonText: {
       color: '#3b82f6',
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: typography.bodyLarge,
+      fontWeight: fontWeights.semibold,
     },
     divider: {
       flexDirection: 'row',
@@ -274,7 +275,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     dividerText: {
       marginHorizontal: 16,
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: typography.body,
     },
     biometricButton: {
       backgroundColor: colors.surface,
@@ -293,8 +294,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     biometricButtonText: {
       color: colors.text,
-      fontSize: 16,
-      fontWeight: '400',
+      fontSize: typography.h4,
+      fontWeight: fontWeights.regular,
     },
     socialButtons: {
       gap: 12,
@@ -313,8 +314,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     socialButtonText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: '400',
+      fontSize: typography.bodyLarge,
+      fontWeight: fontWeights.regular,
     },
     signupContainer: {
       flexDirection: 'row',
@@ -324,12 +325,12 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     },
     signupText: {
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: typography.body,
     },
     signupLink: {
       color: '#3b82f6',
-      fontSize: 14,
-      fontWeight: '400',
+      fontSize: typography.body,
+      fontWeight: fontWeights.regular,
       marginLeft: 4,
     },
   })

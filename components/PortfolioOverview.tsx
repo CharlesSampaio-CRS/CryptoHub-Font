@@ -9,6 +9,7 @@ import { usePortfolio } from "@/contexts/PortfolioContext"
 import { apiService } from "@/services/api"
 import { SkeletonPortfolioOverview } from "./SkeletonLoaders"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
+import { typography, fontWeights } from "@/lib/typography"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors, isDark } = useTheme()
@@ -175,13 +176,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   infoIconYellow: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.bold,
     color: "#FFFFFF",
   },
   infoText: {
-    fontSize: 10,
-    fontWeight: "300",
+    fontSize: typography.micro,
+    fontWeight: fontWeights.light,
     flex: 1,
     lineHeight: 14,
   },
@@ -205,8 +206,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "400",
+    fontSize: typography.body,
+    fontWeight: fontWeights.regular,
     letterSpacing: 0.3,
     textTransform: "uppercase",
     opacity: 0.7,
@@ -223,8 +224,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   refreshIcon: {
-    fontSize: 20,
-    fontWeight: "300",
+    fontSize: typography.displaySmall,
+    fontWeight: fontWeights.light,
     opacity: 0.7,
   },
   valueContainer: {
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   value: {
-    fontSize: 42,
-    fontWeight: "300",
+    fontSize: typography.displayLarge,
+    fontWeight: fontWeights.light,
     letterSpacing: -1.5,
   },
   lastUpdated: {
-    fontSize: 11,
-    fontWeight: "400",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
     opacity: 0.5,
   },
   changeContainer: {
@@ -251,24 +252,24 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   badgeText: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
   },
   changeValue: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     flex: 1,
   },
   timeframe: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: typography.body,
     textAlign: "center",
   },
   exchangesCount: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   refreshButtonDisabled: {
     opacity: 0.5,

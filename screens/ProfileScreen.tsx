@@ -5,6 +5,7 @@ import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
 import { useNavigation } from "@react-navigation/native"
 import { LogoIcon } from "../components/LogoIcon"
+import { typography, fontWeights } from "../lib/typography"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function ProfileScreen() {
@@ -57,8 +58,8 @@ export function ProfileScreen() {
         <View style={styles.headerContent}>
           <LogoIcon size={24} />
           <View style={styles.headerText}>
-            <Text style={[styles.title, { color: colors.text }]}>Perfil</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Suas informações pessoais</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{t('profile.title')}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('profile.subtitle')}</Text>
           </View>
         </View>
         
@@ -121,13 +122,13 @@ export function ProfileScreen() {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={[styles.editButtonText, { color: colors.primary }]}>Editar</Text>
+            <Text style={[styles.editButtonText, { color: colors.primary }]}>{t('profile.edit')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Seção: Informações Pessoais */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>INFORMAÇÕES PESSOAIS</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('profile.personalInfo')}</Text>
           
           {/* Email */}
           <View style={[styles.infoItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -145,7 +146,7 @@ export function ProfileScreen() {
                 </Svg>
               </View>
               <View>
-                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Email</Text>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('profile.email')}</Text>
                 <Text style={[styles.infoValue, { color: colors.text }]}>{userData.email}</Text>
               </View>
             </View>
@@ -166,7 +167,7 @@ export function ProfileScreen() {
                 </Svg>
               </View>
               <View>
-                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Telefone</Text>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('profile.phone')}</Text>
                 <Text style={[styles.infoValue, { color: colors.text }]}>{userData.phone}</Text>
               </View>
             </View>
@@ -175,7 +176,7 @@ export function ProfileScreen() {
 
         {/* Seção: Ações */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>AÇÕES</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('profile.actions')}</Text>
           
           <TouchableOpacity style={[styles.actionItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             <View style={styles.actionLeft}>
@@ -190,7 +191,7 @@ export function ProfileScreen() {
                   />
                 </Svg>
               </View>
-              <Text style={[styles.actionText, { color: colors.text }]}>Alterar Senha</Text>
+              <Text style={[styles.actionText, { color: colors.text }]}>{t('profile.changePassword')}</Text>
             </View>
             <Text style={[styles.actionArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -208,7 +209,7 @@ export function ProfileScreen() {
                   />
                 </Svg>
               </View>
-              <Text style={[styles.actionText, { color: colors.text }]}>Exportar Dados</Text>
+              <Text style={[styles.actionText, { color: colors.text }]}>{t('profile.exportData')}</Text>
             </View>
             <Text style={[styles.actionArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
@@ -253,14 +254,14 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
-    fontWeight: "300",
+    fontWeight: fontWeights.light,
   },
   scrollView: {
     flex: 1,
@@ -294,8 +295,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: typography.h3,
+    fontWeight: fontWeights.semibold,
     color: '#ffffff',
   },
   profileInfo: {
@@ -303,16 +304,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   profileName: {
-    fontSize: 15,
-    fontWeight: '400',
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: typography.body,
     marginBottom: 4,
   },
   memberSince: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   editButton: {
     flexDirection: 'row',
@@ -324,15 +325,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   editButtonText: {
-    fontSize: 14,
-    fontWeight: '400',
+    fontSize: typography.body,
+    fontWeight: fontWeights.regular,
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.semibold,
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
@@ -360,12 +361,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginBottom: 2,
   },
   infoValue: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -380,12 +381,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 15,
-    fontWeight: '400',
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
     textAlign: 'center',
   },
   actionItem: {
@@ -404,12 +405,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionText: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
   },
   actionArrow: {
-    fontSize: 24,
-    fontWeight: "300",
+    fontSize: typography.h1,
+    fontWeight: fontWeights.light,
   },
   headerLogoutButton: {
     width: 44,
@@ -429,8 +430,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ef4444",
   },
   logoutButtonText: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.button,
+    fontWeight: fontWeights.regular,
     color: "#ffffff",
   },
 })

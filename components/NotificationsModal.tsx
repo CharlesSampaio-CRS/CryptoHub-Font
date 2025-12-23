@@ -1,6 +1,7 @@
 import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable } from "react-native"
 import { useState, useMemo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
+import { typography, fontWeights } from "../lib/typography"
 import { useLanguage } from "../contexts/LanguageContext"
 import { Notification, mockNotifications } from "../types/notifications"
 
@@ -195,12 +196,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: typography.h2,
+    fontWeight: fontWeights.medium,
   },
   unreadText: {
-    fontSize: 12,
-    fontWeight: "300",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
     marginTop: 4,
   },
   headerActions: {
@@ -210,15 +211,15 @@ const styles = StyleSheet.create({
   },
   markAllButton: {
     color: "#3b82f6",
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   closeButton: {
     padding: 4,
   },
   closeButtonText: {
-    fontSize: 24,
-    fontWeight: "300",
+    fontSize: typography.h1,
+    fontWeight: fontWeights.light,
   },
   notificationsList: {
     flex: 1,
@@ -249,12 +250,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   notificationTitle: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.medium,
     flex: 1,
   },
   notificationTitleUnread: {
-    fontWeight: "500",
+    fontWeight: fontWeights.medium,
   },
   unreadDot: {
     width: 8,
@@ -263,8 +264,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#3b82f6",
   },
   notificationMessage: {
-    fontSize: 13,
-    fontWeight: "300",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.light,
     lineHeight: 18,
     marginBottom: 8,
   },
@@ -274,15 +275,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   notificationTime: {
-    fontSize: 12,
-    fontWeight: "300",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
     opacity: 0.6,
   },
   deleteButton: {
     padding: 4,
   },
   deleteButtonText: {
-    fontSize: 14,
+    fontSize: typography.body,
     opacity: 0.5,
   },
   emptyState: {
@@ -297,13 +298,13 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     marginBottom: 8,
   },
   emptyMessage: {
-    fontSize: 14,
-    fontWeight: "300",
+    fontSize: typography.body,
+    fontWeight: fontWeights.light,
     textAlign: "center",
     lineHeight: 20,
   },

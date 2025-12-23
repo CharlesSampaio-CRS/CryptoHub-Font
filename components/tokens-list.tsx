@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { useState } from "react"
 import { apiService } from "@/services/api"
+import { typography, fontWeights } from "@/lib/typography"
 import { Exchange } from "@/types/api"
 import { TokenDetailsModal } from "./token-details-modal"
 
@@ -153,8 +154,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f7ff",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: typography.h2,
+    fontWeight: fontWeights.medium,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: typography.body,
     color: "#6b7280",
     textAlign: "center",
   },
@@ -192,8 +193,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   symbol: {
-    fontSize: 11,
-    fontWeight: "500",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.medium,
     color: "#3b82f6",
     letterSpacing: 0.3,
   },
@@ -206,8 +207,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   value: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.medium,
     color: "#111827",
   },
   changeInlineBadge: {
@@ -217,12 +218,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.04)",
   },
   changeInlineText: {
-    fontSize: 11,
-    fontWeight: "400",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
   },
   price: {
-    fontSize: 12,
-    fontWeight: "400",
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
     color: "#6b7280",
     marginTop: 2,
   },
@@ -235,12 +236,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   detailLabel: {
-    fontSize: 13,
+    fontSize: typography.bodySmall,
     color: "#9ca3af",
   },
   detailValue: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   totalCard: {
     backgroundColor: "#ffffff",
@@ -253,13 +254,13 @@ const styles = StyleSheet.create({
     borderColor: "#3b82f6",
   },
   totalLabel: {
-    fontSize: 13,
+    fontSize: typography.bodySmall,
     color: "#9ca3af",
     marginBottom: 8,
   },
   totalValue: {
-    fontSize: 24,
-    fontWeight: "500",
+    fontSize: typography.h1,
+    fontWeight: fontWeights.medium,
     color: "#3b82f6",
   },
 })

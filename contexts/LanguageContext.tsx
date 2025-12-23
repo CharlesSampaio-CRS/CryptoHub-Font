@@ -34,7 +34,7 @@ const translations = {
     
     // Profile Screen
     'profile.title': 'Perfil',
-    'profile.subtitle': 'Configurações da conta',
+    'profile.subtitle': 'Suas informações pessoais',
     'profile.user': 'Usuário do CryptoHub',
     'profile.settings': 'Configurações',
     'profile.notifications': 'Notificações',
@@ -56,6 +56,13 @@ const translations = {
     'profile.version': 'Versão',
     'profile.termsOfUse': 'Termos de Uso',
     'profile.privacyPolicy': 'Política de Privacidade',
+    'profile.edit': 'Editar',
+    'profile.personalInfo': 'INFORMAÇÕES PESSOAIS',
+    'profile.email': 'Email',
+    'profile.phone': 'Telefone',
+    'profile.actions': 'AÇÕES',
+    'profile.changePassword': 'Alterar Senha',
+    'profile.exportData': 'Exportar Dados',
     
     // Settings Screen
     'settings.title': 'Configurações',
@@ -342,7 +349,7 @@ const translations = {
     
     // Profile Screen
     'profile.title': 'Profile',
-    'profile.subtitle': 'Account settings',
+    'profile.subtitle': 'Your personal information',
     'profile.user': 'CryptoHub User',
     'profile.settings': 'Settings',
     'profile.notifications': 'Notifications',
@@ -364,6 +371,13 @@ const translations = {
     'profile.version': 'Version',
     'profile.termsOfUse': 'Terms of Use',
     'profile.privacyPolicy': 'Privacy Policy',
+    'profile.edit': 'Edit',
+    'profile.personalInfo': 'PERSONAL INFORMATION',
+    'profile.email': 'Email',
+    'profile.phone': 'Phone',
+    'profile.actions': 'ACTIONS',
+    'profile.changePassword': 'Change Password',
+    'profile.exportData': 'Export Data',
     
     // Settings Screen
     'settings.title': 'Settings',

@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
+import { typography, fontWeights } from '@/lib/typography'
 import { LogoIcon } from '@/components/LogoIcon'
 
 interface SignUpScreenProps {
@@ -131,8 +132,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     backButtonText: {
       color: colors.text,
-      fontSize: 20,
-      fontWeight: '400',
+      fontSize: typography.h2,
+      fontWeight: fontWeights.regular,
     },
     logo: {
       marginBottom: 16,
@@ -140,16 +141,16 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       justifyContent: 'center',
     },
     title: {
-      fontSize: 18,
-      fontWeight: '300',
+      fontSize: typography.h3,
+      fontWeight: fontWeights.light,
       letterSpacing: -0.2,
       color: colors.text,
       marginBottom: 8,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 12,
-      fontWeight: '300',
+      fontSize: typography.caption,
+      fontWeight: fontWeights.light,
       color: colors.textSecondary,
       textAlign: 'center',
     },
@@ -161,8 +162,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       marginBottom: 16,
     },
     label: {
-      fontSize: 16,
-      fontWeight: '400',
+      fontSize: typography.h4,
+      fontWeight: fontWeights.regular,
       color: colors.text,
       marginBottom: 8,
     },
@@ -170,7 +171,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       backgroundColor: colors.surface,
       borderRadius: 12,
       padding: 16,
-      fontSize: 16,
+      fontSize: typography.h4,
       color: colors.text,
       borderWidth: 1,
       borderColor: colors.border,
@@ -186,7 +187,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     passwordInput: {
       flex: 1,
       padding: 16,
-      fontSize: 16,
+      fontSize: typography.h4,
       color: colors.text,
     },
     showPasswordButton: {
@@ -194,7 +195,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     showPasswordText: {
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: typography.body,
     },
     registerButton: {
       borderRadius: 12,
@@ -210,8 +211,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     registerButtonText: {
       color: '#3b82f6',
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: typography.bodyLarge,
+      fontWeight: fontWeights.semibold,
     },
     divider: {
       flexDirection: 'row',
@@ -226,7 +227,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     dividerText: {
       marginHorizontal: 16,
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: typography.body,
     },
     socialButtons: {
       gap: 12,
@@ -245,8 +246,8 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     socialButtonText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: '400',
+      fontSize: typography.bodyLarge,
+      fontWeight: fontWeights.regular,
     },
     loginContainer: {
       flexDirection: 'row',
@@ -256,12 +257,12 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     loginText: {
       color: colors.textSecondary,
-      fontSize: 14,
+      fontSize: typography.body,
     },
     loginLink: {
       color: '#3b82f6',
-      fontSize: 14,
-      fontWeight: '400',
+      fontSize: typography.body,
+      fontWeight: fontWeights.regular,
       marginLeft: 4,
     },
     termsContainer: {
@@ -270,7 +271,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     },
     termsText: {
       color: colors.textSecondary,
-      fontSize: 12,
+      fontSize: typography.caption,
       textAlign: 'center',
       lineHeight: 18,
     },

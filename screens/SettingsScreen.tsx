@@ -18,6 +18,7 @@ import { useLanguage } from "../contexts/LanguageContext"
 import { useAuth } from "../contexts/AuthContext"
 import { NotificationsModal } from "../components/NotificationsModal"
 import { LogoIcon } from "../components/LogoIcon"
+import { typography, fontWeights } from "../lib/typography"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function SettingsScreen() {
@@ -772,14 +773,14 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
-    fontWeight: "300",
+    fontWeight: fontWeights.light,
   },
   scrollView: {
     flex: 1,
@@ -792,8 +793,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.semibold,
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
@@ -821,16 +822,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemText: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
   },
   menuItemSubtext: {
-    fontSize: 13,
+    fontSize: typography.bodySmall,
     marginTop: 2,
   },
   menuItemArrow: {
-    fontSize: 24,
-    fontWeight: "300",
+    fontSize: typography.h1,
+    fontWeight: fontWeights.light,
   },
   modalContainer: {
     flex: 1,
@@ -844,12 +845,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "400",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.regular,
   },
   modalClose: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.medium,
   },
   modalContent: {
     flex: 1,
@@ -859,8 +860,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalSectionTitle: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.regular,
     marginBottom: 12,
   },
   settingItem: {
@@ -873,12 +874,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   settingLabel: {
-    fontSize: 15,
-    fontWeight: "400",
+    fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.regular,
     marginBottom: 4,
   },
   settingDescription: {
-    fontSize: 13,
+    fontSize: typography.bodySmall,
   },
   timeSelector: {
     padding: 16,
@@ -898,24 +899,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   timeOptionText: {
-    fontSize: 13,
-    fontWeight: "400",
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.regular,
   },
   aboutContent: {
     alignItems: "center",
     paddingVertical: 40,
   },
   appVersion: {
-    fontSize: 14,
+    fontSize: typography.body,
     marginBottom: 16,
   },
   aboutText: {
-    fontSize: 15,
+    fontSize: typography.bodyLarge,
     lineHeight: 24,
     textAlign: "center",
   },
   termsText: {
-    fontSize: 14,
+    fontSize: typography.body,
     lineHeight: 22,
   },
   // Toggle Button
@@ -946,8 +947,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   ipText: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: typography.body,
+    fontWeight: fontWeights.medium,
     letterSpacing: 0.3,
   },
   copyButton: {
@@ -976,13 +977,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   infoIconYellow: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.bold,
     color: "#FFFFFF",
   },
   infoText: {
-    fontSize: 11,
-    fontWeight: "300",
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.light,
     lineHeight: 16,
     flex: 1,
   },
@@ -996,8 +997,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   deleteAccountButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: typography.h4,
+    fontWeight: fontWeights.semibold,
   },
   // Security Modal Styles (following CreateStrategyModal pattern)
   modalOverlay: {
@@ -1026,15 +1027,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   securityModalTitle: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: typography.h2,
+    fontWeight: fontWeights.medium,
   },
   modalCloseButton: {
     padding: 4,
   },
   modalCloseIcon: {
-    fontSize: 24,
-    fontWeight: "300",
+    fontSize: typography.h1,
+    fontWeight: fontWeights.light,
   },
   securityModalContent: {
     flex: 1,
