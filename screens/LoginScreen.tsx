@@ -147,7 +147,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await loginWithGoogle()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao fazer login com Google')
+      Alert.alert(t('common.error'), error.message || t('login.googleError'))
     }
   }
 
@@ -155,7 +155,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await loginWithApple()
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao fazer login com Apple')
+      Alert.alert(t('common.error'), error.message || t('login.appleError'))
     }
   }
 
@@ -349,16 +349,16 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
           <View style={styles.logoContainer}>
             <LogoIcon />
           </View>
-          <Text style={styles.title}>Bem vindo!</Text>
-          <Text style={styles.subtitle}>Acesse sua conta para continuar</Text>
+          <Text style={styles.title}>{t('login.welcome')}</Text>
+          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
         </View>
 
         <View style={styles.formContainer}>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t('login.email')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="seu@email.com"
+            placeholder={t('login.emailPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
@@ -370,11 +370,11 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Senha</Text>
+          <Text style={styles.label}>{t('login.password')}</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="••••••••"
+              placeholder={t('login.passwordPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={password}
               onChangeText={setPassword}
@@ -388,14 +388,14 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
               onPress={() => setShowPassword(!showPassword)}
             >
               <Text style={styles.showPasswordText}>
-                {showPassword ? 'Ocultar' : 'Mostrar'}
+                {showPassword ? t('login.hidePassword') : t('login.showPassword')}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+          <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -410,7 +410,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
           {isFullLoading ? (
             <AnimatedLogoIcon size={24} />
           ) : (
-            <Text style={styles.loginButtonText}>Entrar</Text>
+            <Text style={styles.loginButtonText}>{t('login.signIn')}</Text>
           )}
         </TouchableOpacity>
 
@@ -418,7 +418,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
           <>
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>ou continue com</Text>
+              <Text style={styles.dividerText}>{t('login.orContinueWith')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -431,7 +431,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                 {biometricType === 'Face ID' ? '👤' : '👆'}
               </Text>
               <Text style={styles.biometricButtonText}>
-                Entrar com {biometricType}
+                {t('login.signInWith')} {biometricType}
               </Text>
             </TouchableOpacity>
           </>
@@ -439,7 +439,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>ou</Text>
+          <Text style={styles.dividerText}>{t('login.or')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -450,7 +450,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             disabled={isFullLoading}
           >
             <GoogleIcon />
-            <Text style={styles.socialButtonText}>Google</Text>
+            <Text style={styles.socialButtonText}>{t('login.google')}</Text>
           </TouchableOpacity>
 
           {Platform.OS === 'ios' && (
@@ -461,16 +461,16 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             >
               <AppleIcon color={isDark ? '#000000' : '#ffffff'} />
               <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>
-                Apple
+                {t('login.apple')}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
           <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Não tem uma conta?</Text>
+            <Text style={styles.signupText}>{t('login.noAccount')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.signupLink}>Cadastre-se</Text>
+              <Text style={styles.signupLink}>{t('login.signUp')}</Text>
             </TouchableOpacity>
           </View>
         </View>

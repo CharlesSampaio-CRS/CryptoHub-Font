@@ -1,11 +1,15 @@
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react'
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 type Language = 'pt-BR' | 'en-US'
+
+const LANGUAGE_STORAGE_KEY = '@cryptohub:language'
 
 interface LanguageContextType {
   language: Language
   setLanguage: (language: Language) => void
   t: (key: string) => string
+  isLoading: boolean
 }
 
 const translations = {
@@ -240,6 +244,27 @@ const translations = {
     'maintenance.subMessage': 'Pedimos desculpas pelo inconveniente. Tente novamente em alguns instantes.',
     'maintenance.retry': 'Tentar Novamente',
     'maintenance.contact': 'Se o problema persistir, entre em contato com o suporte.',
+    
+    // Login Screen
+    'login.welcome': 'Bem vindo!',
+    'login.subtitle': 'Acesse sua conta para continuar',
+    'login.email': 'Email',
+    'login.emailPlaceholder': 'seu@email.com',
+    'login.password': 'Senha',
+    'login.passwordPlaceholder': '••••••••',
+    'login.showPassword': 'Mostrar',
+    'login.hidePassword': 'Ocultar',
+    'login.forgotPassword': 'Esqueceu a senha?',
+    'login.signIn': 'Entrar',
+    'login.orContinueWith': 'ou continue com',
+    'login.or': 'ou',
+    'login.signInWith': 'Entrar com',
+    'login.google': 'Google',
+    'login.apple': 'Apple',
+    'login.noAccount': 'Não tem uma conta?',
+    'login.signUp': 'Cadastre-se',
+    'login.googleError': 'Falha ao fazer login com Google',
+    'login.appleError': 'Falha ao fazer login com Apple',
   },
   'en-US': {
     // Navigation
@@ -473,6 +498,27 @@ const translations = {
     'maintenance.subMessage': 'We apologize for the inconvenience. Please try again in a few moments.',
     'maintenance.retry': 'Try Again',
     'maintenance.contact': 'If the problem persists, please contact support.',
+    
+    // Login Screen
+    'login.welcome': 'Welcome!',
+    'login.subtitle': 'Sign in to your account to continue',
+    'login.email': 'Email',
+    'login.emailPlaceholder': 'your@email.com',
+    'login.password': 'Password',
+    'login.passwordPlaceholder': '••••••••',
+    'login.showPassword': 'Show',
+    'login.hidePassword': 'Hide',
+    'login.forgotPassword': 'Forgot password?',
+    'login.signIn': 'Sign In',
+    'login.orContinueWith': 'or continue with',
+    'login.or': 'or',
+    'login.signInWith': 'Sign in with',
+    'login.google': 'Google',
+    'login.apple': 'Apple',
+    'login.noAccount': 'Don\'t have an account?',
+    'login.signUp': 'Sign Up',
+    'login.googleError': 'Failed to sign in with Google',
+    'login.appleError': 'Failed to sign in with Apple',
   }
 }
 
@@ -480,6 +526,37 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>('pt-BR')
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load language from storage on mount
+  useEffect(() => {
+    const loadLanguage = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)
+        if (savedLanguage === 'pt-BR' || savedLanguage === 'en-US') {
+          setLanguage(savedLanguage)
+        }
+      } catch (error) {
+        console.error('Error loading language:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadLanguage()
+  }, [])
+
+  // Save language to storage whenever it changes
+  const handleSetLanguage = useCallback(async (newLanguage: Language) => {
+    try {
+      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, newLanguage)
+      setLanguage(newLanguage)
+    } catch (error) {
+      console.error('Error saving language:', error)
+      // Still update the state even if storage fails
+      setLanguage(newLanguage)
+    }
+  }, [])
 
   // Translation function
   const t = useCallback((key: string): string => {
@@ -489,9 +566,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Memoize context value
   const value = useMemo(() => ({
     language,
-    setLanguage,
-    t
-  }), [language, t])
+    setLanguage: handleSetLanguage,
+    t,
+    isLoading
+  }), [language, handleSetLanguage, t, isLoading])
 
   return (
     <LanguageContext.Provider value={value}>

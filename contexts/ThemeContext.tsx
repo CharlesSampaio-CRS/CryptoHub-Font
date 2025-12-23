@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react'
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 type Theme = 'light' | 'dark'
+
+const THEME_STORAGE_KEY = '@cryptohub:theme'
 
 interface ThemeColors {
   // Backgrounds
@@ -60,6 +63,7 @@ interface ThemeContextType {
   colors: ThemeColors
   isDark: boolean
   setTheme: (theme: Theme) => void
+  isLoading: boolean
 }
 
 const lightColors: ThemeColors = {
@@ -172,6 +176,25 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light') // Default to light
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load theme from storage on mount
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY)
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          setTheme(savedTheme)
+        }
+      } catch (error) {
+        console.error('Error loading theme:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadTheme()
+  }, [])
 
   // Memoize colors to prevent recreation on every render
   const colors = useMemo(() => 
@@ -179,9 +202,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [theme]
   )
 
-  // Memoize setTheme to maintain stable reference
-  const handleSetTheme = useCallback((newTheme: Theme) => {
-    setTheme(newTheme)
+  // Memoize setTheme to maintain stable reference and save to storage
+  const handleSetTheme = useCallback(async (newTheme: Theme) => {
+    try {
+      await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme)
+      setTheme(newTheme)
+    } catch (error) {
+      console.error('Error saving theme:', error)
+      // Still update the state even if storage fails
+      setTheme(newTheme)
+    }
   }, [])
 
   // Memoize context value to prevent unnecessary re-renders
@@ -189,8 +219,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     theme,
     colors,
     isDark: theme === 'dark',
-    setTheme: handleSetTheme
-  }), [theme, colors, handleSetTheme])
+    setTheme: handleSetTheme,
+    isLoading
+  }), [theme, colors, handleSetTheme, isLoading])
 
   return (
     <ThemeContext.Provider value={value}>
