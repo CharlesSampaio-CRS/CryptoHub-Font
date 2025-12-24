@@ -379,12 +379,23 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
     card: { backgroundColor: colors.surface, borderColor: colors.border },
-    toggle: { backgroundColor: colors.toggleInactive, borderColor: colors.toggleInactive },
-    toggleActive: { backgroundColor: colors.toggleActive, borderColor: colors.toggleActive },
-    toggleThumb: { backgroundColor: colors.toggleThumb },
+    toggle: { 
+      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(200, 200, 200, 0.3)', 
+      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)' 
+    },
+    toggleActive: { 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)', 
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.3)' 
+    },
+    toggleThumb: { 
+      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(100, 100, 100, 0.7)' 
+    },
+    toggleThumbActive: { 
+      backgroundColor: isDark ? 'rgba(96, 165, 250, 0.9)' : 'rgba(59, 130, 246, 0.8)' 
+    },
     tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
     logoContainer: { backgroundColor: '#ffffff', borderColor: colors.border }, // Fundo branco em ambos os modos para os ícones
-  }), [colors])
+  }), [colors, isDark])
 
   // Cores do gradiente para os cards - tons neutros
   const cardGradientColors: readonly [string, string, ...string[]] = isDark 
@@ -429,7 +440,12 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
             )}
           </View>
           <View style={[styles.toggle, themedStyles.toggle, hideZeroBalanceExchanges && [styles.toggleActive, themedStyles.toggleActive]]}>
-            <View style={[styles.toggleThumb, themedStyles.toggleThumb, hideZeroBalanceExchanges && styles.toggleThumbActive]} />
+            <View style={[
+              styles.toggleThumb, 
+              themedStyles.toggleThumb, 
+              hideZeroBalanceExchanges && styles.toggleThumbActive,
+              hideZeroBalanceExchanges && themedStyles.toggleThumbActive
+            ]} />
           </View>
         </TouchableOpacity>
         
@@ -749,11 +765,13 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: typography.caption,
     fontWeight: fontWeights.regular,
+    opacity: 0.65,
   },
   hiddenCount: {
     fontSize: typography.micro,
     fontWeight: fontWeights.regular,
     fontStyle: "italic",
+    opacity: 0.5,
   },
   toggle: {
     width: 44,
@@ -762,17 +780,39 @@ const styles = StyleSheet.create({
     padding: 2,
     justifyContent: "center",
     borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   toggleActive: {
     // Colors from theme
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   toggleThumb: {
     width: 18,
     height: 18,
     borderRadius: 9,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   toggleThumbActive: {
     transform: [{ translateX: 20 }],
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   list: {
     gap: 10,
