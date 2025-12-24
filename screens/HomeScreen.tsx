@@ -18,7 +18,6 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
-  const [availableExchangesCount, setAvailableExchangesCount] = useState(0)
   const [openOrdersModalVisible, setOpenOrdersModalVisible] = useState(false)
   const [orderDetailsModalVisible, setOrderDetailsModalVisible] = useState(false)
   const [selectedExchangeId, setSelectedExchangeId] = useState<string>("")
@@ -31,19 +30,6 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
     mockNotifications.filter(n => !n.read).length, 
     []
   )
-
-  useEffect(() => {
-    loadAvailableExchanges()
-  }, [])
-
-  const loadAvailableExchanges = async () => {
-    try {
-      const data = await apiService.getAvailableExchanges(config.userId)
-      setAvailableExchangesCount(data.exchanges?.length || 0)
-    } catch (error) {
-      console.error('Error loading available exchanges:', error)
-    }
-  }
 
   const onNotificationsPress = useCallback(() => {
     setNotificationsModalVisible(true)
@@ -124,7 +110,6 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         <PortfolioOverview />
         <ExchangesList 
           onAddExchange={onAddExchange}
-          availableExchangesCount={availableExchangesCount}
           onOpenOrdersPress={onOpenOrdersPress}
           onRefreshOrders={() => {
             // Salva referência para a função de refresh
@@ -146,12 +131,8 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         userId={config.userId}
         onSelectOrder={onSelectOrder}
         onOrderCancelled={async () => {
-          // Após cancelar ordem, atualiza lista de tokens
-          console.log('🔄 [HomeScreen] Ordem cancelada, atualizando balances...')
-          await refreshBalance()
-          
-          // Atualiza também contagem de ordens abertas
-          console.log('🔄 [HomeScreen] Atualizando ordens abertas...')
+          // Após cancelar ordem, atualiza APENAS contagem de ordens abertas
+          console.log('🔄 [HomeScreen] Ordem cancelada, atualizando ordens abertas...')
           if (refreshOrdersRef.current) {
             await refreshOrdersRef.current()
           }

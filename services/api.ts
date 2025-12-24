@@ -45,15 +45,6 @@ async function fetchWithTimeout(
   throw new Error('Failed after all retries');
 }
 
-// Cache simples para portfolio evolution (5 minutos)
-interface CacheEntry {
-  data: PortfolioEvolutionResponse;
-  timestamp: number;
-}
-
-const portfolioEvolutionCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 300000; // 5 minutos (aumentado de 30s)
-
 // Cache para detalhes completos das exchanges (fees, markets, etc)
 interface ExchangeDetailsCacheEntry {
   data: any;
@@ -62,6 +53,15 @@ interface ExchangeDetailsCacheEntry {
 
 const exchangeDetailsCache = new Map<string, ExchangeDetailsCacheEntry>();
 const EXCHANGE_DETAILS_CACHE_TTL = 3600000; // 1 hora (dados de fees e markets mudam raramente)
+
+// Cache para evolução do portfólio
+interface PortfolioEvolutionCacheEntry {
+  data: PortfolioEvolutionResponse;
+  timestamp: number;
+}
+
+const portfolioEvolutionCache = new Map<string, PortfolioEvolutionCacheEntry>();
+const PORTFOLIO_EVOLUTION_CACHE_TTL = 300000; // 5 minutos
 
 export const apiService = {
   /**
@@ -122,6 +122,52 @@ export const apiService = {
       return data;
     } catch (error) {
       console.error('Error fetching balances summary:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca a evolução do portfólio nos últimos N dias
+   * @param userId ID do usuário
+   * @param days Número de dias (padrão: 7)
+   * @returns Promise com os dados de evolução
+   */
+  async getPortfolioEvolution(userId: string, days: number = 7): Promise<PortfolioEvolutionResponse> {
+    const cacheKey = `${userId}-${days}`;
+    const now = Date.now();
+
+    // Verifica se existe cache válido
+    const cached = portfolioEvolutionCache.get(cacheKey);
+    if (cached && (now - cached.timestamp) < PORTFOLIO_EVOLUTION_CACHE_TTL) {
+      return cached.data;
+    }
+
+    try {
+      const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
+      
+      const response = await fetchWithTimeout(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      }, 15000);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Armazena no cache
+      portfolioEvolutionCache.set(cacheKey, {
+        data,
+        timestamp: now
+      });
+
+      return data;
+    } catch (error) {
+      console.error('❌ Error fetching portfolio evolution:', error);
       throw error;
     }
   },
@@ -289,52 +335,6 @@ export const apiService = {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(numValue);
-  },
-
-  /**
-   * Busca o histórico de evolução do portfólio
-   * @param userId ID do usuário
-   * @param days Número de dias para buscar (padrão: 7)
-   * @returns Promise com os dados de evolução
-   */
-  async getPortfolioEvolution(userId: string, days: number = 7): Promise<PortfolioEvolutionResponse> {
-    const cacheKey = `${userId}-${days}`;
-    const now = Date.now();
-
-    // Verifica se existe cache válido
-    const cached = portfolioEvolutionCache.get(cacheKey);
-    if (cached && (now - cached.timestamp) < CACHE_TTL) {
-      return cached.data;
-    }
-
-    try {
-      const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
-      
-      const response = await fetchWithTimeout(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      }, 15000);
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      // Armazena no cache
-      portfolioEvolutionCache.set(cacheKey, {
-        data,
-        timestamp: now
-      });
-
-      return data;
-    } catch (error) {
-      console.error('❌ Error fetching portfolio evolution:', error);
-      throw error;
-    }
   },
 
   /**
@@ -814,10 +814,6 @@ export const apiService = {
    */
   getCacheInfo() {
     return {
-      portfolioEvolution: {
-        size: portfolioEvolutionCache.size,
-        ttl: CACHE_TTL,
-      },
       exchangeDetails: {
         size: exchangeDetailsCache.size,
         ttl: EXCHANGE_DETAILS_CACHE_TTL,

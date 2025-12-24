@@ -125,15 +125,20 @@ export function OpenOrdersModal({
       if (result.success) {
         console.log('✅ [OpenOrdersModal] Ordem cancelada com sucesso!')
         
+        // Fecha o modal IMEDIATAMENTE para feedback visual rápido
+        console.log('📋 [OpenOrdersModal] 🚪 Fechando modal...')
+        onClose()
+        
         // Remove do cache para forçar atualização da API
         const cacheKey = `${userId}_${exchangeId}`
         console.log('📋 [OpenOrdersModal] 🗑️ Deletando cache:', cacheKey)
         ordersCache.delete(cacheKey)
         
-        // Recarrega a lista completa da API
-        console.log('📋 [OpenOrdersModal] 🔄 Recarregando lista de ordens...')
-        await loadOrders()
-        console.log('📋 [OpenOrdersModal] ✅ Lista recarregada!')
+        // Atualiza APENAS a exchange específica desta ordem (via função global exposta por ExchangesList)
+        console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange específica:', exchangeId)
+        if (typeof (window as any).__exchangesListRefreshOrdersForExchange === 'function') {
+          await (window as any).__exchangesListRefreshOrdersForExchange(exchangeId)
+        }
         
         // Chama callback para atualizar lista de tokens
         if (onOrderCancelled) {

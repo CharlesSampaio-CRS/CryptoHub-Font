@@ -25,15 +25,17 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       setError(null)
       
       const startTime = Date.now()
+      console.log(`🔄 [PortfolioContext] Buscando evolução de ${days} dias...`)
       
       const data = await apiService.getPortfolioEvolution(config.userId, days)
       
       const duration = Date.now() - startTime
+      console.log(`✅ [PortfolioContext] Evolução carregada em ${duration}ms`)
       
       setEvolutionData(data)
       setCurrentPeriod(days)
     } catch (err: any) {
-      console.error('❌ Error loading evolution data:', err)
+      console.error('❌ [PortfolioContext] Error loading evolution data:', err)
       const errorMessage = err.message && err.message.includes('fetch') 
         ? 'Erro ao consultar dados' 
         : err.message || 'Erro ao consultar dados'
@@ -43,10 +45,11 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Load on mount DESABILITADO - será feito pelo DataLoader no App.tsx após login
-  // useEffect(() => {
-  //   loadEvolutionData(7)
-  // }, [loadEvolutionData])
+  // Load on mount - carrega automaticamente ao iniciar
+  useEffect(() => {
+    console.log('🚀 [PortfolioContext] Inicializando - carregando dados de 7 dias')
+    loadEvolutionData(7)
+  }, [loadEvolutionData])
 
   // Refresh sem mostrar loading (usado no pull-to-refresh)
   const refreshEvolution = useCallback(async (days?: number, showLoadingState = true) => {

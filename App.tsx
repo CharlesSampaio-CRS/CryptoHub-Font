@@ -21,9 +21,9 @@ import { SignUpScreen } from "./screens/SignUpScreen"
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
 import { BalanceProvider, useBalance } from "./contexts/BalanceContext"
+import { PortfolioProvider } from "./contexts/PortfolioContext"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { PrivacyProvider } from "./contexts/PrivacyContext"
-import { PortfolioProvider, usePortfolio } from "./contexts/PortfolioContext"
 import { LoadingProgress } from "./components/LoadingProgress"
 import { MaintenanceScreen } from "./components/MaintenanceScreen"
 
@@ -33,7 +33,6 @@ const Stack = createNativeStackNavigator()
 // DataLoader - monitora quando os dados estão prontos e notifica
 function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDataReady: () => void }) {
   const { data: balanceData, loading: balanceLoading, error: balanceError, refresh: refreshBalance } = useBalance()
-  const { evolutionData: portfolioData, loading: portfolioLoading, error: portfolioError, refreshEvolution } = usePortfolio()
   const hasCalledRef = useRef(false)
   const hasRefreshedRef = useRef(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
@@ -43,18 +42,14 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
     if (!hasRefreshedRef.current) {
       hasRefreshedRef.current = true
       
-      Promise.all([
-        refreshBalance(),
-        refreshEvolution()
-      ]).catch(err => {
+      refreshBalance().catch(err => {
         console.error('❌ Erro ao fazer refresh inicial:', err)
       })
     }
-  }, [refreshBalance, refreshEvolution])
+  }, [refreshBalance])
 
-  // Detecta erros críticos de API (ambos com erro ao mesmo tempo = API offline)
-  const isCriticalError = balanceError !== null && portfolioError !== null && 
-                          !balanceLoading && !portfolioLoading
+  // Detecta erros críticos de API (erro ao carregar balance = API offline)
+  const isCriticalError = balanceError !== null && !balanceLoading
 
   useEffect(() => {
     // Se erro crítico detectado, mostra tela de manutenção
@@ -67,16 +62,13 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
 
     // Aguarda os dados estarem prontos (não loading E dados existem)
     const balanceReady = !balanceLoading && (balanceData !== null || balanceError !== null)
-    const portfolioReady = !portfolioLoading && (portfolioData !== null || portfolioError !== null)
 
-    // Chama onDataReady quando:
-    // 1. AMBOS terminaram de carregar (sucesso OU erro)
-    // 2. Ainda não foi chamado
-    if (balanceReady && portfolioReady && !hasCalledRef.current) {
+    // Chama onDataReady quando balance terminou de carregar
+    if (balanceReady && !hasCalledRef.current) {
       hasCalledRef.current = true
       onDataReady()
     }
-  }, [balanceLoading, portfolioLoading, balanceData, portfolioData, balanceError, portfolioError, onDataReady, isCriticalError, showMaintenance])
+  }, [balanceLoading, balanceData, balanceError, onDataReady, isCriticalError, showMaintenance])
 
   // Timeout de segurança: se demorar mais de 10 segundos, finaliza o loading
   useEffect(() => {
@@ -106,10 +98,7 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
     
     // Tenta recarregar os dados
     try {
-      await Promise.all([
-        refreshBalance(),
-        refreshEvolution()
-      ])
+      await refreshBalance()
     } catch (error) {
       console.error('❌ Erro ao tentar reconectar:', error)
     }

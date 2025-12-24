@@ -175,9 +175,9 @@ export function TradeModal({
 
     setIsSubmitting(true)
     try {
-      console.log('🔄 Criando ordem...')
-      console.log('📋 Tipo:', isBuy ? 'COMPRA' : 'VENDA')
-      console.log('📋 Dados:', { userId: user.id, exchangeId, symbol, amountNum, orderType, priceNum })
+      console.log('🔄 [TradeModal] Criando ordem...')
+      console.log('📋 [TradeModal] Tipo:', isBuy ? 'COMPRA' : 'VENDA')
+      console.log('📋 [TradeModal] Dados:', { userId: user.id, exchangeId, symbol, amountNum, orderType, priceNum })
       
       // Chama a API de compra ou venda
       const result = isBuy 
@@ -198,28 +198,32 @@ export function TradeModal({
             orderType === 'limit' ? priceNum : undefined
           )
       
-      console.log('📥 Resultado da API:', result)
+      console.log('📥 [TradeModal] Resultado da API:', result)
       
       // Verifica se a ordem foi criada com sucesso
       if (result.success) {
-        console.log('✅ Ordem criada com sucesso!')
+        console.log('✅ [TradeModal] Ordem criada com sucesso!')
         const isDryRun = result.dry_run === true
         const orderId = result.order?.id || 'N/A'
         const orderStatus = result.order?.status || 'unknown'
         
+        // Fecha o modal IMEDIATAMENTE para feedback visual rápido
+        console.log('📋 [TradeModal] 🚪 Fechando modal...')
+        onClose()
+        
         // Invalida o cache de ordens para forçar atualização
-        console.log('🔄 Invalidando cache de ordens abertas...')
+        console.log('🔄 [TradeModal] Invalidando cache de ordens abertas...')
         const cacheKey = `${user.id}_${exchangeId}`
         ordersCache.delete(cacheKey)
-        console.log('✅ Cache invalidado:', cacheKey)
-        
-        // Fecha o modal imediatamente
-        onClose()
+        console.log('✅ [TradeModal] Cache invalidado:', cacheKey)
         
         // Chama callback para atualizar lista de ordens abertas
         if (onOrderCreated) {
-          console.log('🔄 Chamando callback onOrderCreated...')
-          onOrderCreated()
+          console.log('🔄 [TradeModal] Chamando callback onOrderCreated...')
+          await onOrderCreated()
+          console.log('✅ [TradeModal] Callback onOrderCreated completado!')
+        } else {
+          console.warn('⚠️ [TradeModal] onOrderCreated não está definido!')
         }
         
         // Mostra alerta de sucesso

@@ -9,6 +9,7 @@ import { usePortfolio } from "@/contexts/PortfolioContext"
 import { apiService } from "@/services/api"
 import { SkeletonPortfolioOverview } from "./SkeletonLoaders"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
+import { PortfolioChart } from "./PortfolioChart"
 import { typography, fontWeights } from "@/lib/typography"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
@@ -83,7 +84,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const gradientColors: readonly [string, string, ...string[]] = isDark 
     ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza escuro
     : ['rgba(250, 250, 250, 1)', 'rgba(252, 252, 252, 1)', 'rgba(250, 250, 250, 1)']  // Light mode - cinza claríssimo quase branco
-
+  
   return (
     <View style={styles.containerWrapper}>
       <LinearGradient
@@ -92,8 +93,6 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
         end={{ x: 1, y: 1 }}
         style={[styles.container, { borderColor: colors.border }]}
       >
-        {/* Info box removido - UX improvement */}
-        
         <View style={styles.header}>
           <Text style={[styles.label, { color: colors.text }]}>{t('home.portfolio')}</Text>
           <TouchableOpacity 
@@ -114,32 +113,34 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
         <View style={styles.valueContainer}>
           <Text style={[styles.value, { color: colors.text }]}>
-            {hideValue(formattedValue)}
+            {hideValue(`$${formattedValue}`)}
           </Text>
           <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
             {formatLastUpdated()}
           </Text>
         </View>
 
-        <View style={[styles.changeContainer, { borderTopColor: colors.borderLight }]}>
-          <View style={styles.changeInfo}>
-            <Text style={[
-              styles.badgeText, 
-              { color: isPositive ? colors.success : colors.danger }
-            ]}>
-              {isPositive ? "▲" : "▼"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
-            </Text>
+        {/* Portfolio Chart */}
+        <PortfolioChart />
 
-            <Text style={[
-              styles.changeValue,
-              { color: isPositive ? colors.success : colors.danger }
-            ]}>
-              {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
-            </Text>
-            <Text style={[styles.timeframe, { color: colors.textSecondary }]}>
-              {t('portfolio.lastDays').replace('{days}', currentPeriod.toString())}
-            </Text>
-          </View>
+        {/* PNL Container - separado com borda superior */}
+        <View style={[styles.changeContainer, { borderTopColor: colors.border }]}>
+          <Text style={[
+            styles.badgeText, 
+            { color: isPositive ? colors.success : colors.danger }
+          ]}>
+             {isPositive ? "↑" : "↓"} {hideValue(`${isPositive ? "+" : ""}${change24h.toFixed(2)}%`)}
+          </Text>
+
+          <Text style={[
+            styles.changeValue,
+            { color: isPositive ? colors.success : colors.danger }
+          ]}>
+            {hideValue(`${isPositive ? "+" : ""}$${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
+          </Text>
+          <Text style={[styles.timeframe, { color: colors.textSecondary }]}>
+            {t('portfolio.lastDays').replace('{days}', currentPeriod.toString())}
+          </Text>
         </View>
       </LinearGradient>
     </View>
@@ -150,7 +151,6 @@ const styles = StyleSheet.create({
   containerWrapper: {
     marginBottom: 12,
   },
-  // Info box styles removidos - UX improvement
   container: {
     borderRadius: 16,
     padding: 12,
@@ -212,8 +212,6 @@ const styles = StyleSheet.create({
   changeContainer: {
     paddingTop: 8,
     borderTopWidth: 1,
-  },
-  changeInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
