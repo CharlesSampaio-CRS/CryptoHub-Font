@@ -130,8 +130,6 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
     }
     
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 8,
     }).format(numPrice)

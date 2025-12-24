@@ -18,7 +18,7 @@ export const QuickChart = memo(function QuickChart() {
   const { evolutionData, loading, error, refreshEvolution } = usePortfolio()
   const { valuesHidden } = usePrivacy()
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<7 | 15 | 30>(7) // Período padrão: 7 dias
+  const [selectedPeriod, setSelectedPeriod] = useState<7 | 15>(7) // Período padrão: 7 dias (removido 30)
   const [isChangingPeriod, setIsChangingPeriod] = useState(false)
   const [previousData, setPreviousData] = useState<any>(null)
   const opacityAnim = useRef(new Animated.Value(1)).current
@@ -123,9 +123,10 @@ export const QuickChart = memo(function QuickChart() {
           data: values_usd,
           color: (opacity = 1) => {
             const color = stats.isPositive ? '#10b981' : '#ef4444' // Verde ou vermelho
-            return color + Math.round(opacity * 255).toString(16).padStart(2, '0')
+            // Força opacidade total para a linha
+            return color
           },
-          strokeWidth: 3.5,
+          strokeWidth: 4,
         },
       ],
     }
@@ -159,60 +160,18 @@ export const QuickChart = memo(function QuickChart() {
   return (
     <TouchableWithoutFeedback onPress={() => setSelectedPointIndex(null)}>
       <View style={styles.containerWrapper}>
-        <LinearGradient
-          colors={gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.container, { borderColor: colors.cardBorder }]}
-        >
-          <View style={styles.headerContainer}>
-            <View style={styles.titleSection}>
-              <Text style={[styles.title, { color: colors.text }]}>{t('home.performance')}</Text>
-              {isChangingPeriod && (
-                <View style={styles.loadingIndicator}>
-                  <AnimatedLogoIcon size={16} />
-                </View>
-              )}
-            </View>
-          
-            {/* Botões de período */}
-            <View style={styles.periodButtonsContainer}>
-              {[7, 15, 30].map((period) => (
-                <TouchableWithoutFeedback 
-                  key={period}
-                  onPress={() => setSelectedPeriod(period as 7 | 15 | 30)}
-                >
-                  <View style={[
-                    styles.periodButton,
-                    { 
-                      backgroundColor: selectedPeriod === period ? colors.primary : 'transparent',
-                      borderColor: selectedPeriod === period ? colors.primary : colors.border
-                    }
-                  ]}>
-                    <Text style={[
-                      styles.periodButtonText,
-                      { color: selectedPeriod === period ? colors.primaryText : colors.textSecondary }
-                    ]}>
-                      {period}d
-                    </Text>
-                  </View>
-                </TouchableWithoutFeedback>
-              ))}
-            </View>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+              {error}
+            </Text>
           </View>
-
-          {error ? (
-            <View style={styles.errorContainer}>
-              <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                {error}
-              </Text>
-            </View>
-          ) : (
-            <Animated.View style={[styles.chartWrapper, { opacity: opacityAnim }]}>
-              <LineChart
+        ) : (
+          <Animated.View style={[styles.chartWrapper, { opacity: opacityAnim }]}>
+            <LineChart
               data={chartData}
-              width={screenWidth - 64}
-              height={240}
+              width={screenWidth - 32}
+              height={140}
               chartConfig={{
                 backgroundColor: "transparent",
                 backgroundGradientFrom: "transparent",
@@ -220,131 +179,43 @@ export const QuickChart = memo(function QuickChart() {
                 backgroundGradientFromOpacity: 0,
                 backgroundGradientToOpacity: 0,
                 fillShadowGradient: stats.isPositive ? '#10b981' : '#ef4444',
-                fillShadowGradientOpacity: 0.25,
-                fillShadowGradientTo: stats.isPositive ? '#10b98110' : '#ef444410',
-                fillShadowGradientToOpacity: 0.08,
+                fillShadowGradientOpacity: 0.6,
+                fillShadowGradientTo: stats.isPositive ? '#10b981' : '#ef4444',
+                fillShadowGradientToOpacity: 0.25,
                 decimalPlaces: 0,
                 color: (opacity = 1) => {
                   const baseColor = stats.isPositive ? '#10b981' : '#ef4444'
-                  return baseColor + Math.round(opacity * 255).toString(16).padStart(2, '0')
+                  return baseColor
                 },
-                labelColor: (opacity = 1) => colors.textSecondary + Math.round(opacity * 255).toString(16).padStart(2, '0'),
+                labelColor: (opacity = 1) => 'transparent',
                 style: {
-                  borderRadius: 16,
+                  borderRadius: 0,
                 },
                 propsForDots: {
-                  r: "5",
-                  strokeWidth: "0",
-                  fill: stats.isPositive ? '#10b981' : '#ef4444',
+                  r: "0",
                 },
                 propsForBackgroundLines: {
-                  strokeDasharray: "5,5",
-                  stroke: colors.border,
-                  strokeWidth: 0.8,
-                  strokeOpacity: 0.4,
+                  strokeWidth: 0,
                 },
                 propsForLabels: {
-                  fontSize: 10,
-                  fontFamily: 'System',
+                  fontSize: 1,
                 },
               }}
               bezier
               style={styles.chart}
-              withInnerLines={true}
+              withInnerLines={false}
               withOuterLines={false}
-              withVerticalLabels={true}
-              withHorizontalLabels={true}
-              withDots={true}
+              withVerticalLabels={false}
+              withHorizontalLabels={false}
+              withDots={false}
               withShadow={false}
-              withVerticalLines={true}
-              withHorizontalLines={true}
-              segments={4}
-              formatYLabel={(value) => {
-                if (valuesHidden) {
-                  return '••••'
-                }
-                const num = parseFloat(value)
-                if (num >= 1000000) {
-                  return `$${(num / 1000000).toFixed(1)}M`
-                } else if (num >= 1000) {
-                  return `$${(num / 1000).toFixed(1)}K`
-                }
-                return `$${Math.round(num)}`
-              }}
-              onDataPointClick={(data) => {
-                const { index } = data
-                // Toggle: se clicar no mesmo ponto, esconde. Se clicar em outro, mostra
-                setSelectedPointIndex(selectedPointIndex === index ? null : index)
-              }}
-              decorator={() => {
-                if (selectedPointIndex === null) return null
-                
-                const value = chartData.datasets[0].data[selectedPointIndex]
-                const index = selectedPointIndex
-                const x = (index * ((screenWidth - 64 - 32) / (chartData.datasets[0].data.length - 1))) + 16
-                const maxValue = Math.max(...chartData.datasets[0].data)
-                const minValue = Math.min(...chartData.datasets[0].data)
-                const range = maxValue - minValue || 1
-                const percentage = (value - minValue) / range
-                const y = 240 - 45 - (percentage * (240 - 85)) // Ajustado para altura 240
-                
-                // Pega a data do ponto selecionado
-                const timestamp = evolutionData?.evolution?.timestamps[selectedPointIndex]
-                const date = timestamp ? new Date(timestamp) : null
-                const dateStr = date 
-                  ? `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
-                  : ''
-                
-                return (
-                  <View key={index}>
-                    <View
-                      style={{
-                        position: 'absolute',
-                        left: x - 50,
-                        top: y - 50,
-                        backgroundColor: stats.isPositive ? '#10b981' : '#ef4444',
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        borderRadius: 8,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 4,
-                        elevation: 8,
-                        minWidth: 100,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: '600',
-                          color: '#ffffff',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {formatValue(value)}
-                      </Text>
-                      {dateStr && (
-                        <Text
-                          style={{
-                            fontSize: 9,
-                            color: '#ffffff',
-                            opacity: 0.8,
-                            marginTop: 2,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {dateStr}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                )
-              }}
+              withVerticalLines={false}
+              withHorizontalLines={false}
+              segments={3}
+              formatYLabel={(value) => ''}
             />
           </Animated.View>
-          )}
-        </LinearGradient>
+        )}
       </View>
     </TouchableWithoutFeedback>
   )
@@ -352,113 +223,24 @@ export const QuickChart = memo(function QuickChart() {
 
 const styles = StyleSheet.create({
   containerWrapper: {
-    marginBottom: 16,
-  },
-  container: {
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 0,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  titleSection: {
-    flex: 1,
-    gap: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  loadingIndicator: {
-    marginLeft: 8,
-    opacity: 0.6,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  periodButtonsContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  periodButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    minWidth: 42,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  periodButtonText: {
-    fontSize: typography.caption,
-    fontWeight: fontWeights.regular,
-  },
-  title: {
-    fontSize: typography.h4,
-    fontWeight: fontWeights.regular,
-    letterSpacing: 0.2,
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  changeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  changeText: {
-    fontSize: typography.caption,
-    fontWeight: fontWeights.semibold,
-  },
-  changeValue: {
-    fontSize: typography.tiny,
-    fontWeight: fontWeights.medium,
-  },
-  hint: {
-    fontSize: typography.tiny,
-    fontStyle: "italic",
+    marginBottom: 0,
   },
   chart: {
     marginLeft: -16,
-    borderRadius: 16,
+    borderRadius: 0,
   },
   chartWrapper: {
     position: "relative",
   },
-  loadingContainer: {
-    height: 240,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: typography.body,
-    marginTop: 12,
-  },
   errorContainer: {
-    height: 200,
+    height: 220, // 200→220
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24, // 20→24
   },
   errorText: {
-    fontSize: typography.body,
+    fontSize: typography.bodyLarge, // body→bodyLarge (17px)
     textAlign: "center",
+    lineHeight: 24,
   },
 })

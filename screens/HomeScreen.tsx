@@ -8,17 +8,13 @@ import { OpenOrdersModal } from "../components/open-orders-modal"
 import { OrderDetailsModal } from "../components/order-details-modal"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
-import { usePortfolio } from "../contexts/PortfolioContext"
 import { mockNotifications } from "../types/notifications"
-import { QuickChart } from "../components/QuickChart"
-import { ExchangesPieChart } from "../components/ExchangesPieChart"
 import { apiService } from "../services/api"
 import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
   const { refresh: refreshBalance, refreshing } = useBalance()
-  const { refreshEvolution } = usePortfolio()
   const scrollY = useRef(new Animated.Value(0)).current
   const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
@@ -29,6 +25,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const [selectedExchangeName, setSelectedExchangeName] = useState<string>("")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const lastScrollY = useRef(0)
+  const refreshOrdersRef = useRef<(() => void) | null>(null)
 
   const unreadCount = useMemo(() => 
     mockNotifications.filter(n => !n.read).length, 
@@ -75,13 +72,10 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
     setOrderDetailsModalVisible(true)
   }, [])
 
-  // Refresh completo: balances + evolution
+  // Refresh completo: apenas balances
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      refreshBalance(),
-      refreshEvolution()
-    ])
-  }, [refreshBalance, refreshEvolution])
+    await refreshBalance()
+  }, [refreshBalance])
 
   const handleScroll = useMemo(() => Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -128,12 +122,14 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         }
       >
         <PortfolioOverview />
-        <QuickChart />
-        <ExchangesPieChart />
         <ExchangesList 
           onAddExchange={onAddExchange}
           availableExchangesCount={availableExchangesCount}
           onOpenOrdersPress={onOpenOrdersPress}
+          onRefreshOrders={() => {
+            // Salva referência para a função de refresh
+            refreshOrdersRef.current = (window as any).__exchangesListRefreshOrders
+          }}
         />
       </Animated.ScrollView>
 
@@ -149,6 +145,17 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         exchangeName={selectedExchangeName}
         userId={config.userId}
         onSelectOrder={onSelectOrder}
+        onOrderCancelled={async () => {
+          // Após cancelar ordem, atualiza lista de tokens
+          console.log('🔄 [HomeScreen] Ordem cancelada, atualizando balances...')
+          await refreshBalance()
+          
+          // Atualiza também contagem de ordens abertas
+          console.log('🔄 [HomeScreen] Atualizando ordens abertas...')
+          if (refreshOrdersRef.current) {
+            await refreshOrdersRef.current()
+          }
+        }}
       />
 
       <OrderDetailsModal
@@ -172,8 +179,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-    gap: 16,
+    padding: 12,
+    paddingBottom: 80,
+    gap: 12,
   },
 })

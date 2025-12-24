@@ -75,20 +75,6 @@ export function TokensList({ exchange }: TokensListProps) {
         const amount = parseFloat(token.amount)
         const priceUSD = parseFloat(token.price_usd)
         const valueUSD = parseFloat(token.value_usd)
-        const change1h = token.change_1h ? parseFloat(token.change_1h) : null
-        const change4h = token.change_4h ? parseFloat(token.change_4h) : null
-        const change24h = token.change_24h ? parseFloat(token.change_24h) : null
-
-        const getChangeColor = (change: number | null) => {
-          if (change === null) return '#6b7280'
-          return change >= 0 ? '#10b981' : '#ef4444'
-        }
-
-        const formatChange = (change: number | null) => {
-          if (change === null) return 'N/A'
-          const sign = change >= 0 ? '+' : ''
-          return `${sign}${change.toFixed(2)}%`
-        }
 
         return (
           <TouchableOpacity 
@@ -99,19 +85,10 @@ export function TokensList({ exchange }: TokensListProps) {
           >
             <View style={styles.tokenHeader}>
               <View style={styles.symbolContainer}>
-                <Text style={styles.symbol}>{symbol}</Text>
+                <Text style={styles.symbol}>{symbol.toLowerCase()}</Text>
               </View>
               <View style={styles.valueContainer}>
-                <View style={styles.valueRow}>
-                  <Text style={styles.value}>{apiService.formatUSD(valueUSD)}</Text>
-                  {change24h !== null && (
-                    <View style={styles.changeInlineBadge}>
-                      <Text style={[styles.changeInlineText, { color: getChangeColor(change24h) }]}>
-                        {formatChange(change24h)}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+                <Text style={styles.value}>{apiService.formatUSD(valueUSD)}</Text>
                 {priceUSD > 0 && (
                   <Text style={styles.price}>{apiService.formatUSD(priceUSD)}</Text>
                 )}
@@ -156,113 +133,124 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f7ff",
   },
   title: {
-    fontSize: typography.h2,
-    fontWeight: fontWeights.medium,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    fontSize: typography.h2, // 24px
+    fontWeight: fontWeights.bold,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    color: "#111827",
+    letterSpacing: -0.3,
   },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 40,
+    padding: 48,
   },
   emptyText: {
-    fontSize: typography.body,
+    fontSize: typography.bodyLarge, // 17px
     color: "#6b7280",
     textAlign: "center",
+    lineHeight: 24,
   },
   tokenCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 20, // 16→20
+    marginHorizontal: 20, // 16→20
+    marginBottom: 16, // 12→16
     borderWidth: 1,
     borderColor: "#e3f2fd",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tokenHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16, // 12→16
   },
   symbolContainer: {
     backgroundColor: "#e3f2fd",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 12, // 8→12
+    paddingVertical: 6, // 4→6
+    borderRadius: 8, // 6→8
+    minWidth: 80,
+    alignItems: "center",
   },
   symbol: {
-    fontSize: typography.tiny,
-    fontWeight: fontWeights.medium,
+    fontSize: typography.body, // tiny→body (16px)
+    fontWeight: fontWeights.bold, // medium→bold
     color: "#3b82f6",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   valueContainer: {
     alignItems: "flex-end",
-  },
-  valueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    flex: 1,
+    marginLeft: 12,
   },
   value: {
-    fontSize: typography.h4,
-    fontWeight: fontWeights.medium,
+    fontSize: typography.h3, // h4→h3 (20px)
+    fontWeight: fontWeights.bold, // medium→bold
     color: "#111827",
   },
-  changeInlineBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    backgroundColor: "rgba(0,0,0,0.04)",
-  },
-  changeInlineText: {
-    fontSize: typography.tiny,
-    fontWeight: fontWeights.regular,
-  },
   price: {
-    fontSize: typography.caption,
+    fontSize: typography.body, // caption→body (16px)
     fontWeight: fontWeights.regular,
     color: "#6b7280",
-    marginTop: 2,
+    marginTop: 4, // 2→4
   },
   tokenDetails: {
-    gap: 8,
+    gap: 12, // 8→12
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    minHeight: 28,
   },
   detailLabel: {
-    fontSize: typography.bodySmall,
-    color: "#9ca3af",
+    fontSize: typography.body, // bodySmall→body (16px)
+    color: "#6b7280",
+    fontWeight: fontWeights.medium,
   },
   detailValue: {
-    fontSize: typography.bodySmall,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.body, // bodySmall→body (16px)
+    fontWeight: fontWeights.medium, // regular→medium
+    color: "#111827",
   },
   totalCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    marginTop: 8,
+    borderRadius: 16, // 12→16
+    padding: 24, // 20→24
+    marginHorizontal: 20, // 16→20
+    marginBottom: 24, // 16→24
+    marginTop: 12, // 8→12
     borderWidth: 2,
     borderColor: "#3b82f6",
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   totalLabel: {
-    fontSize: typography.bodySmall,
-    color: "#9ca3af",
-    marginBottom: 8,
+    fontSize: typography.body, // bodySmall→body (16px)
+    color: "#6b7280",
+    marginBottom: 12, // 8→12
+    fontWeight: fontWeights.medium,
+    letterSpacing: 0.5,
   },
   totalValue: {
-    fontSize: typography.h1,
-    fontWeight: fontWeights.medium,
+    fontSize: typography.displaySmall, // h1→displaySmall (24px)
+    fontWeight: fontWeights.bold, // medium→bold
     color: "#3b82f6",
+    letterSpacing: -0.5,
   },
 })

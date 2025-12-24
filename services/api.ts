@@ -243,16 +243,14 @@ export const apiService = {
    */
   formatUSD(value: string | number): string {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (numValue === 0) return '$0.00';
+    if (numValue === 0) return '0.00';
     
     // Para valores muito pequenos, mostra até 10 casas decimais
     if (numValue < 0.01) {
-      return '$' + numValue.toFixed(10).replace(/\.?0+$/, '');
+      return numValue.toFixed(10).replace(/\.?0+$/, '');
     }
     
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 10,
     }).format(numValue);
@@ -265,14 +263,31 @@ export const apiService = {
     const numValue = parseFloat(amount);
     if (numValue === 0) return '0';
     
-    // Para valores muito pequenos, mostra até 10 casas decimais sem notação científica
+    // Para valores muito pequenos (< 0.000001), mostra até 10 casas decimais
     if (numValue < 0.000001) {
       return numValue.toFixed(10).replace(/\.?0+$/, '');
     }
     
+    // Para valores grandes, usa abreviações
+    if (numValue >= 1_000_000_000) {
+      return `${(numValue / 1_000_000_000).toFixed(2)}Bi`;
+    }
+    if (numValue >= 1_000_000) {
+      return `${(numValue / 1_000_000).toFixed(2)}Mi`;
+    }
+    if (numValue >= 1_000) {
+      return `${(numValue / 1_000).toFixed(2)}K`;
+    }
+    
+    // Para valores entre 0.000001 e 1, mostra até 3 casas decimais
+    if (numValue < 1) {
+      return numValue.toFixed(3);
+    }
+    
+    // Para valores entre 1 e 1000, mostra até 2 casas decimais
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 10,
+      maximumFractionDigits: 2,
     }).format(numValue);
   },
 
@@ -443,11 +458,15 @@ export const apiService = {
    * 📋 Busca ordens abertas de uma exchange específica
    * @param userId ID do usuário
    * @param exchangeId MongoDB _id da exchange
+   * @param symbol (opcional) Par específico (ex: DOGE/USDT)
    * @returns Promise com a lista de ordens abertas
    */
-  async getOpenOrders(userId: string, exchangeId: string): Promise<any> {
+  async getOpenOrders(userId: string, exchangeId: string, symbol?: string): Promise<any> {
     try {
-      const url = `${API_BASE_URL}/orders/open?user_id=${userId}&exchange_id=${exchangeId}`;
+      let url = `${API_BASE_URL}/orders/open?user_id=${userId}&exchange_id=${exchangeId}`;
+      if (symbol) {
+        url += `&symbol=${symbol}`;
+      }
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
@@ -464,6 +483,330 @@ export const apiService = {
       console.error(`Error fetching open orders for exchange ${exchangeId}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * 📊 Cria ordem de compra (market ou limit)
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @param token Símbolo do token (ex: BTC, DOGE)
+   * @param amount Quantidade a comprar
+   * @param orderType Tipo de ordem: 'market' ou 'limit'
+   * @param price Preço (obrigatório para limit, opcional para market)
+   * @returns Promise com resultado da ordem
+   */
+  async createBuyOrder(
+    userId: string,
+    exchangeId: string,
+    token: string,
+    amount: number,
+    orderType: 'market' | 'limit',
+    price?: number
+  ): Promise<any> {
+    try {
+      const body: any = {
+        user_id: userId,
+        exchange_id: exchangeId,
+        token: token,
+        amount: amount,
+        order_type: orderType,
+      };
+
+      // Adiciona preço apenas se for limit ou se foi fornecido
+      if (orderType === 'limit' && price) {
+        body.price = price;
+      }
+
+      console.log('🟢 [API] Criando ordem de COMPRA')
+      console.log('📤 [API] URL:', `${API_BASE_URL}/orders/buy`)
+      console.log('📤 [API] Body:', JSON.stringify(body, null, 2))
+
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/orders/buy`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+        30000 // 30s timeout
+      );
+
+      console.log('📥 [API] Status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [API] Erro da API:', errorData)
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ [API] Resposta:', data)
+      return data;
+    } catch (error) {
+      console.error('❌ [API] Error creating buy order:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📉 Cria ordem de venda (market ou limit)
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @param token Símbolo do token (ex: BTC, DOGE)
+   * @param amount Quantidade a vender
+   * @param orderType Tipo de ordem: 'market' ou 'limit'
+   * @param price Preço (obrigatório para limit, opcional para market)
+   * @returns Promise com resultado da ordem
+   */
+  async createSellOrder(
+    userId: string,
+    exchangeId: string,
+    token: string,
+    amount: number,
+    orderType: 'market' | 'limit',
+    price?: number
+  ): Promise<any> {
+    try {
+      const body: any = {
+        user_id: userId,
+        exchange_id: exchangeId,
+        token: token,
+        amount: amount,
+        order_type: orderType,
+      };
+
+      // Adiciona preço apenas se for limit ou se foi fornecido
+      if (orderType === 'limit' && price) {
+        body.price = price;
+      }
+
+      console.log('🔴 [API] Criando ordem de VENDA')
+      console.log('📤 [API] URL:', `${API_BASE_URL}/orders/sell`)
+      console.log('📤 [API] Body:', JSON.stringify(body, null, 2))
+
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/orders/sell`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+        30000 // 30s timeout
+      );
+
+      console.log('📥 [API] Status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [API] Erro da API:', errorData)
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ [API] Resposta:', data)
+      return data;
+    } catch (error) {
+      console.error('❌ [API] Error creating sell order:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 💰 Consulta saldo disponível de um token específico
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @param token Símbolo do token (ex: BTC, DOGE, USDT)
+   * @returns Promise com saldo disponível, usado e total
+   */
+  async getTokenBalance(
+    userId: string,
+    exchangeId: string,
+    token: string
+  ): Promise<any> {
+    try {
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/exchanges/${exchangeId}/balance/${token}?user_id=${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+        15000 // 15s timeout
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error getting token balance:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📊 Lista tokens disponíveis para negociação (markets)
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @param quote (opcional) Moeda de cotação (default: USDT)
+   * @param search (opcional) Buscar token específico
+   * @returns Promise com lista de markets e seus limites
+   */
+  async getMarkets(
+    userId: string,
+    exchangeId: string,
+    quote: string = 'USDT',
+    search?: string
+  ): Promise<any> {
+    try {
+      let url = `${API_BASE_URL}/exchanges/${exchangeId}/markets?user_id=${userId}&quote=${quote}`;
+      if (search) {
+        url += `&search=${search}`;
+      }
+
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+        15000 // 15s timeout
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error getting markets:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📜 Histórico de ordens fechadas/canceladas (com cache de 5 min)
+   * @param userId ID do usuário
+   * @param exchangeId MongoDB _id da exchange
+   * @param symbol (opcional) Par específico (ex: BTC/USDT)
+   * @param limit (opcional) Número de ordens (default: 100, max: 500)
+   * @param useCache (opcional) Usar cache (default: true)
+   * @returns Promise com histórico de ordens
+   */
+  async getOrderHistory(
+    userId: string,
+    exchangeId: string,
+    symbol?: string,
+    limit: number = 100,
+    useCache: boolean = true
+  ): Promise<any> {
+    try {
+      let url = `${API_BASE_URL}/orders/history?user_id=${userId}&exchange_id=${exchangeId}&limit=${limit}&use_cache=${useCache}`;
+      if (symbol) {
+        url += `&symbol=${symbol}`;
+      }
+
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+        15000 // 15s timeout
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error getting order history:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * ❌ Cancela uma ordem aberta
+   * @param userId ID do usuário
+   * @param orderId ID da ordem a cancelar
+   * @param exchangeId ID da exchange (opcional mas recomendado)
+   * @param symbol Par de negociação (opcional mas recomendado)
+   * @returns Promise com resultado do cancelamento
+   */
+  async cancelOrder(
+    userId: string,
+    orderId: string,
+    exchangeId?: string,
+    symbol?: string
+  ): Promise<any> {
+    try {
+      console.log('🔴 [API] Cancelando ordem')
+      console.log('📤 [API] URL:', `${API_BASE_URL}/orders/cancel`)
+      
+      const body = {
+        user_id: userId,
+        order_id: orderId,
+        ...(exchangeId && { exchange_id: exchangeId }),
+        ...(symbol && { symbol })
+      }
+      
+      console.log('📤 [API] Body:', JSON.stringify(body, null, 2))
+      
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/orders/cancel`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+        15000 // 15s timeout
+      );
+
+      console.log('📥 [API] Status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [API] Erro da API:', errorData)
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ [API] Resposta:', data)
+      return data;
+    } catch (error) {
+      console.error('❌ [API] Error canceling order:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Invalida o cache de ordens abertas para um usuário/exchange específico
+   * Usado após criar ou cancelar ordens para forçar atualização
+   */
+  invalidateOrdersCache(userId: string, exchangeId: string) {
+    console.log('🗑️ [API] Invalidando cache de ordens para:', { userId, exchangeId })
+    // O cache está no componente OpenOrdersModal, não aqui
+    // Este método serve como trigger para componentes que importam este serviço
+    // Os componentes podem usar este método como sinal para limpar seus próprios caches
   },
 
   /**

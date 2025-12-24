@@ -1,4 +1,4 @@
-import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable } from "react-native"
+import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native"
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
@@ -14,10 +14,11 @@ interface OpenOrdersModalProps {
   exchangeName: string
   userId: string
   onSelectOrder: (order: OpenOrder) => void
+  onOrderCancelled?: () => void  // Callback chamado após cancelar ordem
 }
 
-// Cache global para ordens abertas
-const ordersCache = new Map<string, { orders: OpenOrder[], timestamp: number }>()
+// Cache global para ordens abertas - EXPORTADO para uso externo
+export const ordersCache = new Map<string, { orders: OpenOrder[], timestamp: number }>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos em milissegundos
 
 export function OpenOrdersModal({ 
@@ -26,7 +27,8 @@ export function OpenOrdersModal({
   exchangeId, 
   exchangeName,
   userId,
-  onSelectOrder 
+  onSelectOrder,
+  onOrderCancelled
 }: OpenOrdersModalProps) {
   const { colors } = useTheme()
   const { t } = useLanguage()
@@ -34,6 +36,8 @@ export function OpenOrdersModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [confirmCancelVisible, setConfirmCancelVisible] = useState(false)
+  const [orderToCancel, setOrderToCancel] = useState<OpenOrder | null>(null)
 
   useEffect(() => {
     if (visible && exchangeId) {
@@ -96,6 +100,60 @@ export function OpenOrdersModal({
 
   const getSideColor = (side: string) => {
     return side === 'buy' ? '#10b981' : '#ef4444'
+  }
+
+  const handleCancelOrder = async (order: OpenOrder) => {
+    // Abre o modal de confirmação
+    setOrderToCancel(order)
+    setConfirmCancelVisible(true)
+  }
+
+  const confirmCancelOrder = async () => {
+    if (!orderToCancel) return
+    
+    setConfirmCancelVisible(false)
+    
+    try {
+      console.log('📋 [OpenOrdersModal] 🔄 Cancelando ordem:', orderToCancel.id)
+      console.log('📋 [OpenOrdersModal] 📋 Dados:', { userId, exchangeId, orderId: orderToCancel.id, symbol: orderToCancel.symbol })
+      
+      // Chama a API para cancelar (com exchange_id e symbol)
+      console.log('📋 [OpenOrdersModal] 🌐 Chamando apiService.cancelOrder...')
+      const result = await apiService.cancelOrder(userId, orderToCancel.id, exchangeId, orderToCancel.symbol)
+      console.log('📋 [OpenOrdersModal] 📥 Resultado recebido:', result)
+      
+      if (result.success) {
+        console.log('✅ [OpenOrdersModal] Ordem cancelada com sucesso!')
+        
+        // Remove do cache para forçar atualização da API
+        const cacheKey = `${userId}_${exchangeId}`
+        console.log('📋 [OpenOrdersModal] 🗑️ Deletando cache:', cacheKey)
+        ordersCache.delete(cacheKey)
+        
+        // Recarrega a lista completa da API
+        console.log('📋 [OpenOrdersModal] 🔄 Recarregando lista de ordens...')
+        await loadOrders()
+        console.log('📋 [OpenOrdersModal] ✅ Lista recarregada!')
+        
+        // Chama callback para atualizar lista de tokens
+        if (onOrderCancelled) {
+          console.log('📋 [OpenOrdersModal] 🔄 Chamando callback onOrderCancelled...')
+          onOrderCancelled()
+        }
+        
+        // Notifica sucesso
+        Alert.alert('Sucesso', '✅ Ordem cancelada com sucesso!')
+      } else {
+        console.error('❌ [OpenOrdersModal] API retornou success=false:', result)
+        throw new Error(result.error || 'Erro ao cancelar ordem')
+      }
+    } catch (error: any) {
+      console.error('❌ [OpenOrdersModal] Erro ao cancelar:', error)
+      console.error('❌ [OpenOrdersModal] Stack:', error.stack)
+      Alert.alert('Erro', `❌ Erro ao cancelar ordem: ${error.message}`)
+    } finally {
+      setOrderToCancel(null)
+    }
   }
 
   const getOrderTypeLabel = (type: string) => {
@@ -248,88 +306,65 @@ export function OpenOrdersModal({
               ) : (
                 <View style={styles.ordersList}>
                   {orders.map((order) => (
-                    <TouchableOpacity
+                    <View
                       key={order.id}
-                      style={[styles.orderCard, { 
+                      style={[styles.orderItemCompact, { 
                         backgroundColor: colors.surface,
-                        borderColor: colors.border 
+                        borderBottomColor: colors.border 
                       }]}
-                      onPress={() => {
-                        console.log('📋 [OpenOrdersModal] Ordem selecionada:', {
-                          id: order.id,
-                          symbol: order.symbol,
-                          keys: Object.keys(order),
-                          fullOrder: order
-                        })
-                        onSelectOrder(order)
-                        onClose()
-                      }}
                     >
-                      {/* Header da ordem */}
-                      <View style={styles.orderHeader}>
-                        <View style={styles.orderSymbol}>
-                          <Text style={[styles.symbolText, { color: colors.text }]}>
-                            {order.symbol}
+                      <View style={styles.orderCompactRow}>
+                        {/* Symbol - clicável para abrir detalhes */}
+                        <TouchableOpacity
+                          onPress={() => {
+                            console.log('📋 [OpenOrdersModal] Ordem selecionada:', order.id)
+                            onSelectOrder(order)
+                            onClose()
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.orderSymbolCompact, { color: colors.text }]} numberOfLines={1}>
+                            {order.symbol.toLowerCase()}
                           </Text>
-                          <View style={[styles.typeBadge, { backgroundColor: getOrderTypeColor(order.type) + '20' }]}>
-                            <Text style={[styles.typeText, { color: getOrderTypeColor(order.type) }]}>
-                              {getOrderTypeLabel(order.type)}
-                            </Text>
-                          </View>
-                        </View>
-                        <View style={[styles.sideBadge, { backgroundColor: getSideColor(order.side) + '20' }]}>
-                          <Text style={[styles.sideText, { color: getSideColor(order.side) }]}>
+                        </TouchableOpacity>
+
+                        {/* Side (Buy/Sell) */}
+                        <View style={[styles.orderSideBadgeCompact, { backgroundColor: getSideColor(order.side) + '10' }]}>
+                          <Text style={[styles.orderSideTextCompact, { color: getSideColor(order.side) }]}>
                             {getSideLabel(order.side)}
                           </Text>
                         </View>
-                      </View>
 
-                      {/* Detalhes */}
-                      <View style={styles.orderDetails}>
-                        <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-                            {t('orders.price')}
-                          </Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {formatValue(order.price)}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-                            {t('orders.amount')}
-                          </Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {formatAmount(order.amount)}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-                            {t('orders.filled')}
-                          </Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {order.filled > 0 && order.amount > 0 ? ((order.filled / order.amount) * 100).toFixed(1) + '%' : '0%'}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-                            {t('orders.total')}
-                          </Text>
-                          <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {formatValue(order.price * order.amount)}
-                          </Text>
-                        </View>
-                      </View>
+                        {/* Amount */}
+                        <Text style={[styles.orderAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {formatAmount(order.amount)}
+                        </Text>
 
-                      {/* Footer */}
-                      <View style={styles.orderFooter}>
-                        <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-                          {formatDate(order.timestamp)}
+                        {/* Price */}
+                        <Text style={[styles.orderPriceCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {formatValue(order.price)}
                         </Text>
-                        <Text style={[styles.totalText, { color: colors.text }]}>
-                          {formatValue(order.cost)}
-                        </Text>
+
+                        {/* Status badge (se parcialmente preenchida) */}
+                        {order.filled > 0 && (
+                          <View style={[styles.orderStatusBadgeCompact, { backgroundColor: '#f59e0b' + '10' }]}>
+                            <Text style={[styles.orderStatusTextCompact, { color: '#f59e0b' }]}>
+                              {((order.filled / order.amount) * 100).toFixed(0)}%
+                            </Text>
+                          </View>
+                        )}
+
+                        {/* Cancel Button */}
+                        <TouchableOpacity
+                          onPress={() => handleCancelOrder(order)}
+                          style={[styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                        >
+                          <Text style={{ color: '#ef4444', fontSize: typography.caption, fontWeight: fontWeights.medium }}>
+                            cancel
+                          </Text>
+                        </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               )}
@@ -337,6 +372,113 @@ export function OpenOrdersModal({
           </View>
         </Pressable>
       </Pressable>
+
+      {/* Modal de Confirmação de Cancelamento */}
+      <Modal
+        visible={confirmCancelVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setConfirmCancelVisible(false)}
+      >
+        <Pressable 
+          style={styles.confirmOverlay} 
+          onPress={() => setConfirmCancelVisible(false)}
+        >
+          <Pressable 
+            style={styles.confirmSafeArea} 
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.confirmContainer, { backgroundColor: colors.background }]}>
+              {/* Header */}
+              <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                  Confirmar Cancelamento
+                </Text>
+              </View>
+
+              {/* Content */}
+              <View style={styles.confirmContent}>
+                <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                  {orderToCancel && `Deseja realmente cancelar esta ordem ${orderToCancel.side === 'buy' ? 'de compra' : 'de venda'}?`}
+                </Text>
+                
+                {orderToCancel && (
+                  <View style={[styles.confirmDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={styles.confirmDetailRow}>
+                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                        Par:
+                      </Text>
+                      <Text style={[styles.confirmValue, { color: colors.text }]}>
+                        {orderToCancel.symbol}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.confirmDetailRow}>
+                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                        Lado:
+                      </Text>
+                      <Text style={[styles.confirmValue, { color: getSideColor(orderToCancel.side) }]}>
+                        {getSideLabel(orderToCancel.side)}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.confirmDetailRow}>
+                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                        Quantidade:
+                      </Text>
+                      <Text style={[styles.confirmValue, { color: colors.text }]}>
+                        {formatAmount(orderToCancel.amount)}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.confirmDetailRow}>
+                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                        Preço:
+                      </Text>
+                      <Text style={[styles.confirmValue, { color: colors.text }]}>
+                        {formatValue(orderToCancel.price)}
+                      </Text>
+                    </View>
+                    
+                    <View style={[styles.confirmDetailRow, styles.confirmTotalRow, { borderTopColor: colors.border }]}>
+                      <Text style={[styles.confirmLabel, { color: colors.textSecondary, fontWeight: fontWeights.semibold }]}>
+                        Total:
+                      </Text>
+                      <Text style={[styles.confirmValue, { color: colors.text, fontWeight: fontWeights.semibold }]}>
+                        {formatValue(orderToCancel.amount * orderToCancel.price)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* Footer com botões */}
+              <View style={styles.confirmFooter}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setConfirmCancelVisible(false)
+                    setOrderToCancel(null)
+                  }}
+                  style={[styles.confirmButton, styles.confirmButtonCancel, { borderColor: colors.border }]}
+                >
+                  <Text style={[styles.confirmButtonText, { color: colors.textSecondary }]}>
+                    Não
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={confirmCancelOrder}
+                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: '#ef4444' }]}
+                >
+                  <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+                    Sim, Cancelar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   )
 }
@@ -567,6 +709,150 @@ const styles = StyleSheet.create({
   },
   totalText: {
     fontSize: typography.bodyLarge,
+    fontWeight: fontWeights.semibold,
+  },
+  // Compact list styles (similar to tokens list)
+  orderItemCompact: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0.5,
+  },
+  orderCompactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    justifyContent: 'space-between',
+  },
+  orderSymbolCompact: {
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.semibold,
+    minWidth: 50,
+  },
+  orderSideBadgeCompact: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    minWidth: 32,
+  },
+  orderSideTextCompact: {
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.medium,
+    textAlign: 'center',
+  },
+  orderAmountCompact: {
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
+    minWidth: 50,
+    textAlign: 'right',
+  },
+  orderPriceCompact: {
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
+    minWidth: 50,
+    textAlign: 'right',
+  },
+  orderStatusBadgeCompact: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    minWidth: 30,
+  },
+  orderStatusTextCompact: {
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.medium,
+    textAlign: 'center',
+  },
+  cancelButton: {
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    borderWidth: 1,
+    borderRadius: 3,
+  },
+  // Estilos do modal de confirmação
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  confirmSafeArea: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  confirmContainer: {
+    borderRadius: 16,
+    width: "100%",
+    maxWidth: 400,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  confirmHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    alignItems: "center",
+  },
+  confirmTitle: {
+    fontSize: typography.h3,
+    fontWeight: fontWeights.semibold,
+  },
+  confirmContent: {
+    padding: 20,
+    gap: 16,
+  },
+  confirmMessage: {
+    fontSize: typography.body,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  confirmDetails: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  confirmDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  confirmTotalRow: {
+    paddingTop: 12,
+    marginTop: 4,
+    borderTopWidth: 1,
+  },
+  confirmLabel: {
+    fontSize: typography.bodySmall,
+  },
+  confirmValue: {
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.medium,
+  },
+  confirmFooter: {
+    flexDirection: "row",
+    padding: 20,
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmButtonCancel: {
+    borderWidth: 1,
+  },
+  confirmButtonConfirm: {
+    // backgroundColor definido inline
+  },
+  confirmButtonText: {
+    fontSize: typography.body,
     fontWeight: fontWeights.semibold,
   },
 })

@@ -133,7 +133,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // TODO: Implementar chamada real à API
       const mockUser: User = {
-        id: 'user_' + Date.now(),
+        id: 'charles_test_user', // ID fixo para desenvolvimento
         email,
         name: email.split('@')[0],
         authProvider: 'email'
@@ -187,9 +187,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true)
       
       // TODO: Implementar OAuth com Google
-      // Por enquanto, simulando
+      // Por enquanto, usa o userId fixo do config para desenvolvimento
       const mockUser: User = {
-        id: 'google_' + Date.now(),
+        id: 'charles_test_user', // ID fixo para desenvolvimento
         email: 'user@gmail.com',
         name: 'Google User',
         avatar: 'https://lh3.googleusercontent.com/a/default-user',
@@ -219,9 +219,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true)
       
       // TODO: Implementar OAuth com Apple
-      // Por enquanto, simulando
+      // Por enquanto, usa o userId fixo do config para desenvolvimento
       const mockUser: User = {
-        id: 'apple_' + Date.now(),
+        id: 'charles_test_user', // ID fixo para desenvolvimento
         email: 'user@icloud.com',
         name: 'Apple User',
         authProvider: 'apple'
@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // TODO: Implementar chamada real à API
       const mockUser: User = {
-        id: 'user_' + Date.now(),
+        id: 'charles_test_user', // ID fixo para desenvolvimento
         email,
         name,
         authProvider: 'email'
