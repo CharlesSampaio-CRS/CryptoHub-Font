@@ -583,6 +583,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                           styles.variationBadgeCompact,
                           { 
                             backgroundColor: isLoadingThisExchange ? 'transparent' : colors.primary + '15',
+                            borderWidth: isLoadingThisExchange ? 0 : 0.5,
+                            borderColor: isLoadingThisExchange ? 'transparent' : colors.primary,
                             marginLeft: 8,
                           }
                         ]}
@@ -592,7 +594,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                           <AnimatedLogoIcon size={12} />
                         ) : (
                           <Text style={[styles.variationTextCompact, { color: colors.primary }]}>
-                            orders: {count}
+                            {t('orders.badge').toLowerCase()}: {count}
                           </Text>
                         )}
                       </TouchableOpacity>
@@ -739,7 +741,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                               {/* Tooltip */}
                               {tooltipVisible === `${exchange.exchange_id}-${symbol}` && (
                                 <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                  <Text style={[styles.tooltipText, { color: colors.text }]}>Trade</Text>
+                                  <Text style={[styles.tooltipText, { color: colors.text }]}>{t('trade.tooltip')}</Text>
                                 </View>
                               )}
                             </View>

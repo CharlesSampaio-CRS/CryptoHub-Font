@@ -681,13 +681,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    gap: 12,
   },
   headerTitleContainer: {
     flex: 1,
   },
   modalTitle: {
-    fontSize: typography.h2,
+    fontSize: typography.h3,
     fontWeight: fontWeights.medium,
   },
   exchangeName: {
@@ -780,17 +779,11 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.semibold,
   },
   closeButton: {
-    padding: 8,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
+    padding: 4,
   },
   closeButtonText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: fontWeights.light,
-    lineHeight: 20,
   },
   modalContent: {
     flex: 1,

@@ -203,6 +203,16 @@ const translations = {
     'orders.details.trades': 'Trades Executados',
     'orders.details.trade': 'Trade',
     'orders.details.close': 'Fechar',
+    'orders.count': 'ordens',
+    'orders.countSingular': 'ordem',
+    
+    // Trade
+    'trade.tooltip': 'Negociar',
+    'trade.title': 'Trade',
+    
+    // Exchanges tooltips and misc
+    'exchanges.requiresPassphrase': 'Requer passphrase',
+    
     'exchanges.status': 'Status:',
     'exchanges.activate': 'Ativar',
     'exchanges.hidden': 'ocultas',
@@ -581,6 +591,15 @@ const translations = {
     'orders.details.trades': 'Executed Trades',
     'orders.details.trade': 'Trade',
     'orders.details.close': 'Close',
+    'orders.count': 'orders',
+    'orders.countSingular': 'order',
+    
+    // Trade
+    'trade.tooltip': 'Trade',
+    'trade.title': 'Trade',
+    
+    // Exchanges tooltips and misc
+    'exchanges.requiresPassphrase': 'Requires passphrase',
     
     // Token Details
     'token.details': 'Token Details',

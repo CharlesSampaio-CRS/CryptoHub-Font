@@ -99,7 +99,7 @@ const LinkedExchangeCard = memo(({
         activeOpacity={0.7}
       >
         {/* Ícone */}
-        <View style={styles.compactIconContainer}>
+        <View style={[styles.compactIconContainer, isDark && { backgroundColor: '#FFFFFF' }]}>
           {localIcon ? (
             <Image 
               source={localIcon} 
@@ -200,6 +200,7 @@ const AvailableExchangeCard = memo(({
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
   const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
+  const isDark = colors.isDark
   
   const themedStyles = useMemo(() => ({
     card: {
@@ -215,7 +216,7 @@ const AvailableExchangeCard = memo(({
         activeOpacity={0.7}
       >
         {/* Ícone */}
-        <View style={styles.availableIconContainer}>
+        <View style={[styles.availableIconContainer, isDark && { backgroundColor: '#FFFFFF' }]}>
           {localIcon ? (
             <Image 
               source={localIcon} 
@@ -252,7 +253,7 @@ const AvailableExchangeCard = memo(({
             {showTooltip && (
               <View style={[styles.passphraseTooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.passphraseTooltipText, { color: colors.text }]}>
-                  Requer passphrase
+                  {t('exchanges.requiresPassphrase')}
                 </Text>
               </View>
             )}
@@ -732,7 +733,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     primaryButtonText: { color: colors.primary },
     
     // Exchange Info
-    exchangeInfo: { backgroundColor: colors.surfaceSecondary },
+    exchangeInfo: { backgroundColor: colors.surfaceSecondary, padding: 16 },
     
     // Modal Exchange Country
     modalExchangeCountry: { color: colors.textSecondary },
@@ -966,6 +967,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 </TouchableOpacity>
               </View>
 
+              <ScrollView style={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
               {selectedExchange && (
               <>
                 {/* Info da Exchange */}
@@ -1112,6 +1114,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 </View>
               </>
             )}
+            </ScrollView>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -2150,6 +2153,10 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
     height: "85%",
   },
+  modalScrollContent: {
+    flex: 1,
+    padding: 20,
+  },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2172,7 +2179,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 16,
     borderRadius: 12,
     marginBottom: 24,
   },
