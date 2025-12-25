@@ -82,7 +82,7 @@ export function OrderDetailsModal({ visible, onClose, order }: OrderDetailsModal
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalSafeArea} onPress={(e) => e.stopPropagation()}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
             {/* Header */}
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.headerContent}>
@@ -110,7 +110,7 @@ export function OrderDetailsModal({ visible, onClose, order }: OrderDetailsModal
             {/* Content */}
             <ScrollView style={styles.modalContent}>
               {/* Status */}
-              <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.section, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                   {t('orders.details.status')}
                 </Text>
@@ -123,7 +123,7 @@ export function OrderDetailsModal({ visible, onClose, order }: OrderDetailsModal
               </View>
 
               {/* Progresso */}
-              <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.section, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                   {t('orders.details.progress')}
                 </Text>
@@ -161,7 +161,7 @@ export function OrderDetailsModal({ visible, onClose, order }: OrderDetailsModal
               </View>
 
               {/* Detalhes Principais */}
-              <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.section, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                   {t('orders.details.title')}
                 </Text>
@@ -221,7 +221,7 @@ export function OrderDetailsModal({ visible, onClose, order }: OrderDetailsModal
 
               {/* Trades (se houver) */}
               {order.trades && order.trades.length > 0 && (
-                <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.section, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                     {t('orders.details.trades')} ({order.trades.length})
                   </Text>

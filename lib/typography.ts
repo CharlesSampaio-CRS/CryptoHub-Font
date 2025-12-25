@@ -11,45 +11,45 @@ export const typography = {
   // ========================================
   // TÍTULOS (Headings)
   // ========================================
-  h1: 24,      // Título principal de página
-  h2: 20,      // Título de seção grande
-  h3: 18,      // Título de seção média
-  h4: 16,      // Subtítulo/Card title
+  h1: 28,      // Título principal de página (+4)
+  h2: 24,      // Título de seção grande (+4)
+  h3: 20,      // Título de seção média (+2)
+  h4: 18,      // Subtítulo/Card title (+2)
   
   // ========================================
   // CORPO DE TEXTO (Body)
   // ========================================
-  body: 14,         // Texto principal padrão
-  bodyLarge: 15,    // Texto destacado/importante
-  bodySmall: 13,    // Texto secundário
+  body: 16,         // Texto principal padrão (+2)
+  bodyLarge: 17,    // Texto destacado/importante (+2)
+  bodySmall: 15,    // Texto secundário (+2)
   
   // ========================================
   // TEXTOS PEQUENOS (Small text)
   // ========================================
-  caption: 12,  // Labels, descrições, helper text
-  tiny: 11,     // Metadados, timestamps, contadores
-  micro: 10,    // Badges, tags, variações de preço
+  caption: 14,  // Labels, descrições, helper text (+2)
+  tiny: 13,     // Metadados, timestamps, contadores (+2)
+  micro: 12,    // Badges, tags, variações de preço (+2)
   
   // ========================================
   // VALORES NUMÉRICOS (Display)
   // ========================================
-  displayLarge: 42,   // Valor principal do portfolio
-  display: 28,        // Valores grandes (gráficos)
-  displaySmall: 20,   // Valores médios
+  displayLarge: 48,   // Valor principal do portfolio (+6)
+  display: 32,        // Valores grandes (gráficos) (+4)
+  displaySmall: 24,   // Valores médios (+4)
   
   // ========================================
   // BOTÕES (Buttons)
   // ========================================
-  button: 15,       // Botão primário/principal
-  buttonSmall: 13,  // Botão secundário/pequeno
+  button: 17,       // Botão primário/principal (+2)
+  buttonSmall: 15,  // Botão secundário/pequeno (+2)
   
   // ========================================
   // FORMULÁRIOS (Forms)
   // ========================================
-  input: 16,        // Texto de input
-  label: 12,        // Labels de formulário
-  placeholder: 16,  // Placeholder text
-  errorText: 12,    // Mensagens de erro
+  input: 18,        // Texto de input (+2)
+  label: 14,        // Labels de formulário (+2)
+  placeholder: 17,  // Placeholder text (+1)
+  errorText: 13,    // Mensagens de erro (+1)
   
   // ========================================
   // ÍCONES E EMOJIS (Icons)

@@ -257,7 +257,7 @@ export function TradeModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.surface }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View>
@@ -510,11 +510,11 @@ export function TradeModal({
             style={styles.confirmSafeArea} 
             onPress={(e) => e.stopPropagation()}
           >
-            <View style={[styles.confirmContainer, { backgroundColor: colors.background }]}>
+            <View style={[styles.confirmContainer, { backgroundColor: colors.surface }]}>
               {/* Header */}
               <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmTitle, { color: colors.text }]}>
-                  Confirmar {isBuy ? 'Compra' : 'Venda'}
+                  {isBuy ? 'Compra' : 'Venda'}
                 </Text>
               </View>
 
@@ -525,7 +525,7 @@ export function TradeModal({
                 </Text>
                 
                 {pendingOrder && (
-                  <View style={[styles.confirmDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <View style={[styles.confirmDetails, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                     <View style={styles.confirmDetailRow}>
                       <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
                         Par:
@@ -602,7 +602,7 @@ export function TradeModal({
                   style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: isBuy ? '#10b981' : '#ef4444' }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
-                    Confirmar {isBuy ? 'Compra' : 'Venda'}
+                    {isBuy ? 'Compra' : 'Venda'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -618,12 +618,13 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
+    borderRadius: 20,
+    width: '90%',
+    maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
@@ -634,28 +635,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: typography.h2,
-    fontWeight: fontWeights.bold,
-    marginBottom: 4,
+    fontSize: typography.h3,
+    fontWeight: fontWeights.medium,
   },
   subtitle: {
     fontSize: typography.body,
     fontWeight: fontWeights.regular,
+    marginTop: 2,
   },
   closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 4,
   },
   closeButtonText: {
-    fontSize: 28,
-    fontWeight: fontWeights.regular,
+    fontSize: 22,
+    fontWeight: fontWeights.light,
   },
   content: {
     padding: 24,

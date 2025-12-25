@@ -197,9 +197,9 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
     >
       <View style={styles.modalOverlay}>
         <View style={styles.safeArea}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             {/* Header */}
-            <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {tokenData ? `${symbol} - ${tokenData.exchange.name}` : t('token.details')}
               </Text>
@@ -207,7 +207,6 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
                 <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
               </TouchableOpacity>
             </View>
-
             {loading ? (
               <View style={styles.loadingContainer}>
                 <AnimatedLogoIcon size={40} />
@@ -230,7 +229,7 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
             ) : tokenData ? (
               <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Preço Atual */}
-                <View style={[styles.section, { backgroundColor: colors.background }]}>
+                <View style={[styles.section, { backgroundColor: colors.surfaceSecondary }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                     {t('token.currentPrice')}
                   </Text>

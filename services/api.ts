@@ -799,6 +799,119 @@ export const apiService = {
   },
 
   /**
+   * Cancela todas as ordens abertas de uma exchange
+   * @param userId ID do usuário
+   * @param exchangeId ID da exchange
+   * @returns Promise com resultado do cancelamento
+   */
+  async cancelAllOrders(
+    userId: string,
+    exchangeId: string
+  ): Promise<any> {
+    try {
+      console.log('🔴 [API] Cancelando TODAS as ordens da exchange:', exchangeId)
+      console.log('📤 [API] URL:', `${API_BASE_URL}/orders/cancel-all`)
+      
+      const body = {
+        user_id: userId,
+        exchange_id: exchangeId
+      }
+      
+      console.log('📤 [API] Body:', JSON.stringify(body, null, 2))
+      
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/orders/cancel-all`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+        30000 // 30s timeout (pode demorar mais para cancelar múltiplas ordens)
+      );
+
+      console.log('📥 [API] Status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [API] Erro da API:', errorData)
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ [API] Resposta:', data)
+      return data;
+    } catch (error) {
+      console.error('❌ [API] Error canceling all orders:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Edita uma ordem existente (preço e/ou quantidade)
+   * @param userId ID do usuário
+   * @param orderId ID da ordem
+   * @param exchangeId ID da exchange
+   * @param symbol Par de negociação
+   * @param newPrice Novo preço (opcional)
+   * @param newAmount Nova quantidade (opcional)
+   * @returns Promise com resultado da edição
+   */
+  async editOrder(
+    userId: string,
+    orderId: string,
+    exchangeId: string,
+    symbol: string,
+    newPrice?: number,
+    newAmount?: number
+  ): Promise<any> {
+    try {
+      console.log('✏️ [API] Editando ordem:', orderId)
+      console.log('📤 [API] URL:', `${API_BASE_URL}/orders/edit`)
+      
+      const body: any = {
+        user_id: userId,
+        order_id: orderId,
+        exchange_id: exchangeId,
+        symbol: symbol
+      }
+      
+      if (newPrice !== undefined) body.price = newPrice
+      if (newAmount !== undefined) body.amount = newAmount
+      
+      console.log('📤 [API] Body:', JSON.stringify(body, null, 2))
+      
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/orders/edit`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+        15000 // 15s timeout
+      );
+
+      console.log('📥 [API] Status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [API] Erro da API:', errorData)
+        throw new Error(errorData.error || `API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ [API] Resposta:', data)
+      return data;
+    } catch (error) {
+      console.error('❌ [API] Error editing order:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Invalida o cache de ordens abertas para um usuário/exchange específico
    * Usado após criar ou cancelar ordens para forçar atualização
    */

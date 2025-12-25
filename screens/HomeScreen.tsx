@@ -1,5 +1,5 @@
-import { StyleSheet, ScrollView, SafeAreaView, Animated, RefreshControl } from "react-native"
-import { useRef, useState, useMemo, useCallback, memo, useEffect } from "react"
+import { StyleSheet, ScrollView, SafeAreaView, RefreshControl } from "react-native"
+import { useRef, useState, useMemo, useCallback, memo } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { ExchangesList } from "../components/ExchangesList"
@@ -15,15 +15,12 @@ import { config } from "../lib/config"
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
   const { refresh: refreshBalance, refreshing } = useBalance()
-  const scrollY = useRef(new Animated.Value(0)).current
-  const [isScrollingDown, setIsScrollingDown] = useState(false)
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
   const [openOrdersModalVisible, setOpenOrdersModalVisible] = useState(false)
   const [orderDetailsModalVisible, setOrderDetailsModalVisible] = useState(false)
   const [selectedExchangeId, setSelectedExchangeId] = useState<string>("")
   const [selectedExchangeName, setSelectedExchangeName] = useState<string>("")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const lastScrollY = useRef(0)
   const refreshOrdersRef = useRef<(() => void) | null>(null)
 
   const unreadCount = useMemo(() => 
@@ -62,40 +59,18 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const handleRefresh = useCallback(async () => {
     await refreshBalance()
   }, [refreshBalance])
-
-  const handleScroll = useMemo(() => Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: true,
-      listener: (event: any) => {
-        const currentScrollY = event.nativeEvent.contentOffset.y
-        
-        // Detectar direção do scroll
-        if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-          setIsScrollingDown(true)
-        } else if (currentScrollY < lastScrollY.current) {
-          setIsScrollingDown(false)
-        }
-        
-        lastScrollY.current = currentScrollY
-      },
-    }
-  ), [])
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Header 
-        hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}
         onProfilePress={onProfilePress}
         unreadCount={unreadCount}
       />
-      <Animated.ScrollView
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         removeClippedSubviews={true}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -116,7 +91,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
             refreshOrdersRef.current = (window as any).__exchangesListRefreshOrders
           }}
         />
-      </Animated.ScrollView>
+      </ScrollView>
 
       <NotificationsModal 
         visible={notificationsModalVisible}
@@ -131,10 +106,11 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         userId={config.userId}
         onSelectOrder={onSelectOrder}
         onOrderCancelled={async () => {
-          // Após cancelar ordem, atualiza APENAS contagem de ordens abertas
-          console.log('🔄 [HomeScreen] Ordem cancelada, atualizando ordens abertas...')
-          if (refreshOrdersRef.current) {
-            await refreshOrdersRef.current()
+          // Após cancelar ordem, atualiza APENAS a exchange específica
+          console.log('🔄 [HomeScreen] Ordem cancelada, atualizando ordens abertas da exchange...')
+          const refreshSingleExchange = (window as any).__exchangesListRefreshOrdersForExchange
+          if (refreshSingleExchange && selectedExchangeId) {
+            await refreshSingleExchange(selectedExchangeId)
           }
         }}
       />

@@ -38,8 +38,10 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
     currentPrice: number
     balance: { token: number; usdt: number }
   } | null>(null)
+  const [tooltipVisible, setTooltipVisible] = useState<string | null>(null)
   const [openOrdersCount, setOpenOrdersCount] = useState<Record<string, number>>({})
   const [loadingOrders, setLoadingOrders] = useState(false)
+  const [loadingOrdersByExchange, setLoadingOrdersByExchange] = useState<Record<string, boolean>>({})
   const [hasLoadedOrders, setHasLoadedOrders] = useState(false)
   const [lastOrdersUpdate, setLastOrdersUpdate] = useState<Date | null>(null)
   const ordersIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -218,6 +220,43 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
     setHasLoadedOrders(true)
   }, [data?.exchanges, loadingOrders])
 
+  // Função para atualizar ordens de uma exchange específica (usada após cancelar ordem)
+  const refreshSingleExchangeOrders = useCallback(async (exchangeId: string) => {
+    const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
+    if (!exchange) return
+
+    console.log('🔄 [ExchangesList] Atualizando ordens de:', exchange.name)
+    
+    // Marca como loading para esta exchange
+    setLoadingOrdersByExchange(prev => ({ ...prev, [exchangeId]: true }))
+
+    try {
+      const response = await apiService.getOpenOrders(config.userId, exchangeId)
+      const count = response.count || response.total_orders || 0
+      const orders = response.orders || []
+      
+      // Atualiza cache
+      const cacheKey = `${config.userId}_${exchangeId}`
+      ordersCache.set(cacheKey, { 
+        orders: orders, 
+        timestamp: Date.now() 
+      })
+      
+      // Atualiza contagem
+      setOpenOrdersCount(prev => ({
+        ...prev,
+        [exchangeId]: count
+      }))
+      
+      console.log('✅ [ExchangesList] Ordens atualizadas:', exchange.name, '-', count, 'ordens')
+    } catch (error: any) {
+      console.error('❌ [ExchangesList] Erro ao atualizar ordens:', error.message)
+    } finally {
+      // Remove loading
+      setLoadingOrdersByExchange(prev => ({ ...prev, [exchangeId]: false }))
+    }
+  }, [data?.exchanges])
+
   // Busca variações de preço para uma exchange específica
   const fetchExchangeVariations = useCallback(async (exchangeId: string) => {
     const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
@@ -340,8 +379,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
 
   // Expõe função de atualizar uma exchange específica globalmente
   useEffect(() => {
-    (window as any).__exchangesListRefreshOrdersForExchange = fetchOpenOrdersForExchange
-  }, [])
+    (window as any).__exchangesListRefreshOrdersForExchange = refreshSingleExchangeOrders
+  }, [refreshSingleExchangeOrders])
 
   const toggleZeroBalanceExchanges = useCallback(() => {
     setHideZeroBalanceExchanges(prev => !prev)
@@ -448,16 +487,6 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
             ]} />
           </View>
         </TouchableOpacity>
-        
-        {/* Indicador de loading das variações */}
-        {Object.values(loadingVariations).some(loading => loading) && (
-          <View style={styles.loadingVariationsContainer}>
-            <AnimatedLogoIcon size={14} />
-            <Text style={[styles.loadingTokensText, { color: colors.textSecondary }]}>
-              Carregando variações...
-            </Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.list} collapsable={false}>
@@ -496,83 +525,84 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
 
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
-              <LinearGradient
-                colors={cardGradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.card, { borderColor: colors.border }]}
+              {/* Header da Exchange - Mesmo estilo dos tokens */}
+              <View
+                style={[
+                  styles.tokenItemCompact,
+                  { 
+                    backgroundColor: colors.surface,
+                    borderBottomColor: colors.border,
+                  }
+                ]}
               >
-                <View style={styles.cardContent}>
-                  <View style={styles.leftSection}>
-                    <View style={[styles.logoContainer, themedStyles.logoContainer]}>
-                      {logoSource ? (
-                        <Image 
-                          source={logoSource} 
-                          style={styles.logoImage}
-                          resizeMode="contain"
-                          fadeDuration={0}
-                          defaultSource={logoSource}
-                        />
-                      ) : (
-                        <Text style={styles.logoFallback}>💰</Text>
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.exchangeNameRow}>
-                        <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
-                        
-                        {/* Quantidade de assets ao lado do nome */}
-                        <Text style={[styles.assetsCount, { color: colors.textSecondary, marginLeft: 8 }]}>
-                          {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
-                        </Text>
-                        
-                        {/* Badge de ordens abertas */}
-                        {(() => {
-                          const count = openOrdersCount[exchange.exchange_id]
-                          const hasCallback = !!onOpenOrdersPress
-                          return count > 0 && hasCallback ? (
-                            <TouchableOpacity
-                              onPress={(e) => {
-                                e.stopPropagation()
-                                onOpenOrdersPress(exchange.exchange_id, exchange.name)
-                              }}
-                              style={[styles.ordersBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}
-                            >
-                              <Text style={[styles.ordersBadgeText, { color: colors.primary }]}>
-                                {t('orders.badge')}: {count}
-                              </Text>
-                            </TouchableOpacity>
-                          ) : null
-                        })()}
-                        
-                        {(exchange as any).status === 'inactive' && (exchange as any).inactive_reason && (
-                          <TouchableOpacity 
-                            onPress={() => {
-                              Alert.alert(
-                                `⚠️ ${t('alert.exchangeInactive')}`,
-                                (exchange as any).inactive_reason,
-                                [{ text: t('common.ok'), style: 'default' }]
-                              )
-                            }}
-                              style={styles.infoIconButton}
-                            >
-                              <Text style={[styles.infoIconText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>ℹ️</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      </View>
-                    </View>
-
-                    <View style={styles.rightSection}>
-                      <Text style={[styles.balance, { color: colors.text }]}>
-                        {hideValue(`$${apiService.formatUSD(balance)}`)}
-                      </Text>
-                    </View>
+                <View style={styles.tokenCompactRow}>
+                  {/* Logo da Exchange */}
+                  <View style={[styles.logoContainer, themedStyles.logoContainer]}>
+                    {logoSource ? (
+                      <Image 
+                        source={logoSource} 
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                        fadeDuration={0}
+                        defaultSource={logoSource}
+                      />
+                    ) : (
+                      <Text style={styles.logoFallback}>💰</Text>
+                    )}
                   </View>
-                </LinearGradient>
+                  
+                  {/* Nome da Exchange */}
+                  <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
+                    {exchange.name}
+                  </Text>
+                  
+                  {/* Quantidade de assets */}
+                  <Text style={[styles.tokenAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {tokenCount} {tokenCount === 1 ? 'asset' : 'assets'}
+                  </Text>
+                  
+                  {/* Saldo Total */}
+                  <Text style={[styles.tokenValueCompact, { color: colors.text }]} numberOfLines={1}>
+                    {hideValue(`$${apiService.formatUSD(balance)}`)}
+                  </Text>
+                  
+                  {/* Badge de ordens abertas */}
+                  {(() => {
+                    const count = openOrdersCount[exchange.exchange_id]
+                    const isLoadingThisExchange = loadingOrdersByExchange[exchange.exchange_id]
+                    const hasCallback = !!onOpenOrdersPress
+                    return (count > 0 || isLoadingThisExchange) && hasCallback ? (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation()
+                          if (!isLoadingThisExchange) {
+                            onOpenOrdersPress(exchange.exchange_id, exchange.name)
+                          }
+                        }}
+                        style={[
+                          styles.variationBadgeCompact,
+                          { 
+                            backgroundColor: isLoadingThisExchange ? 'transparent' : colors.primary + '15',
+                            marginLeft: 8,
+                          }
+                        ]}
+                        disabled={isLoadingThisExchange}
+                      >
+                        {isLoadingThisExchange ? (
+                          <AnimatedLogoIcon size={12} />
+                        ) : (
+                          <Text style={[styles.variationTextCompact, { color: colors.primary }]}>
+                            orders: {count}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    ) : null
+                  })()}
+                </View>
+              </View>
 
-                {/* Top 8-10 tokens SEMPRE visíveis */}
-                <View
+              {/* Lista de Tokens */}
+              <View
                   style={[
                     styles.tokensContainer,
                     { 
@@ -612,25 +642,41 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                             { 
                               backgroundColor: colors.surface,
                               borderBottomColor: colors.border,
+                              zIndex: 1000 - tokenIndex,
+                              elevation: 1000 - tokenIndex,
                             }
                           ]}
                         >
                           {/* Linha única: Nome + Quantidade + Valor + Variação 24h + Trade */}
                           <View style={styles.tokenCompactRow}>
-                            {/* TOKEN - clicável para abrir modal de detalhes */}
-                            <TouchableOpacity
-                              onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
-                              activeOpacity={0.7}
-                              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                            >
-                              {/* Indicador de disponibilidade */}
-                              {isAvailableForTrade && (
-                                <View style={[styles.availabilityIndicator, { backgroundColor: '#10b981' }]} />
+                            {/* TOKEN - clicável para abrir modal de detalhes com Tooltip de preço */}
+                            <View style={{ position: 'relative', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <TouchableOpacity
+                                onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
+                                onLongPress={() => setTooltipVisible(`price-${exchange.exchange_id}-${symbol}`)}
+                                onPressOut={() => setTooltipVisible(null)}
+                                delayLongPress={300}
+                                activeOpacity={0.7}
+                                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                              >
+                                {/* Indicador de disponibilidade */}
+                                {isAvailableForTrade && (
+                                  <View style={[styles.availabilityIndicator, { backgroundColor: '#10b981' }]} />
+                                )}
+                                <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
+                                  {symbol.toLowerCase()}
+                                </Text>
+                              </TouchableOpacity>
+                              
+                              {/* Tooltip de Preço */}
+                              {tooltipVisible === `price-${exchange.exchange_id}-${symbol}` && (
+                                <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                  <Text style={[styles.tooltipText, { color: colors.text }]}>
+                                    ${apiService.formatUSD(priceUSD)}
+                                  </Text>
+                                </View>
                               )}
-                              <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
-                                {symbol.toLowerCase()}
-                              </Text>
-                            </TouchableOpacity>
+                            </View>
                             
                             {/* Quantidade - não clicável */}
                             <Text style={[styles.tokenAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -665,31 +711,38 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                               </View>
                             )}
                             
-                            {/* Trade Button */}
-                            <TouchableOpacity
-                              onPress={(e) => {
-                                e.stopPropagation()
-                                setSelectedTrade({
-                                  exchangeId: exchange.exchange_id,
-                                  exchangeName: exchange.name,
-                                  symbol: symbol,
-                                  currentPrice: priceUSD,
-                                  balance: { token: parseFloat(token.amount), usdt: usdtBalance }
-                                })
-                                setTradeModalVisible(true)
-                              }}
-                              style={[styles.ordersBadge, { backgroundColor: colors.surface, borderColor: colors.border, marginLeft: 8, paddingVertical: 2, paddingHorizontal: 6, borderWidth: 1, borderRadius: 3 }]}
-                            >
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                <Text style={{ color: colors.textSecondary, fontSize: typography.caption, fontWeight: fontWeights.medium }}>
-                                  trade
-                                </Text>
+                            {/* Trade Button com Tooltip */}
+                            <View style={{ position: 'relative' }}>
+                              <TouchableOpacity
+                                onPress={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedTrade({
+                                    exchangeId: exchange.exchange_id,
+                                    exchangeName: exchange.name,
+                                    symbol: symbol,
+                                    currentPrice: priceUSD,
+                                    balance: { token: parseFloat(token.amount), usdt: usdtBalance }
+                                  })
+                                  setTradeModalVisible(true)
+                                }}
+                                onLongPress={() => setTooltipVisible(`${exchange.exchange_id}-${symbol}`)}
+                                onPressOut={() => setTooltipVisible(null)}
+                                delayLongPress={300}
+                                style={[styles.ordersBadge, { backgroundColor: colors.surface, borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)', marginLeft: 8, paddingVertical: 3, paddingHorizontal: 6, borderWidth: 1, borderRadius: 3 }]}
+                              >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0 }}>
-                                  <Text style={{ color: '#10b981', fontSize: 9, fontWeight: fontWeights.bold, lineHeight: 9, letterSpacing: -1 }}>↑</Text>
-                                  <Text style={{ color: '#ef4444', fontSize: 9, fontWeight: fontWeights.bold, lineHeight: 9, letterSpacing: -1 }}>↓</Text>
+                                  <Text style={{ color: '#10b981', fontSize: 12, fontWeight: fontWeights.bold, lineHeight: 12, letterSpacing: -1 }}>↑</Text>
+                                  <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: fontWeights.bold, lineHeight: 12, letterSpacing: -1 }}>↓</Text>
                                 </View>
-                              </View>
-                            </TouchableOpacity>
+                              </TouchableOpacity>
+                              
+                              {/* Tooltip */}
+                              {tooltipVisible === `${exchange.exchange_id}-${symbol}` && (
+                                <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                  <Text style={[styles.tooltipText, { color: colors.text }]}>Trade</Text>
+                                </View>
+                              )}
+                            </View>
                           </View>
                         </View>
                       )
@@ -968,12 +1021,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     opacity: 0.5,
   },
-  loadingVariationsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
   noTokensText: {
     fontSize: typography.caption,
     textAlign: "center",
@@ -1025,8 +1072,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenAmount: {
-    fontSize: typography.micro,
-    fontWeight: fontWeights.light,
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
   },
   tokenPriceSeparator: {
     fontSize: typography.tiny,
@@ -1038,7 +1085,7 @@ const styles = StyleSheet.create({
   },
   tokenValue: {
     fontSize: typography.bodySmall,
-    fontWeight: fontWeights.regular,
+    fontWeight: fontWeights.medium,
   },
   tokenValueZero: {
     // Applied via inline style
@@ -1075,7 +1122,7 @@ const styles = StyleSheet.create({
   },
   tokenSymbolCompact: {
     fontSize: typography.caption,
-    fontWeight: fontWeights.regular,
+    fontWeight: fontWeights.medium,
     letterSpacing: 0.2,
     minWidth: 48,
     textAlign: "left",
@@ -1087,13 +1134,13 @@ const styles = StyleSheet.create({
   },
   tokenAmountCompact: {
     fontSize: typography.caption,
-    fontWeight: fontWeights.light,
+    fontWeight: fontWeights.regular,
     flex: 1,
     textAlign: "left",
   },
   tokenValueCompact: {
     fontSize: typography.caption,
-    fontWeight: fontWeights.regular,
+    fontWeight: fontWeights.medium,
     minWidth: 60,
     textAlign: "right",
   },
@@ -1103,8 +1150,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   variationTextCompact: {
-    fontSize: 10,
-    fontWeight: fontWeights.semibold,
+    fontSize: typography.micro,
+    fontWeight: fontWeights.bold,
     textAlign: "center",
     letterSpacing: 0.2,
   },
@@ -1118,5 +1165,27 @@ const styles = StyleSheet.create({
   loadingTokensText: {
     fontSize: typography.bodySmall,
     fontWeight: fontWeights.regular,
+  },
+  tooltip: {
+    position: "absolute",
+    bottom: -30,
+    left: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 4.65,
+    elevation: 999,
+    zIndex: 9999,
+  },
+  tooltipText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
   },
 })

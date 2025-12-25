@@ -38,6 +38,10 @@ export function OpenOrdersModal({
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [confirmCancelVisible, setConfirmCancelVisible] = useState(false)
   const [orderToCancel, setOrderToCancel] = useState<OpenOrder | null>(null)
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null)
+  const [confirmCancelAllVisible, setConfirmCancelAllVisible] = useState(false)
+  const [cancellingAll, setCancellingAll] = useState(false)
+  const [menuOpenForOrderId, setMenuOpenForOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (visible && exchangeId) {
@@ -112,6 +116,7 @@ export function OpenOrdersModal({
     if (!orderToCancel) return
     
     setConfirmCancelVisible(false)
+    setCancellingOrderId(orderToCancel.id) // Marca ordem como sendo cancelada
     
     try {
       console.log('📋 [OpenOrdersModal] 🔄 Cancelando ordem:', orderToCancel.id)
@@ -158,6 +163,62 @@ export function OpenOrdersModal({
       Alert.alert('Erro', `❌ Erro ao cancelar ordem: ${error.message}`)
     } finally {
       setOrderToCancel(null)
+      setCancellingOrderId(null) // Remove loading
+    }
+  }
+
+  const handleCancelAllOrders = () => {
+    // Abre o modal de confirmação
+    setConfirmCancelAllVisible(true)
+  }
+
+  const confirmCancelAllOrders = async () => {
+    setConfirmCancelAllVisible(false)
+    setCancellingAll(true)
+    
+    try {
+      console.log('📋 [OpenOrdersModal] 🔄 Cancelando TODAS as ordens da exchange:', exchangeId)
+      
+      // Chama a API para cancelar todas
+      const result = await apiService.cancelAllOrders(userId, exchangeId)
+      console.log('📋 [OpenOrdersModal] 📥 Resultado recebido:', result)
+      
+      if (result.success) {
+        console.log('✅ [OpenOrdersModal] Todas as ordens canceladas com sucesso!')
+        
+        // Fecha o modal IMEDIATAMENTE
+        console.log('📋 [OpenOrdersModal] 🚪 Fechando modal...')
+        onClose()
+        
+        // Remove do cache
+        const cacheKey = `${userId}_${exchangeId}`
+        console.log('📋 [OpenOrdersModal] 🗑️ Deletando cache:', cacheKey)
+        ordersCache.delete(cacheKey)
+        
+        // Atualiza a exchange
+        console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange específica:', exchangeId)
+        if (typeof (window as any).__exchangesListRefreshOrdersForExchange === 'function') {
+          await (window as any).__exchangesListRefreshOrdersForExchange(exchangeId)
+        }
+        
+        // Chama callback
+        if (onOrderCancelled) {
+          console.log('📋 [OpenOrdersModal] 🔄 Chamando callback onOrderCancelled...')
+          onOrderCancelled()
+        }
+        
+        // Notifica sucesso com informações
+        const cancelledCount = result.cancelled_count || result.cancelledCount || 0
+        Alert.alert('Sucesso', `✅ ${cancelledCount} ordem(ns) cancelada(s) com sucesso!`)
+      } else {
+        console.error('❌ [OpenOrdersModal] API retornou success=false:', result)
+        throw new Error(result.error || 'Erro ao cancelar ordens')
+      }
+    } catch (error: any) {
+      console.error('❌ [OpenOrdersModal] Erro ao cancelar todas:', error)
+      Alert.alert('Erro', `❌ Erro ao cancelar ordens: ${error.message}`)
+    } finally {
+      setCancellingAll(false)
     }
   }
 
@@ -229,7 +290,7 @@ export function OpenOrdersModal({
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalSafeArea} onPress={(e) => e.stopPropagation()}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
             {/* Header */}
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.headerTitleContainer}>
@@ -272,10 +333,30 @@ export function OpenOrdersModal({
                     </TouchableOpacity>
                   </View>
                 )}
+                
+                {/* Botão Cancelar Todas */}
+                {orders.length > 0 && !loading && (
+                  <TouchableOpacity 
+                    onPress={handleCancelAllOrders}
+                    style={[styles.cancelAllButton, { backgroundColor: '#ef4444' + '15', borderColor: '#ef4444' + '40' }]}
+                    disabled={cancellingAll}
+                  >
+                    {cancellingAll ? (
+                      <AnimatedLogoIcon size={14} />
+                    ) : (
+                      <Text style={[styles.cancelAllButtonText, { color: '#ef4444' }]}>
+                        {t('orders.cancelAll')}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
-              </TouchableOpacity>
+              
+              <View style={styles.headerActions}>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Content */}
@@ -327,6 +408,7 @@ export function OpenOrdersModal({
                             onClose()
                           }}
                           activeOpacity={0.7}
+                          style={styles.symbolContainer}
                         >
                           <Text style={[styles.orderSymbolCompact, { color: colors.text }]} numberOfLines={1}>
                             {order.symbol.toLowerCase()}
@@ -340,34 +422,59 @@ export function OpenOrdersModal({
                           </Text>
                         </View>
 
-                        {/* Amount */}
-                        <Text style={[styles.orderAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
-                          {formatAmount(order.amount)}
-                        </Text>
-
-                        {/* Price */}
-                        <Text style={[styles.orderPriceCompact, { color: colors.textSecondary }]} numberOfLines={1}>
-                          {formatValue(order.price)}
-                        </Text>
-
-                        {/* Status badge (se parcialmente preenchida) */}
-                        {order.filled > 0 && (
-                          <View style={[styles.orderStatusBadgeCompact, { backgroundColor: '#f59e0b' + '10' }]}>
-                            <Text style={[styles.orderStatusTextCompact, { color: '#f59e0b' }]}>
-                              {((order.filled / order.amount) * 100).toFixed(0)}%
-                            </Text>
-                          </View>
-                        )}
-
-                        {/* Cancel Button */}
-                        <TouchableOpacity
-                          onPress={() => handleCancelOrder(order)}
-                          style={[styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                        >
-                          <Text style={{ color: '#ef4444', fontSize: typography.caption, fontWeight: fontWeights.medium }}>
-                            cancel
+                        {/* Values container */}
+                        <View style={styles.valuesContainer}>
+                          {/* Amount */}
+                          <Text style={[styles.orderAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                            {formatAmount(order.amount)}
                           </Text>
-                        </TouchableOpacity>
+
+                          {/* Price */}
+                          <Text style={[styles.orderPriceCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                            {formatValue(order.price)}
+                          </Text>
+                        </View>
+
+                        {/* Actions container */}
+                        <View style={styles.actionsContainer}>
+                          {/* Status badge (se parcialmente preenchida) */}
+                          {order.filled > 0 && (
+                            <View style={[styles.orderStatusBadgeCompact, { backgroundColor: '#f59e0b' + '10' }]}>
+                              <Text style={[styles.orderStatusTextCompact, { color: '#f59e0b' }]}>
+                                {((order.filled / order.amount) * 100).toFixed(0)}%
+                              </Text>
+                            </View>
+                          )}
+
+                          {/* Menu Button (3 dots) */}
+                          <View>
+                            <TouchableOpacity
+                              onPress={() => setMenuOpenForOrderId(menuOpenForOrderId === order.id ? null : order.id)}
+                              style={[styles.menuButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            >
+                              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: fontWeights.bold, lineHeight: 16 }}>
+                                ⋮
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Dropdown Menu */}
+                            {menuOpenForOrderId === order.id && (
+                              <View style={[styles.dropdownMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    setMenuOpenForOrderId(null)
+                                    handleCancelOrder(order)
+                                  }}
+                                  style={styles.dropdownItem}
+                                >
+                                  <Text style={[styles.dropdownItemText, { color: '#ef4444' }]}>
+                                    {t('orders.cancel')}
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                        </View>
                       </View>
                     </View>
                   ))}
@@ -393,7 +500,7 @@ export function OpenOrdersModal({
             style={styles.confirmSafeArea} 
             onPress={(e) => e.stopPropagation()}
           >
-            <View style={[styles.confirmContainer, { backgroundColor: colors.background }]}>
+            <View style={[styles.confirmContainer, { backgroundColor: colors.surface }]}>
               {/* Header */}
               <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmTitle, { color: colors.text }]}>
@@ -467,7 +574,7 @@ export function OpenOrdersModal({
                   style={[styles.confirmButton, styles.confirmButtonCancel, { borderColor: colors.border }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: colors.textSecondary }]}>
-                    Não
+                    Voltar
                   </Text>
                 </TouchableOpacity>
                 
@@ -476,7 +583,68 @@ export function OpenOrdersModal({
                   style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: '#ef4444' }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
-                    Sim, Cancelar
+                    Cancelar Ordem
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal de Confirmação de Cancelar Todas */}
+      <Modal
+        visible={confirmCancelAllVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setConfirmCancelAllVisible(false)}
+      >
+        <Pressable 
+          style={styles.confirmOverlay} 
+          onPress={() => setConfirmCancelAllVisible(false)}
+        >
+          <Pressable 
+            style={styles.confirmSafeArea} 
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.confirmContainer, { backgroundColor: colors.surface }]}>
+              {/* Header */}
+              <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                  {t('orders.cancelAllTitle')}
+                </Text>
+              </View>
+
+              {/* Content */}
+              <View style={styles.confirmContent}>
+                <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                  {t('orders.cancelAllMessage').replace('{count}', String(orders.length))}
+                </Text>
+                
+                <View style={[styles.confirmWarning, { backgroundColor: '#ef4444' + '10', borderColor: '#ef4444' + '40' }]}>
+                  <Text style={[styles.confirmWarningText, { color: '#ef4444' }]}>
+                    {t('orders.cancelAllWarning')}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Footer com botões */}
+              <View style={styles.confirmFooter}>
+                <TouchableOpacity
+                  onPress={() => setConfirmCancelAllVisible(false)}
+                  style={[styles.confirmButton, styles.confirmButtonCancel, { borderColor: colors.border }]}
+                >
+                  <Text style={[styles.confirmButtonText, { color: colors.textSecondary }]}>
+                    {t('orders.cancelAllNo')}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={confirmCancelAllOrders}
+                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: '#ef4444' }]}
+                >
+                  <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+                    Cancelar Todas
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -513,6 +681,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
+    gap: 12,
   },
   headerTitleContainer: {
     flex: 1,
@@ -590,12 +759,38 @@ const styles = StyleSheet.create({
   refreshButtonDisabled: {
     opacity: 0.5,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    paddingTop: 2,
+  },
+  cancelAllButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelAllButtonText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.semibold,
+  },
   closeButton: {
-    padding: 4,
+    padding: 8,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
   },
   closeButtonText: {
-    fontSize: typography.h1,
+    fontSize: 20,
     fontWeight: fontWeights.light,
+    lineHeight: 20,
   },
   modalContent: {
     flex: 1,
@@ -718,60 +913,105 @@ const styles = StyleSheet.create({
   },
   // Compact list styles (similar to tokens list)
   orderItemCompact: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderBottomWidth: 0.5,
   },
   orderCompactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    justifyContent: 'space-between',
+    gap: 8,
+  },
+  symbolContainer: {
+    minWidth: 80,
   },
   orderSymbolCompact: {
     fontSize: typography.bodySmall,
     fontWeight: fontWeights.semibold,
-    minWidth: 50,
   },
   orderSideBadgeCompact: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 3,
-    minWidth: 32,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    minWidth: 36,
   },
   orderSideTextCompact: {
     fontSize: typography.tiny,
     fontWeight: fontWeights.medium,
     textAlign: 'center',
   },
+  valuesContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
   orderAmountCompact: {
     fontSize: typography.tiny,
     fontWeight: fontWeights.regular,
-    minWidth: 50,
+    minWidth: 60,
     textAlign: 'right',
   },
   orderPriceCompact: {
     fontSize: typography.tiny,
     fontWeight: fontWeights.regular,
-    minWidth: 50,
+    minWidth: 60,
     textAlign: 'right',
   },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   orderStatusBadgeCompact: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 3,
-    minWidth: 30,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    minWidth: 36,
   },
   orderStatusTextCompact: {
     fontSize: typography.tiny,
     fontWeight: fontWeights.medium,
     textAlign: 'center',
   },
-  cancelButton: {
-    paddingVertical: 1,
-    paddingHorizontal: 4,
+  menuButton: {
+    width: 32,
+    height: 32,
     borderWidth: 1,
-    borderRadius: 3,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 36,
+    right: 0,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 120,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemText: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.medium,
+  },
+  cancelButton: {
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderRadius: 4,
+    minWidth: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // Estilos do modal de confirmação
   confirmOverlay: {
@@ -813,6 +1053,17 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     textAlign: "center",
     lineHeight: 20,
+  },
+  confirmWarning: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  confirmWarningText: {
+    fontSize: typography.bodySmall,
+    fontWeight: fontWeights.medium,
+    textAlign: "center",
   },
   confirmDetails: {
     padding: 16,

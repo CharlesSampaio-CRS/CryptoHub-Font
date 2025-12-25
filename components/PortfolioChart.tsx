@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import { memo, useMemo } from 'react'
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, PanResponder } from 'react-native'
+import { memo, useMemo, useState, useRef } from 'react'
 import Svg, { Line, Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Path } from 'react-native-svg'
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { usePrivacy } from '@/contexts/PrivacyContext'
+import { apiService } from '@/services/api'
 import { typography, fontWeights } from '@/lib/typography'
 
 const { width } = Dimensions.get('window')
@@ -22,6 +23,8 @@ export const PortfolioChart = memo(function PortfolioChart() {
   const { colors, isDark } = useTheme()
   const { evolutionData } = usePortfolio()
   const { hideValue } = usePrivacy()
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null)
+  const chartRef = useRef<View>(null)
 
   // Processa os dados do gráfico
   const chartData = useMemo((): ChartPoint[] => {
@@ -100,6 +103,54 @@ export const PortfolioChart = memo(function PortfolioChart() {
   // Cor do gráfico baseada na tendência
   const lineColor = isPositive ? colors.success : colors.danger
 
+  // PanResponder para detectar toques no gráfico
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (evt) => {
+          const locationX = evt.nativeEvent.locationX
+          findNearestPoint(locationX)
+        },
+        onPanResponderMove: (evt) => {
+          const locationX = evt.nativeEvent.locationX
+          findNearestPoint(locationX)
+        },
+        onPanResponderRelease: () => {
+          setSelectedPoint(null) // Limpa ao soltar
+        },
+      }),
+    [chartData]
+  )
+
+  // Encontra o ponto mais próximo do toque
+  const findNearestPoint = (touchX: number) => {
+    if (chartData.length === 0) return
+
+    let nearestIndex = 0
+    let minDistance = Math.abs(chartData[0].x - touchX)
+
+    chartData.forEach((point, index) => {
+      const distance = Math.abs(point.x - touchX)
+      if (distance < minDistance) {
+        minDistance = distance
+        nearestIndex = index
+      }
+    })
+
+    setSelectedPoint(nearestIndex)
+  }
+
+  // Formata a data do timestamp
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp)
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Dados do ponto selecionado
+  const selectedData = selectedPoint !== null ? chartData[selectedPoint] : null
+
   if (chartData.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? 'rgba(38, 38, 38, 0.5)' : 'rgba(248, 248, 248, 1)' }]}>
@@ -112,47 +163,88 @@ export const PortfolioChart = memo(function PortfolioChart() {
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? 'rgba(38, 38, 38, 0.5)' : 'rgba(248, 248, 248, 1)' }]}>
-      <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
-        <Defs>
-          <SvgLinearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
-            <Stop offset="100%" stopColor={lineColor} stopOpacity="0.0" />
-          </SvgLinearGradient>
-        </Defs>
-        
-        {/* Área preenchida com gradiente */}
-        <Path
-          d={areaPath}
-          fill="url(#areaGradient)"
-        />
-        
-        {/* Linha do gráfico */}
-        <Path
-          d={linePath}
-          stroke={lineColor}
-          strokeWidth={2}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        
-        {/* Ponto inicial */}
-        <Circle
-          cx={chartData[0].x}
-          cy={chartData[0].y}
-          r={3}
-          fill={lineColor}
-          opacity={0.7}
-        />
-        
-        {/* Ponto final (maior) */}
-        <Circle
-          cx={chartData[chartData.length - 1].x}
-          cy={chartData[chartData.length - 1].y}
-          r={4}
-          fill={lineColor}
-        />
-      </Svg>
+      <View {...panResponder.panHandlers} ref={chartRef}>
+        {/* Tooltip simples - aparece só ao tocar */}
+        {selectedData && (
+          <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.tooltipValue, { color: colors.text }]}>
+              {hideValue(`$${apiService.formatUSD(selectedData.value)}`)}
+            </Text>
+          </View>
+        )}
+
+        <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
+          <Defs>
+            <SvgLinearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
+              <Stop offset="100%" stopColor={lineColor} stopOpacity="0.0" />
+            </SvgLinearGradient>
+          </Defs>
+          
+          {/* Área preenchida com gradiente */}
+          <Path
+            d={areaPath}
+            fill="url(#areaGradient)"
+          />
+          
+          {/* Linha do gráfico */}
+          <Path
+            d={linePath}
+            stroke={lineColor}
+            strokeWidth={2}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          
+          {/* Ponto inicial */}
+          <Circle
+            cx={chartData[0].x}
+            cy={chartData[0].y}
+            r={3}
+            fill={lineColor}
+            opacity={0.7}
+          />
+          
+          {/* Ponto final (maior) */}
+          <Circle
+            cx={chartData[chartData.length - 1].x}
+            cy={chartData[chartData.length - 1].y}
+            r={4}
+            fill={lineColor}
+          />
+
+          {/* Ponto selecionado (se houver) */}
+          {selectedData && (
+            <>
+              {/* Linha vertical de referência */}
+              <Line
+                x1={selectedData.x}
+                y1={PADDING}
+                x2={selectedData.x}
+                y2={CHART_HEIGHT - PADDING}
+                stroke={lineColor}
+                strokeWidth={1}
+                strokeDasharray="3,3"
+                opacity={0.4}
+              />
+              {/* Círculo do ponto selecionado */}
+              <Circle
+                cx={selectedData.x}
+                cy={selectedData.y}
+                r={5}
+                fill={lineColor}
+              />
+              <Circle
+                cx={selectedData.x}
+                cy={selectedData.y}
+                r={2.5}
+                fill={colors.background}
+              />
+            </>
+          )}
+        </Svg>
+      </View>
     </View>
   )
 })
@@ -164,9 +256,39 @@ const styles = StyleSheet.create({
     marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   emptyText: {
     fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
+    opacity: 0.7,
+  },
+  tooltip: {
+    position: 'absolute',
+    top: 0,
+    alignSelf: 'center',
+    backgroundColor: 'white',
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+    zIndex: 10,
+  },
+  tooltipValue: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.semibold,
+    letterSpacing: -0.3,
+  },
+  tooltipDate: {
+    fontSize: typography.micro,
     fontWeight: fontWeights.regular,
     opacity: 0.7,
   },
