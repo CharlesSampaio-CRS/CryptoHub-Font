@@ -93,7 +93,7 @@ const translations = {
     'strategy.new': '+ Nova',
     'strategy.strategies': 'estratégias',
     'strategy.strategy': 'estratégia',
-    'strategy.executions': 'execuções',
+    'strategy.executions': 'Execuções',
     'strategy.execution': 'execução',
     'strategy.empty': 'Nenhuma estratégia criada',
     'strategy.emptyDesc': 'Crie sua primeira estratégia automatizada',
@@ -471,7 +471,7 @@ const translations = {
     'strategy.new': '+ New',
     'strategy.strategies': 'strategies',
     'strategy.strategy': 'strategy',
-    'strategy.executions': 'executions',
+    'strategy.executions': 'Executions',
     'strategy.execution': 'execution',
     'strategy.empty': 'No strategies created',
     'strategy.emptyDesc': 'Create your first automated strategy',
@@ -769,7 +769,7 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('pt-BR')
+  const [language, setLanguage] = useState<Language>('en-US')
   const [isLoading, setIsLoading] = useState(true)
 
   // Load language from storage on mount

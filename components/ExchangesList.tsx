@@ -419,18 +419,18 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
   const themedStyles = useMemo(() => ({
     card: { backgroundColor: colors.surface, borderColor: colors.border },
     toggle: { 
-      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(200, 200, 200, 0.3)', 
-      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)' 
+      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(220, 220, 220, 0.5)', 
+      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(200, 200, 200, 0.4)' 
     },
     toggleActive: { 
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)', 
-      borderColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.3)' 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.5)', 
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.7)' 
     },
     toggleThumb: { 
-      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(100, 100, 100, 0.7)' 
+      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(120, 120, 120, 0.85)' 
     },
     toggleThumbActive: { 
-      backgroundColor: isDark ? 'rgba(96, 165, 250, 0.9)' : 'rgba(59, 130, 246, 0.8)' 
+      backgroundColor: isDark ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)' 
     },
     tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
     logoContainer: { backgroundColor: '#ffffff', borderColor: colors.border }, // Fundo branco em ambos os modos para os ícones
@@ -730,11 +730,11 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                                 onLongPress={() => setTooltipVisible(`${exchange.exchange_id}-${symbol}`)}
                                 onPressOut={() => setTooltipVisible(null)}
                                 delayLongPress={300}
-                                style={[styles.ordersBadge, { backgroundColor: colors.surface, borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)', marginLeft: 8, paddingVertical: 3, paddingHorizontal: 6, borderWidth: 1, borderRadius: 3 }]}
+                                style={[styles.ordersBadge, { backgroundColor: colors.surface, borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)' }]}
                               >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0 }}>
-                                  <Text style={{ color: '#10b981', fontSize: 12, fontWeight: fontWeights.bold, lineHeight: 12, letterSpacing: -1 }}>↑</Text>
-                                  <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: fontWeights.bold, lineHeight: 12, letterSpacing: -1 }}>↓</Text>
+                                  <Text style={{ color: '#10b981', fontSize: 14, fontWeight: fontWeights.bold, lineHeight: 14, letterSpacing: -1 }}>↑</Text>
+                                  <Text style={{ color: '#ef4444', fontSize: 14, fontWeight: fontWeights.bold, lineHeight: 14, letterSpacing: -1 }}>↓</Text>
                                 </View>
                               </TouchableOpacity>
                               
@@ -920,9 +920,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   ordersBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
     marginLeft: 6,
     borderWidth: 0.5,
   },
@@ -1147,9 +1147,9 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   variationBadgeCompact: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
   variationTextCompact: {
     fontSize: typography.micro,

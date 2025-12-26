@@ -172,7 +172,7 @@ const LinkedExchangeCard = memo(({
             }}
             activeOpacity={0.7}
           >
-            <Text style={[styles.deleteMenuText, { color: colors.danger }]}>{t('common.delete')}</Text>
+            <Text style={[styles.deleteMenuText, { color: colors.danger }]}>{t('exchanges.delete')}</Text>
           </TouchableOpacity>
         </View>
       )}

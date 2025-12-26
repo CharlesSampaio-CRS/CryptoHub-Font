@@ -8,6 +8,7 @@ import { CreateStrategyModal } from "../components/create-strategy-modal"
 import { StrategyDetailsModal } from "@/components/StrategyDetailsModal"
 import { LogoIcon } from "../components/LogoIcon"
 import { AnimatedLogoIcon } from "../components/AnimatedLogoIcon"
+import { typography, fontWeights } from "../lib/typography"
 
 interface Strategy {
   id: string
@@ -31,7 +32,7 @@ interface Strategy {
 const USER_ID = "charles_test_user"
 
 export function StrategyScreen() {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<"strategies" | "executions">("strategies")
   const [strategies, setStrategies] = useState<Strategy[]>([])
@@ -58,6 +59,24 @@ export function StrategyScreen() {
   
   // Ref para rastrear IDs de estratégias recém-criadas (sem stats ainda)
   const newlyCreatedStrategyIds = useRef<Set<string>>(new Set())
+
+  // Themed toggle styles
+  const themedToggleStyles = useMemo(() => ({
+    toggle: { 
+      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(220, 220, 220, 0.5)',
+      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(200, 200, 200, 0.4)',
+    },
+    toggleActive: { 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.5)',
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.7)',
+    },
+    toggleThumb: { 
+      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(120, 120, 120, 0.85)',
+    },
+    toggleThumbActive: { 
+      backgroundColor: isDark ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)',
+    },
+  }), [isDark])
 
   const loadStrategies = useCallback(async (skipStats: boolean = false) => {
     try {
@@ -315,7 +334,7 @@ export function StrategyScreen() {
         
         {activeTab === "strategies" && hasStrategies && (
           <TouchableOpacity
-            style={[styles.newButton, { backgroundColor: colors.surface, borderColor: '#3b82f6' }]}
+            style={[styles.newButton, { backgroundColor: 'transparent', borderColor: '#3b82f6' }]}
             onPress={handleNewStrategy}
             activeOpacity={0.8}
           >
@@ -325,12 +344,11 @@ export function StrategyScreen() {
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={[
             styles.tab,
-            { borderColor: colors.border },
-            activeTab === "strategies" && { backgroundColor: colors.primary, borderColor: colors.primary },
+            activeTab === "strategies" && [styles.tabActive, { borderBottomColor: colors.primary }],
           ]}
           onPress={() => setActiveTab("strategies")}
           activeOpacity={0.8}
@@ -338,8 +356,8 @@ export function StrategyScreen() {
           <Text
             style={[
               styles.tabText,
-              { color: colors.text },
-              activeTab === "strategies" && { color: "#ffffff" },
+              { color: colors.textSecondary },
+              activeTab === "strategies" && [styles.tabTextActive, { color: colors.text }],
             ]}
           >
             {t('strategy.title')}
@@ -348,8 +366,7 @@ export function StrategyScreen() {
         <TouchableOpacity
           style={[
             styles.tab,
-            { borderColor: colors.border },
-            activeTab === "executions" && { backgroundColor: colors.primary, borderColor: colors.primary },
+            activeTab === "executions" && [styles.tabActive, { borderBottomColor: colors.primary }],
           ]}
           onPress={() => setActiveTab("executions")}
           activeOpacity={0.8}
@@ -357,8 +374,8 @@ export function StrategyScreen() {
           <Text
             style={[
               styles.tabText,
-              { color: colors.text },
-              activeTab === "executions" && { color: "#ffffff" },
+              { color: colors.textSecondary },
+              activeTab === "executions" && [styles.tabTextActive, { color: colors.text }],
             ]}
           >
             {t('strategy.executions')}
@@ -396,7 +413,7 @@ export function StrategyScreen() {
                 {t('strategy.emptyDesc')}
               </Text>
               <TouchableOpacity
-                style={[styles.createButton, { backgroundColor: colors.surface, borderColor: '#3b82f6' }]}
+                style={[styles.createButton, { backgroundColor: 'transparent', borderColor: '#3b82f6' }]}
                 onPress={handleNewStrategy}
                 activeOpacity={0.8}
               >
@@ -408,7 +425,7 @@ export function StrategyScreen() {
             {strategies.map((strategy) => (
               <TouchableOpacity
                 key={strategy.id}
-                style={[styles.strategyCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.strategyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => {
                   setSelectedStrategyId(strategy.id)
                   setDetailsModalVisible(true)
@@ -428,7 +445,11 @@ export function StrategyScreen() {
                   </View>
                   
                   <TouchableOpacity
-                    style={[styles.toggle, strategy.isActive && styles.toggleActive]}
+                    style={[
+                      styles.toggle, 
+                      themedToggleStyles.toggle,
+                      strategy.isActive && [styles.toggleActive, themedToggleStyles.toggleActive]
+                    ]}
                     onPress={(e) => {
                       e.stopPropagation()
                       toggleStrategy(strategy.id)
@@ -438,7 +459,9 @@ export function StrategyScreen() {
                     <View
                       style={[
                         styles.toggleThumb,
+                        themedToggleStyles.toggleThumb,
                         strategy.isActive && styles.toggleThumbActive,
+                        strategy.isActive && themedToggleStyles.toggleThumbActive,
                       ]}
                     />
                   </TouchableOpacity>
@@ -594,7 +617,7 @@ export function StrategyScreen() {
               {executions.map((execution) => (
                 <View
                   key={execution.id}
-                  style={[styles.executionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  style={[styles.executionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 >
                   <View style={styles.executionHeader}>
                     <View style={styles.executionHeaderLeft}>
@@ -701,7 +724,7 @@ export function StrategyScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={[styles.confirmModal, { backgroundColor: colors.card }]}>
+            <View style={[styles.confirmModal, { backgroundColor: colors.surface }]}>
               <Text style={[styles.confirmTitle, { color: colors.text }]}>
                 {toggleStrategyNewStatus ? t('strategy.activateConfirm') : t('strategy.deactivateConfirm')}
               </Text>
@@ -745,7 +768,7 @@ export function StrategyScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={[styles.confirmModal, { backgroundColor: colors.card }]}>
+            <View style={[styles.confirmModal, { backgroundColor: colors.surface }]}>
               <Text style={[styles.confirmTitle, { color: colors.text }]}>
                 {t('strategy.confirmDelete')}
               </Text>
@@ -830,25 +853,27 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "300",
+    fontSize: typography.h3,
+    fontWeight: fontWeights.light,
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
-    fontWeight: "300",
+    fontWeight: fontWeights.light,
   },
   newButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 0.5,
   },
   newButtonText: {
     color: "#3b82f6",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
@@ -914,24 +939,45 @@ const styles = StyleSheet.create({
   },
   // Toggle
   toggle: {
-    width: 46,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#d4d4d4",
+    width: 44,
+    height: 24,
+    borderRadius: 12,
     padding: 2,
     justifyContent: "center",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   toggleActive: {
-    backgroundColor: "#6b7280",
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   toggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   toggleThumbActive: {
-    alignSelf: "flex-end",
+    transform: [{ translateX: 20 }],
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   // Strategy Info
   strategyInfo: {
@@ -993,20 +1039,24 @@ const styles = StyleSheet.create({
   // Tabs
   tabsContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 24,
     paddingHorizontal: 16,
     marginBottom: 16,
+    borderBottomWidth: 1,
   },
   tab: {
-    flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
+    paddingBottom: 12,
+  },
+  tabActive: {
+    borderBottomWidth: 2,
   },
   tabText: {
     fontSize: 15,
     fontWeight: "400",
+  },
+  tabTextActive: {
+    fontWeight: "600",
   },
   // Loading
   loadingContainer: {
@@ -1021,16 +1071,18 @@ const styles = StyleSheet.create({
   },
   // Create Button
   createButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
     marginTop: 24,
-    borderWidth: 2,
+    borderWidth: 0.5,
   },
   createButtonText: {
     color: "#3b82f6",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
   // Stats
   statsSection: {
@@ -1112,15 +1164,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   confirmModal: {
-    width: "85%",
-    maxWidth: 400,
-    borderRadius: 16,
-    padding: 24,
+    width: "90%",
+    borderRadius: 20,
+    padding: 20,
     gap: 16,
   },
   confirmTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "500",
     textAlign: "center",
   },
   confirmMessage: {

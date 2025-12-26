@@ -87,7 +87,7 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Avatar e Nome */}
-        <View style={[styles.profileHeader, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+        <View style={[styles.profileHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.avatarContainer, { backgroundColor: colors.surface }]}>
             {userData.avatar ? (
               <Image source={{ uri: userData.avatar }} style={styles.avatar} />
@@ -131,7 +131,7 @@ export function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('profile.personalInfo')}</Text>
           
           {/* Email */}
-          <View style={[styles.infoItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <View style={[styles.infoItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.infoLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -153,7 +153,7 @@ export function ProfileScreen() {
           </View>
 
           {/* Telefone */}
-          <View style={[styles.infoItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <View style={[styles.infoItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.infoLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -178,7 +178,7 @@ export function ProfileScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('profile.actions')}</Text>
           
-          <TouchableOpacity style={[styles.actionItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <TouchableOpacity style={[styles.actionItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.actionLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -196,7 +196,7 @@ export function ProfileScreen() {
             <Text style={[styles.actionArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <TouchableOpacity style={[styles.actionItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.actionLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">

@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import * as Clipboard from 'expo-clipboard'
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
@@ -22,7 +22,7 @@ import { typography, fontWeights } from "../lib/typography"
 import Svg, { Path, Circle } from "react-native-svg"
 
 export function SettingsScreen() {
-  const { theme, setTheme, colors } = useTheme()
+  const { theme, setTheme, colors, isDark } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { 
     biometricAvailable, 
@@ -47,6 +47,24 @@ export function SettingsScreen() {
   const [autoLockTime, setAutoLockTime] = useState('5') // minutos
   const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(true)
   const [deviceIp, setDeviceIp] = useState<string>('Carregando...')
+
+  // Themed toggle styles (seguindo padrão do ExchangesList)
+  const themedToggleStyles = useMemo(() => ({
+    toggle: { 
+      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(220, 220, 220, 0.5)', 
+      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(200, 200, 200, 0.4)' 
+    },
+    toggleActive: { 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.5)', 
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.7)' 
+    },
+    toggleThumb: { 
+      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(120, 120, 120, 0.85)' 
+    },
+    toggleThumbActive: { 
+      backgroundColor: isDark ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)' 
+    },
+  }), [isDark])
 
   // Busca o IP público do dispositivo ao abrir o modal de segurança
   useEffect(() => {
@@ -108,7 +126,7 @@ export function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.appearance')}</Text>
           
           {/* Dark Mode */}
-          <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginBottom: 12 }]}>
+          <View style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 12 }]}>
             <View style={styles.menuItemLeft}>
               <View style={[styles.menuIconContainer, { backgroundColor: colors.surface }]}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -131,14 +149,14 @@ export function SettingsScreen() {
             <TouchableOpacity 
               style={[
                 styles.toggle,
-                { backgroundColor: theme === 'dark' ? colors.toggleActive : colors.toggleInactive }
+                theme === 'dark' ? themedToggleStyles.toggleActive : themedToggleStyles.toggle
               ]}
               onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               activeOpacity={0.7}
             >
               <View style={[
                 styles.toggleThumb,
-                { backgroundColor: colors.toggleThumb },
+                theme === 'dark' ? themedToggleStyles.toggleThumbActive : themedToggleStyles.toggleThumb,
                 theme === 'dark' && styles.toggleThumbActive
               ]} />
             </TouchableOpacity>
@@ -150,7 +168,7 @@ export function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.notificationsSection')}</Text>
           
           <TouchableOpacity 
-            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => setNotificationsModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
@@ -176,7 +194,7 @@ export function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.securityPrivacySection')}</Text>
           
           <TouchableOpacity 
-            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => setSecurityModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
@@ -198,7 +216,7 @@ export function SettingsScreen() {
 
           {/* Biometria */}
           {biometricAvailable && (
-            <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginTop: 12 }]}>
+            <View style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 12 }]}>
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIconContainer, { backgroundColor: colors.surface }]}>
                   <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -222,14 +240,14 @@ export function SettingsScreen() {
               <TouchableOpacity 
                 style={[
                   styles.toggle,
-                  { backgroundColor: isBiometricEnabled ? colors.toggleActive : colors.toggleInactive }
+                  isBiometricEnabled ? themedToggleStyles.toggleActive : themedToggleStyles.toggle
                 ]}
                 onPress={handleBiometricToggle}
                 activeOpacity={0.7}
               >
                 <View style={[
                   styles.toggleThumb,
-                  { backgroundColor: colors.toggleThumb },
+                  isBiometricEnabled ? themedToggleStyles.toggleThumbActive : themedToggleStyles.toggleThumb,
                   isBiometricEnabled && styles.toggleThumbActive
                 ]} />
               </TouchableOpacity>
@@ -242,7 +260,7 @@ export function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('settings.infoSectionTitle')}</Text>
           
           <TouchableOpacity 
-            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => setAboutModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
@@ -258,7 +276,7 @@ export function SettingsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginTop: 12 }]}
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 12 }]}
             onPress={() => setTermsModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
@@ -280,7 +298,7 @@ export function SettingsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginTop: 12, marginBottom: 12 }]}
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 12, marginBottom: 12 }]}
             onPress={() => setPrivacyModalVisible(true)}
           >
             <View style={styles.menuItemLeft}>
@@ -343,7 +361,7 @@ export function SettingsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={[styles.securityModalContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.securityModalContainer, { backgroundColor: colors.surface }]}>
               {/* Header */}
               <View style={[styles.securityModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.securityModalTitle, { color: colors.text }]}>
@@ -362,7 +380,7 @@ export function SettingsScreen() {
               >
                 <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Autenticação de Dois Fatores</Text>
-              <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={[styles.settingItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>2FA via SMS</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
@@ -372,20 +390,20 @@ export function SettingsScreen() {
                 <TouchableOpacity 
                   style={[
                     styles.toggle,
-                    { backgroundColor: twoFactorEnabled ? colors.toggleActive : colors.toggleInactive }
+                    twoFactorEnabled ? themedToggleStyles.toggleActive : themedToggleStyles.toggle
                   ]}
                   onPress={() => setTwoFactorEnabled(!twoFactorEnabled)}
                   activeOpacity={0.7}
                 >
                   <View style={[
                     styles.toggleThumb,
-                    { backgroundColor: colors.toggleThumb },
+                    twoFactorEnabled ? themedToggleStyles.toggleThumbActive : themedToggleStyles.toggleThumb,
                     twoFactorEnabled && styles.toggleThumbActive
                   ]} />
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={[styles.settingItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Google Authenticator</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
@@ -395,14 +413,14 @@ export function SettingsScreen() {
                 <TouchableOpacity 
                   style={[
                     styles.toggle,
-                    { backgroundColor: googleAuthEnabled ? colors.toggleActive : colors.toggleInactive }
+                    googleAuthEnabled ? themedToggleStyles.toggleActive : themedToggleStyles.toggle
                   ]}
                   onPress={() => setGoogleAuthEnabled(!googleAuthEnabled)}
                   activeOpacity={0.7}
                 >
                   <View style={[
                     styles.toggleThumb,
-                    { backgroundColor: colors.toggleThumb },
+                    googleAuthEnabled ? themedToggleStyles.toggleThumbActive : themedToggleStyles.toggleThumb,
                     googleAuthEnabled && styles.toggleThumbActive
                   ]} />
                 </TouchableOpacity>
@@ -411,7 +429,7 @@ export function SettingsScreen() {
 
             <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Bloqueio Automático</Text>
-              <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={[styles.settingItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Ativar Bloqueio</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
@@ -421,21 +439,21 @@ export function SettingsScreen() {
                 <TouchableOpacity 
                   style={[
                     styles.toggle,
-                    { backgroundColor: autoLockEnabled ? colors.toggleActive : colors.toggleInactive }
+                    autoLockEnabled ? themedToggleStyles.toggleActive : themedToggleStyles.toggle
                   ]}
                   onPress={() => setAutoLockEnabled(!autoLockEnabled)}
                   activeOpacity={0.7}
                 >
                   <View style={[
                     styles.toggleThumb,
-                    { backgroundColor: colors.toggleThumb },
+                    autoLockEnabled ? themedToggleStyles.toggleThumbActive : themedToggleStyles.toggleThumb,
                     autoLockEnabled && styles.toggleThumbActive
                   ]} />
                 </TouchableOpacity>
               </View>
 
               {autoLockEnabled && (
-                <View style={[styles.timeSelector, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                <View style={[styles.timeSelector, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Tempo de Inatividade</Text>
                   <View style={styles.timeOptions}>
                     {['1', '5', '10', '30'].map((time) => (
@@ -462,7 +480,7 @@ export function SettingsScreen() {
 
             <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Alertas</Text>
-              <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={[styles.settingItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>Alertas de Login</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
@@ -472,14 +490,14 @@ export function SettingsScreen() {
                 <TouchableOpacity 
                   style={[
                     styles.toggle,
-                    { backgroundColor: loginAlertsEnabled ? colors.toggleActive : colors.toggleInactive }
+                    loginAlertsEnabled ? themedToggleStyles.toggleActive : themedToggleStyles.toggle
                   ]}
                   onPress={() => setLoginAlertsEnabled(!loginAlertsEnabled)}
                   activeOpacity={0.7}
                 >
                   <View style={[
                     styles.toggleThumb,
-                    { backgroundColor: colors.toggleThumb },
+                    loginAlertsEnabled ? themedToggleStyles.toggleThumbActive : themedToggleStyles.toggleThumb,
                     loginAlertsEnabled && styles.toggleThumbActive
                   ]} />
                 </TouchableOpacity>
@@ -488,7 +506,7 @@ export function SettingsScreen() {
 
             <View style={styles.modalSection}>
               <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Informações do Dispositivo</Text>
-              <View style={[styles.settingItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={[styles.settingItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>IP Público</Text>
                   <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
@@ -544,7 +562,7 @@ export function SettingsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={[styles.aboutModalContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.aboutModalContainer, { backgroundColor: colors.surface }]}>
               {/* Header */}
               <View style={[styles.aboutModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.aboutModalTitle, { color: colors.text }]}>
@@ -586,7 +604,7 @@ export function SettingsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={[styles.termsModalContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.termsModalContainer, { backgroundColor: colors.surface }]}>
               {/* Header */}
               <View style={[styles.termsModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.termsModalTitle, { color: colors.text }]}>
@@ -646,7 +664,7 @@ export function SettingsScreen() {
           style={styles.modalOverlay}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={[styles.deleteAccountModalContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.deleteAccountModalContainer, { backgroundColor: colors.surface }]}>
               {/* Header */}
               <View style={[styles.deleteAccountModalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.deleteAccountModalTitle, { color: colors.danger }]}>⚠️ {t('settings.deleteAccount')}</Text>
@@ -740,7 +758,7 @@ export function SettingsScreen() {
                     }}
                   >
                     <Text style={[styles.deleteAccountConfirmButtonText, { color: colors.danger }]}>
-                      Excluir Permanentemente
+                      Excluir
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -921,19 +939,39 @@ const styles = StyleSheet.create({
   },
   // Toggle Button
   toggle: {
-    width: 46,
-    height: 26,
-    borderRadius: 13,
+    width: 44,
+    height: 24,
+    borderRadius: 12,
     padding: 2,
     justifyContent: "center",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   toggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   toggleThumbActive: {
-    alignSelf: "flex-end",
+    transform: [{ translateX: 20 }],
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   ipContainer: {
     padding: 12,
@@ -1027,14 +1065,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   securityModalTitle: {
-    fontSize: typography.h2,
+    fontSize: typography.h3,
     fontWeight: fontWeights.medium,
   },
   modalCloseButton: {
     padding: 4,
   },
   modalCloseIcon: {
-    fontSize: typography.h1,
+    fontSize: 22,
     fontWeight: fontWeights.light,
   },
   securityModalContent: {
@@ -1103,9 +1141,8 @@ const styles = StyleSheet.create({
   // Delete Account Modal Styles
   deleteAccountModalContainer: {
     width: "90%",
-    maxWidth: 500,
     maxHeight: "85%",
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: "hidden",
   },
   deleteAccountModalHeader: {

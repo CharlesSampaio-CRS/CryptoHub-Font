@@ -485,14 +485,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '500',
   },
   closeButton: {
     padding: 4,
   },
   closeButtonText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '300',
   },
   loadingContainer: {
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '300',
   },
   errorContainer: {
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '400',
     textAlign: 'center',
     marginBottom: 20,
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: '#1a1a1a',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
   },
   content: {
@@ -532,23 +532,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '400',
     marginBottom: 12,
   },
   subsectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '400',
     marginTop: 16,
     marginBottom: 8,
   },
   priceValue: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '500',
     marginBottom: 4,
   },
   pairText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '300',
   },
   changeContainer: {
@@ -563,12 +563,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   changeLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '300',
     marginBottom: 4,
   },
   changeValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
   },
   row: {
@@ -579,12 +579,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '300',
     marginBottom: 4,
   },
   value: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '400',
   },
   spreadRow: {
@@ -606,16 +606,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   infoLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '300',
     marginBottom: 4,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '400',
   },
   lastUpdate: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '300',
     textAlign: 'center',
   },
