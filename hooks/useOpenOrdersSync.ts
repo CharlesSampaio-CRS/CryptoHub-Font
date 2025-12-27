@@ -7,9 +7,14 @@
  * - O usuário forçar refresh manual
  * 
  * Performance:
- * - Usa cache agressivo (30s)
+ * - Usa cache agressivo (30s no backend)
+ * - Debounce leve (500ms no frontend) - backend já tem cache!
  * - Executa em background sem bloquear UI
  * - Chamadas paralelas por exchange
+ * 
+ * Smart Debouncing:
+ * - Auto-sync: respeita debounce de 500ms
+ * - Manual sync: ignora debounce (força atualização)
  */
 
 import { useEffect, useRef, useCallback } from 'react'
@@ -45,17 +50,20 @@ export function useOpenOrdersSync({
   const { data: balanceData } = useBalance()
   const isSyncingRef = useRef(false)
   const lastSyncTimestampRef = useRef<number>(0)
-  const SYNC_DEBOUNCE_MS = 2000 // Evita syncs consecutivos muito rápidos
+  const pendingTimerRef = useRef<NodeJS.Timeout | null>(null) // NEW: Track pending timer
+  const lastBalanceHashRef = useRef<string>('') // NEW: Track balance changes
+  const SYNC_DEBOUNCE_MS = 500 // Reduzido: Backend já tem cache de 30s, debounce pode ser menor
 
-  const syncOpenOrders = useCallback(async () => {
+  const syncOpenOrders = useCallback(async (force = false) => {
     if (!enabled || !balanceData || isSyncingRef.current) {
+      console.log('🔄 [OpenOrdersSync] Skipping sync (disabled, no data, or already syncing)')
       return
     }
 
-    // Debounce: evita syncs muito frequentes
+    // Debounce: evita syncs muito frequentes (exceto se force=true)
     const now = Date.now()
-    if (now - lastSyncTimestampRef.current < SYNC_DEBOUNCE_MS) {
-      console.log('🔄 [OpenOrdersSync] Skipping sync (debounced)')
+    if (!force && now - lastSyncTimestampRef.current < SYNC_DEBOUNCE_MS) {
+      console.log('🔄 [OpenOrdersSync] Skipping sync (debounced - too soon since last sync)')
       return
     }
 
@@ -75,12 +83,11 @@ export function useOpenOrdersSync({
         const syncStartTime = Date.now()
         
         try {
-          // useCache=true: usa cache de 30s por padrão
+          // NO CACHE: sempre busca dados frescos
           const response = await apiService.getOpenOrders(
             userId,
             exchange.exchange_id,
-            undefined, // symbol: undefined = todas as ordens
-            true // useCache = true
+            undefined // symbol: undefined = todas as ordens
           )
 
           const syncTimeMs = Date.now() - syncStartTime
@@ -90,6 +97,7 @@ export function useOpenOrdersSync({
                           (response as any).exchange_error || 
                           (response as any).network_error ||
                           (response as any).not_supported ||
+                          (response as any).rate_limited ||
                           (response as any).error
 
           if (hasError) {
@@ -97,9 +105,14 @@ export function useOpenOrdersSync({
               (response as any).auth_error ? 'auth' :
               (response as any).not_supported ? 'not_supported' :
               (response as any).network_error ? 'network' :
+              (response as any).rate_limited ? 'network' : // Trata rate limit como network error
               'exchange'
             
-            console.warn(`⚠️ [OpenOrdersSync] ${exchange.name}: ${errorType} - ${(response as any).message || 'Unknown error'}`)
+            const errorMsg = (response as any).rate_limited 
+              ? `Rate limited - ${(response as any).message}`
+              : (response as any).message || 'Unknown error'
+            
+            console.warn(`⚠️ [OpenOrdersSync] ${exchange.name}: ${errorType} - ${errorMsg}`)
             
             return {
               exchangeId: exchange.exchange_id,
@@ -178,17 +191,46 @@ export function useOpenOrdersSync({
       return
     }
 
+    // Cancela timer pendente se existir (evita múltiplas chamadas)
+    if (pendingTimerRef.current) {
+      clearTimeout(pendingTimerRef.current)
+      pendingTimerRef.current = null
+    }
+
+    // Cria hash simples do balance para detectar mudanças reais
+    const balanceHash = JSON.stringify(balanceData.exchanges?.map(e => ({
+      id: e.exchange_id,
+      tokensCount: e.tokens?.length || 0
+    })) || [])
+
+    // Se o balance não mudou de verdade, não faz nada
+    if (balanceHash === lastBalanceHashRef.current) {
+      console.log('🔄 [OpenOrdersSync] Balance unchanged, skipping auto-sync')
+      return
+    }
+
+    lastBalanceHashRef.current = balanceHash
+    console.log('🔄 [OpenOrdersSync] Balance changed, scheduling auto-sync in 500ms...')
+
     // Aguarda 500ms após mudança de balance para iniciar sync
-    // Isso permite que a UI renderize primeiro
-    const timer = setTimeout(() => {
-      syncOpenOrders()
+    // Isso permite que a UI renderize primeiro E evita múltiplas chamadas
+    pendingTimerRef.current = setTimeout(() => {
+      pendingTimerRef.current = null
+      syncOpenOrders(false) // Auto-sync respeita debounce
     }, 500)
 
-    return () => clearTimeout(timer)
-  }, [balanceData, enabled, syncOpenOrders])
+    return () => {
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current)
+        pendingTimerRef.current = null
+      }
+    }
+    // IMPORTANTE: NÃO incluir syncOpenOrders nas dependências para evitar loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [balanceData, enabled])
 
   return {
-    syncOpenOrders: syncOpenOrders as () => Promise<void>, // Força sync manual
+    syncOpenOrders: ((force = true) => syncOpenOrders(force)) as (force?: boolean) => Promise<void>, // Manual sync ignora debounce por padrão
     isSyncing: isSyncingRef.current
   }
 }

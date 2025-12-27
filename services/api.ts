@@ -519,38 +519,42 @@ export const apiService = {
 
   /**
    * 📋 Busca ordens abertas de uma exchange específica
-   * 🚀 ULTRA-OPTIMIZADO: Cache de 30s alinhado com backend
+   * ⚡ SEM CACHE: Sempre busca dados frescos para garantir ordens atualizadas
+   * 🛡️  RATE LIMIT: Backend limita 1 req/s por user+exchange
    * @param userId ID do usuário
    * @param exchangeId MongoDB _id da exchange
    * @param symbol (opcional) Par específico (ex: DOGE/USDT)
-   * @param useCache Se true, usa cache local (default: true)
    * @returns Promise com a lista de ordens abertas
    */
-  async getOpenOrders(userId: string, exchangeId: string, symbol?: string, useCache: boolean = true): Promise<any> {
+  async getOpenOrders(userId: string, exchangeId: string, symbol?: string): Promise<any> {
     try {
-      // Cache key includes symbol for granular caching
-      const cacheKey = `open_orders_${exchangeId}_${symbol || 'all'}`;
-      
-      // Check cache first (30 second TTL - aligned with backend)
-      if (useCache) {
-        const cached = cacheService.get<any>(cacheKey, 30000); // 30s TTL (same as backend)
-        if (cached) {
-          console.log('⚡ INSTANT: Returning open orders from LOCAL cache (30s TTL)');
-          return cached;
-        }
-      }
-      
-      console.log('🔄 SLOW PATH: Fetching from backend API...');
-      
       let url = `${API_BASE_URL}/orders/open?user_id=${userId}&exchange_id=${exchangeId}`;
       if (symbol) {
         url += `&symbol=${symbol}`;
       }
       
+      // NO CACHE: sempre busca dados frescos
+      console.log('🔄 Fetching fresh open orders from API (no cache)...');
+      
       const response = await fetchWithTimeout(url, {
         method: 'GET',
-        cache: 'no-store' // Always get fresh data from backend (which has its own cache)
-      }, TIMEOUTS.NORMAL); // Reduced timeout: 15s (backend is fast with cache)
+        cache: 'no-store' // Always get fresh data
+      }, TIMEOUTS.NORMAL); // 15s timeout
+      
+      // Handle rate limit (429)
+      if (response.status === 429) {
+        const errorData = await response.json();
+        console.warn('⚠️  Rate limit hit:', errorData.message);
+        // Return empty orders instead of throwing (graceful degradation)
+        return {
+          success: true,
+          count: 0,
+          orders: [],
+          rate_limited: true,
+          message: errorData.message,
+          retry_after: errorData.retry_after
+        };
+      }
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -558,12 +562,7 @@ export const apiService = {
       
       const data = await response.json();
       
-      // Cache for 30 seconds (aligned with backend cache)
-      if (useCache) {
-        cacheService.set(cacheKey, data);
-        console.log('💾 Cached open orders locally for 30s');
-      }
-      
+      // NO CACHE: retorna dados frescos diretamente
       return data;
     } catch (error) {
       console.error(`Error fetching open orders for exchange ${exchangeId}:`, error);

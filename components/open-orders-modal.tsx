@@ -17,10 +17,6 @@ interface OpenOrdersModalProps {
   onOrderCancelled?: () => void  // Callback chamado após cancelar ordem
 }
 
-// Cache global para ordens abertas - EXPORTADO para uso externo
-export const ordersCache = new Map<string, { orders: OpenOrder[], timestamp: number }>()
-const CACHE_DURATION = 30 * 1000 // 30 segundos (alinhado com backend)
-
 export function OpenOrdersModal({ 
   visible, 
   onClose, 
@@ -45,91 +41,55 @@ export function OpenOrdersModal({
 
   useEffect(() => {
     if (visible && exchangeId) {
-      loadOrdersOptimized()
+      loadOrders()
     }
   }, [visible, exchangeId])
 
-  const loadOrdersOptimized = async () => {
-    const cacheKey = `${userId}_${exchangeId}`
-    const cached = ordersCache.get(cacheKey)
-    const now = Date.now()
-
-    // ⚡ ESTRATÉGIA OTIMIZADA: Mostrar cache IMEDIATAMENTE, atualizar em background se expirado
-    if (cached) {
-      const cacheAge = now - cached.timestamp
-      const isExpired = cacheAge >= CACHE_DURATION
-      
-      // SEMPRE mostra o cache primeiro (UX instantâneo)
-      console.log('⚡ INSTANT: Mostrando cache para', exchangeName, 
-        `(${isExpired ? 'EXPIRADO' : 'VÁLIDO'} - idade: ${Math.round(cacheAge / 1000)}s)`)
-      setOrders(cached.orders)
-      setLastUpdate(new Date(cached.timestamp))
-      
-      // Se ainda válido, não precisa atualizar
-      if (!isExpired) {
-        console.log('✅ Cache válido, não precisa atualizar')
-        return
-      }
-      
-      // Se expirado, atualiza em background (SEM loading indicator)
-      console.log('� Cache expirado, atualizando em background...')
-      fetchOrdersInBackground(cacheKey, exchangeName)
-      return
-    }
-
-    // Cache não existe - primeira vez, mostra loading
-    console.log('🔄 Primeira consulta, buscando da API com loading...')
+  const loadOrders = async () => {
+    console.log('🔄 Buscando ordens abertas para', exchangeName, 'sem cache...')
     setLoading(true)
     setError(null)
     
     try {
       const response = await apiService.getOpenOrders(userId, exchangeId)
+      
+      // Verifica flags de erro (graceful degradation do backend)
+      const hasError = response.error || response.auth_error || response.exchange_error || 
+                      response.network_error || response.rate_limited
+      
+      if (hasError) {
+        const errorMessage = response.message || 'Erro ao buscar ordens'
+        console.warn('⚠️  API retornou erro (graceful):', errorMessage)
+        
+        // Se for erro de autenticação, mostre mensagem específica
+        if (response.auth_error) {
+          setError('Erro de autenticação. Verifique suas credenciais da exchange.')
+        } else if (response.not_supported) {
+          setError('Esta exchange não suporta consulta de ordens abertas.')
+        } else if (response.rate_limited) {
+          setError('Limite de requisições atingido. Aguarde alguns segundos.')
+        } else {
+          setError(errorMessage)
+        }
+        
+        setOrders([])
+        setLastUpdate(new Date())
+        return
+      }
+      
       const fetchedOrders = response.orders || []
       
-      const updateTime = Date.now()
-      ordersCache.set(cacheKey, { 
-        orders: fetchedOrders, 
-        timestamp: updateTime 
-      })
-      
       setOrders(fetchedOrders)
-      setLastUpdate(new Date(updateTime))
+      setLastUpdate(new Date())
       
-      console.log('✅ Primeira consulta concluída:', fetchedOrders.length, 'ordens')
+      console.log('✅ Ordens carregadas:', fetchedOrders.length, 'ordens encontradas')
     } catch (err: any) {
-      console.error('❌ Erro na primeira consulta:', err)
+      console.error('❌ Erro ao carregar ordens:', err)
       setError(err.message || 'Erro ao carregar ordens')
       setOrders([])
     } finally {
       setLoading(false)
     }
-  }
-
-  const fetchOrdersInBackground = async (cacheKey: string, exchangeName: string) => {
-    try {
-      const response = await apiService.getOpenOrders(userId, exchangeId)
-      const fetchedOrders = response.orders || []
-      
-      const updateTime = Date.now()
-      ordersCache.set(cacheKey, { 
-        orders: fetchedOrders, 
-        timestamp: updateTime 
-      })
-      
-      // Atualiza UI silenciosamente
-      setOrders(fetchedOrders)
-      setLastUpdate(new Date(updateTime))
-      
-      console.log('✅ Background update completo para', exchangeName, ':', fetchedOrders.length, 'ordens')
-    } catch (err: any) {
-      console.error('⚠️  Erro no background update (mantendo cache):', err)
-      // NÃO mostra erro - mantém dados cacheados
-    }
-  }
-
-  const loadOrders = async () => {
-    // Mantido para compatibilidade (usado em alguns lugares)
-    loadOrdersOptimized()
   }
 
   const getOrderTypeColor = (type: string) => {
@@ -174,10 +134,7 @@ export function OpenOrdersModal({
         console.log('📋 [OpenOrdersModal] 🚪 Fechando modal...')
         onClose()
         
-        // Remove do cache para forçar atualização da API
-        const cacheKey = `${userId}_${exchangeId}`
-        console.log('📋 [OpenOrdersModal] 🗑️ Deletando cache:', cacheKey)
-        ordersCache.delete(cacheKey)
+        // Cache removido: consulta sempre fresca
         
         // Atualiza APENAS a exchange específica desta ordem (via função global exposta por ExchangesList)
         console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange específica:', exchangeId)
@@ -230,10 +187,7 @@ export function OpenOrdersModal({
         console.log('📋 [OpenOrdersModal] 🚪 Fechando modal...')
         onClose()
         
-        // Remove do cache
-        const cacheKey = `${userId}_${exchangeId}`
-        console.log('📋 [OpenOrdersModal] 🗑️ Deletando cache:', cacheKey)
-        ordersCache.delete(cacheKey)
+        // Cache removido: consulta sempre fresca
         
         // Atualiza a exchange
         console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange específica:', exchangeId)
@@ -356,9 +310,7 @@ export function OpenOrdersModal({
                     </Text>
                     <TouchableOpacity 
                       onPress={() => {
-                        // Força atualização removendo do cache
-                        const cacheKey = `${userId}_${exchangeId}`
-                        ordersCache.delete(cacheKey)
+                        // Sempre busca dados frescos
                         loadOrders()
                       }}
                       style={[styles.refreshButton, loading && styles.refreshButtonDisabled]}
