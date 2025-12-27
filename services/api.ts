@@ -1,17 +1,40 @@
 import { BalanceResponse, AvailableExchangesResponse, LinkedExchangesResponse, PortfolioEvolutionResponse } from '@/types/api';
 import { config } from '@/lib/config';
+import { cacheService, CacheService, CACHE_TTL } from './cache-service';
 
 const API_BASE_URL = config.apiBaseUrl;
 
-// Timeout padrão para requisições (60 segundos para cold start do Render)
-const DEFAULT_TIMEOUT = 60000;
+/**
+ * Request timeout constants (in milliseconds)
+ * Timeouts are configured based on operation complexity and cold start requirements
+ */
+const TIMEOUTS = {
+  /** 5 seconds - Fast operations (single item fetch, token search) */
+  FAST: 5000,
+  
+  /** 10 seconds - Standard operations (list exchanges, check availability) */
+  STANDARD: 10000,
+  
+  /** 15 seconds - Normal operations (list with filters, token details, markets) */
+  NORMAL: 15000,
+  
+  /** 30 seconds - Slow operations (create/update orders, complex calculations) */
+  SLOW: 30000,
+  
+  /** 60 seconds - Very slow (cold start on Render, first request after idle) */
+  VERY_SLOW: 60000,
+  
+  /** 120 seconds - Critical operations (full balance fetch with all exchanges/tokens) */
+  CRITICAL: 120000,
+} as const;
+
 const MAX_RETRIES = 2;
 
 // Helper para adicionar timeout às requisições com retry
 async function fetchWithTimeout(
   url: string, 
   options: RequestInit = {}, 
-  timeout = DEFAULT_TIMEOUT,
+  timeout: number = TIMEOUTS.VERY_SLOW,
   retries = MAX_RETRIES
 ): Promise<Response> {
   const startTime = Date.now();
@@ -45,24 +68,6 @@ async function fetchWithTimeout(
   throw new Error('Failed after all retries');
 }
 
-// Cache para detalhes completos das exchanges (fees, markets, etc)
-interface ExchangeDetailsCacheEntry {
-  data: any;
-  timestamp: number;
-}
-
-const exchangeDetailsCache = new Map<string, ExchangeDetailsCacheEntry>();
-const EXCHANGE_DETAILS_CACHE_TTL = 3600000; // 1 hora (dados de fees e markets mudam raramente)
-
-// Cache para evolução do portfólio
-interface PortfolioEvolutionCacheEntry {
-  data: PortfolioEvolutionResponse;
-  timestamp: number;
-}
-
-const portfolioEvolutionCache = new Map<string, PortfolioEvolutionCacheEntry>();
-const PORTFOLIO_EVOLUTION_CACHE_TTL = 300000; // 5 minutos
-
 export const apiService = {
   /**
    * Busca os balances de todas as exchanges para um usuário
@@ -72,15 +77,25 @@ export const apiService = {
    */
   async getBalances(userId: string, forceRefresh: boolean = false): Promise<BalanceResponse> {
     try {
+      const cacheKey = CacheService.balanceKey(userId);
+      
+      // Check local cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cached = cacheService.get<BalanceResponse>(cacheKey, CACHE_TTL.BALANCES);
+        if (cached) {
+          console.log('⚡ Returning balances from LOCAL cache');
+          return cached;
+        }
+      }
+      
       const timestamp = Date.now();
-      // Só adiciona force_refresh=true quando explicitamente solicitado
       const forceParam = forceRefresh ? '&force_refresh=true' : '';
       const response = await fetchWithTimeout(
         `${API_BASE_URL}/balances?user_id=${userId}${forceParam}&_t=${timestamp}`,
         {
           cache: forceRefresh ? 'no-store' : 'default'
         },
-        120000 // 120s (2 minutos) timeout para balances completos - pode demorar quando force_refresh=true
+        TIMEOUTS.CRITICAL // Full balance fetch can be slow with many exchanges/tokens
       );
       
       if (!response.ok) {
@@ -88,6 +103,12 @@ export const apiService = {
       }
       
       const data: BalanceResponse = await response.json();
+      
+      // Cache locally (whether from backend cache or fresh data)
+      if (!forceRefresh || (data as any).from_cache) {
+        cacheService.set(cacheKey, data);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching balances:', error);
@@ -104,6 +125,17 @@ export const apiService = {
    */
   async getBalancesSummary(userId: string, forceRefresh: boolean = false): Promise<BalanceResponse> {
     try {
+      const cacheKey = CacheService.balanceSummaryKey(userId);
+      
+      // Check local cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cached = cacheService.get<BalanceResponse>(cacheKey, CACHE_TTL.BALANCES);
+        if (cached) {
+          console.log('⚡ Returning balance summary from LOCAL cache');
+          return cached;
+        }
+      }
+      
       const timestamp = Date.now();
       const forceParam = forceRefresh ? '&force_refresh=true' : '';
       const response = await fetchWithTimeout(
@@ -111,7 +143,7 @@ export const apiService = {
         {
           cache: forceRefresh ? 'no-store' : 'default'
         },
-        DEFAULT_TIMEOUT // 60s timeout (aumentado para cold start)
+        TIMEOUTS.VERY_SLOW // Cold start tolerance
       );
       
       if (!response.ok) {
@@ -119,6 +151,12 @@ export const apiService = {
       }
       
       const data: BalanceResponse = await response.json();
+      
+      // Cache locally
+      if (!forceRefresh || (data as any).from_cache) {
+        cacheService.set(cacheKey, data);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching balances summary:', error);
@@ -130,28 +168,31 @@ export const apiService = {
    * Busca a evolução do portfólio nos últimos N dias
    * @param userId ID do usuário
    * @param days Número de dias (padrão: 7)
+   * @param forceRefresh Força atualização sem cache
    * @returns Promise com os dados de evolução
    */
-  async getPortfolioEvolution(userId: string, days: number = 7): Promise<PortfolioEvolutionResponse> {
-    const cacheKey = `${userId}-${days}`;
-    const now = Date.now();
+  async getPortfolioEvolution(userId: string, days: number = 7, forceRefresh: boolean = false): Promise<PortfolioEvolutionResponse> {
+    const cacheKey = CacheService.portfolioEvolutionKey(userId, days);
 
-    // Verifica se existe cache válido
-    const cached = portfolioEvolutionCache.get(cacheKey);
-    if (cached && (now - cached.timestamp) < PORTFOLIO_EVOLUTION_CACHE_TTL) {
-      return cached.data;
+    // Check local cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cached = cacheService.get<PortfolioEvolutionResponse>(cacheKey, CACHE_TTL.PORTFOLIO);
+      if (cached) {
+        console.log('⚡ Returning portfolio evolution from LOCAL cache');
+        return cached;
+      }
     }
 
     try {
-      const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}`;
+      const url = `${API_BASE_URL}/history/evolution?user_id=${userId}&days=${days}${forceRefresh ? '&force_refresh=true' : ''}`;
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        cache: 'no-store'
-      }, 15000);
+        cache: forceRefresh ? 'no-store' : 'default'
+      }, TIMEOUTS.NORMAL);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -159,11 +200,10 @@ export const apiService = {
       
       const data = await response.json();
       
-      // Armazena no cache
-      portfolioEvolutionCache.set(cacheKey, {
-        data,
-        timestamp: now
-      });
+      // Cache locally
+      if (!forceRefresh || (data as any).from_cache) {
+        cacheService.set(cacheKey, data);
+      }
 
       return data;
     } catch (error) {
@@ -183,7 +223,7 @@ export const apiService = {
         {
           cache: 'default'
         },
-        10000 // 10s timeout
+        TIMEOUTS.STANDARD // Exchange details fetch
       );
       
       if (!response.ok) {
@@ -213,7 +253,7 @@ export const apiService = {
       const response = await fetchWithTimeout(url, {
         method: 'GET',
         cache: 'default'
-      }, 15000); // 15s timeout (aumentado de 5s) para tokens que demoram mais
+      }, TIMEOUTS.NORMAL); // Token details with price variations
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -235,19 +275,35 @@ export const apiService = {
    */
   async getAvailableExchanges(userId: string, forceRefresh: boolean = false): Promise<AvailableExchangesResponse> {
     try {
+      const cacheKey = CacheService.availableExchangesKey(userId);
+      
+      // Check local cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cached = cacheService.get<AvailableExchangesResponse>(cacheKey, CACHE_TTL.EXCHANGES);
+        if (cached) {
+          console.log('⚡ Returning available exchanges from LOCAL cache');
+          return cached;
+        }
+      }
+      
       const url = `${API_BASE_URL}/exchanges/available?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
       
-      // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
       const response = await fetchWithTimeout(url, { 
         method: 'GET',
         cache: forceRefresh ? 'no-store' : 'default'
-      }, 10000);
+      }, TIMEOUTS.STANDARD); // List available exchanges
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
       
       const data: AvailableExchangesResponse = await response.json();
+      
+      // Cache locally
+      if (!forceRefresh || (data as any).from_cache) {
+        cacheService.set(cacheKey, data);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching available exchanges:', error);
@@ -263,19 +319,35 @@ export const apiService = {
    */
   async getLinkedExchanges(userId: string, forceRefresh: boolean = false): Promise<LinkedExchangesResponse> {
     try {
+      const cacheKey = CacheService.linkedExchangesKey(userId);
+      
+      // Check local cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cached = cacheService.get<LinkedExchangesResponse>(cacheKey, CACHE_TTL.EXCHANGES);
+        if (cached) {
+          console.log('⚡ Returning linked exchanges from LOCAL cache');
+          return cached;
+        }
+      }
+      
       const url = `${API_BASE_URL}/exchanges/linked?user_id=${userId}${forceRefresh ? '&force_refresh=true' : ''}`;
       
-      // Apenas fazemos a requisição sem headers customizados para evitar CORS preflight
       const response = await fetchWithTimeout(url, { 
         method: 'GET',
         cache: forceRefresh ? 'no-store' : 'default'
-      }, 10000);
+      }, TIMEOUTS.STANDARD); // List linked exchanges
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
       
       const data: LinkedExchangesResponse = await response.json();
+      
+      // Cache locally
+      if (!forceRefresh || (data as any).from_cache) {
+        cacheService.set(cacheKey, data);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching linked exchanges:', error);
@@ -352,7 +424,7 @@ export const apiService = {
       const response = await fetchWithTimeout(url, {
         method: 'GET',
         cache: 'no-store'
-      }, 10000);
+      }, TIMEOUTS.STANDARD); // Token search
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -393,14 +465,14 @@ export const apiService = {
     includeMarkets: boolean = true,
     forceRefresh: boolean = false
   ): Promise<any> {
-    const cacheKey = `${exchangeId}-${includeFees}-${includeMarkets}`;
-    const now = Date.now();
+    const cacheKey = CacheService.exchangeDetailsKey(exchangeId, includeFees, includeMarkets);
 
     // Verifica se existe cache válido (somente se não forçar refresh)
     if (!forceRefresh) {
-      const cached = exchangeDetailsCache.get(cacheKey);
-      if (cached && (now - cached.timestamp) < EXCHANGE_DETAILS_CACHE_TTL) {
-        return cached.data;
+      const cached = cacheService.get<any>(cacheKey, CACHE_TTL.EXCHANGE_DETAILS);
+      if (cached) {
+        console.log('⚡ Returning exchange details from LOCAL cache');
+        return cached;
       }
     }
 
@@ -413,7 +485,7 @@ export const apiService = {
       const response = await fetchWithTimeout(url, {
         method: 'GET',
         cache: forceRefresh ? 'no-store' : 'default'
-      }, 15000); // 15s timeout
+      }, TIMEOUTS.NORMAL); // Exchange full details
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -421,11 +493,8 @@ export const apiService = {
       
       const data = await response.json();
       
-      // Armazena no cache
-      exchangeDetailsCache.set(cacheKey, {
-        data,
-        timestamp: now
-      });
+      // Cache locally
+      cacheService.set(cacheKey, data);
       
       return data;
     } catch (error) {
@@ -440,17 +509,11 @@ export const apiService = {
    */
   clearExchangeDetailsCache(exchangeId?: string) {
     if (exchangeId) {
-      // Limpa apenas o cache da exchange específica
-      const keysToDelete: string[] = [];
-      exchangeDetailsCache.forEach((_, key) => {
-        if (key.startsWith(exchangeId)) {
-          keysToDelete.push(key);
-        }
-      });
-      keysToDelete.forEach(key => exchangeDetailsCache.delete(key));
+      // Limpa apenas o cache da exchange específica usando pattern matching
+      cacheService.invalidate(`exchange_details_${exchangeId}`);
     } else {
-      // Limpa todo o cache
-      exchangeDetailsCache.clear();
+      // Limpa todo o cache de exchange details
+      cacheService.invalidate('exchange_details_');
     }
   },
 
@@ -471,7 +534,7 @@ export const apiService = {
       const response = await fetchWithTimeout(url, {
         method: 'GET',
         cache: 'no-store' // Sempre busca dados atualizados de ordens
-      }, 15000); // 15s timeout
+      }, TIMEOUTS.NORMAL); // Open orders fetch
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -530,7 +593,7 @@ export const apiService = {
           },
           body: JSON.stringify(body),
         },
-        30000 // 30s timeout
+        TIMEOUTS.SLOW // Create buy order
       );
 
       console.log('📥 [API] Status:', response.status, response.statusText)
@@ -595,7 +658,7 @@ export const apiService = {
           },
           body: JSON.stringify(body),
         },
-        30000 // 30s timeout
+        TIMEOUTS.SLOW // Create sell order
       );
 
       console.log('📥 [API] Status:', response.status, response.statusText)
@@ -636,7 +699,7 @@ export const apiService = {
             'Content-Type': 'application/json',
           },
         },
-        15000 // 15s timeout
+        TIMEOUTS.NORMAL // Normal operation
       );
 
       if (!response.ok) {
@@ -680,7 +743,7 @@ export const apiService = {
             'Content-Type': 'application/json',
           },
         },
-        15000 // 15s timeout
+        TIMEOUTS.NORMAL // Normal operation
       );
 
       if (!response.ok) {
@@ -726,7 +789,7 @@ export const apiService = {
             'Content-Type': 'application/json',
           },
         },
-        15000 // 15s timeout
+        TIMEOUTS.NORMAL // Normal operation
       );
 
       if (!response.ok) {
@@ -778,7 +841,7 @@ export const apiService = {
           },
           body: JSON.stringify(body),
         },
-        15000 // 15s timeout
+        TIMEOUTS.NORMAL // Normal operation
       );
 
       console.log('📥 [API] Status:', response.status, response.statusText)
@@ -828,7 +891,7 @@ export const apiService = {
           },
           body: JSON.stringify(body),
         },
-        30000 // 30s timeout (pode demorar mais para cancelar múltiplas ordens)
+        TIMEOUTS.SLOW // Cancel all orders
       );
 
       console.log('📥 [API] Status:', response.status, response.statusText)
@@ -891,7 +954,7 @@ export const apiService = {
           },
           body: JSON.stringify(body),
         },
-        15000 // 15s timeout
+        TIMEOUTS.NORMAL // Normal operation
       );
 
       console.log('📥 [API] Status:', response.status, response.statusText)
@@ -926,12 +989,6 @@ export const apiService = {
    * Retorna informações sobre o cache atual
    */
   getCacheInfo() {
-    return {
-      exchangeDetails: {
-        size: exchangeDetailsCache.size,
-        ttl: EXCHANGE_DETAILS_CACHE_TTL,
-        entries: Array.from(exchangeDetailsCache.keys())
-      }
-    };
+    return cacheService.getStats();
   }
 };

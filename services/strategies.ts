@@ -149,6 +149,7 @@ class StrategiesService {
       exchange_id?: string
       token?: string
       is_active?: boolean
+      force_refresh?: boolean
     }
   ): Promise<Strategy[]> {
     const params = new URLSearchParams({ user_id: userId })
@@ -156,6 +157,7 @@ class StrategiesService {
     if (filters?.exchange_id) params.append("exchange_id", filters.exchange_id)
     if (filters?.token) params.append("token", filters.token)
     if (filters?.is_active !== undefined) params.append("is_active", String(filters.is_active))
+    if (filters?.force_refresh) params.append("force_refresh", "true")
 
     const response = await fetch(`${API_BASE_URL}/strategies?${params.toString()}`)
 
@@ -171,8 +173,13 @@ class StrategiesService {
   /**
    * Busca uma estratégia específica por ID
    */
-  async getStrategy(strategyId: string): Promise<Strategy> {
-    const response = await fetch(`${API_BASE_URL}/strategies/${strategyId}`)
+  async getStrategy(strategyId: string, forceRefresh: boolean = false): Promise<Strategy> {
+    let url = `${API_BASE_URL}/strategies/${strategyId}`
+    if (forceRefresh) {
+      url += '?force_refresh=true'
+    }
+
+    const response = await fetch(url)
 
     if (!response.ok) {
       const error = await response.json()
