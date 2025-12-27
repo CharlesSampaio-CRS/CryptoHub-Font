@@ -19,7 +19,7 @@ interface OpenOrdersModalProps {
 
 // Cache global para ordens abertas - EXPORTADO para uso externo
 export const ordersCache = new Map<string, { orders: OpenOrder[], timestamp: number }>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos em milissegundos
+const CACHE_DURATION = 30 * 1000 // 30 segundos (alinhado com backend)
 
 export function OpenOrdersModal({ 
   visible, 
@@ -45,26 +45,40 @@ export function OpenOrdersModal({
 
   useEffect(() => {
     if (visible && exchangeId) {
-      loadOrders()
+      loadOrdersOptimized()
     }
   }, [visible, exchangeId])
 
-  const loadOrders = async () => {
+  const loadOrdersOptimized = async () => {
     const cacheKey = `${userId}_${exchangeId}`
     const cached = ordersCache.get(cacheKey)
     const now = Date.now()
 
-    // Verifica se tem cache válido (menos de 5 minutos)
-    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-      console.log('📋 [OpenOrdersModal] ⚡ Usando cache para', exchangeName, '(válido por', 
-        Math.round((CACHE_DURATION - (now - cached.timestamp)) / 1000), 'segundos)')
+    // ⚡ ESTRATÉGIA OTIMIZADA: Mostrar cache IMEDIATAMENTE, atualizar em background se expirado
+    if (cached) {
+      const cacheAge = now - cached.timestamp
+      const isExpired = cacheAge >= CACHE_DURATION
+      
+      // SEMPRE mostra o cache primeiro (UX instantâneo)
+      console.log('⚡ INSTANT: Mostrando cache para', exchangeName, 
+        `(${isExpired ? 'EXPIRADO' : 'VÁLIDO'} - idade: ${Math.round(cacheAge / 1000)}s)`)
       setOrders(cached.orders)
       setLastUpdate(new Date(cached.timestamp))
+      
+      // Se ainda válido, não precisa atualizar
+      if (!isExpired) {
+        console.log('✅ Cache válido, não precisa atualizar')
+        return
+      }
+      
+      // Se expirado, atualiza em background (SEM loading indicator)
+      console.log('� Cache expirado, atualizando em background...')
+      fetchOrdersInBackground(cacheKey, exchangeName)
       return
     }
 
-    // Cache expirado ou não existe, busca da API
-    console.log('📋 [OpenOrdersModal] 🔄 Cache expirado ou não existe, buscando da API para', exchangeName)
+    // Cache não existe - primeira vez, mostra loading
+    console.log('🔄 Primeira consulta, buscando da API com loading...')
     setLoading(true)
     setError(null)
     
@@ -72,7 +86,6 @@ export function OpenOrdersModal({
       const response = await apiService.getOpenOrders(userId, exchangeId)
       const fetchedOrders = response.orders || []
       
-      // Salva no cache
       const updateTime = Date.now()
       ordersCache.set(cacheKey, { 
         orders: fetchedOrders, 
@@ -82,14 +95,41 @@ export function OpenOrdersModal({
       setOrders(fetchedOrders)
       setLastUpdate(new Date(updateTime))
       
-      console.log('📋 [OpenOrdersModal] ✅ Cache atualizado para', exchangeName, '-', fetchedOrders.length, 'ordens')
+      console.log('✅ Primeira consulta concluída:', fetchedOrders.length, 'ordens')
     } catch (err: any) {
-      console.error('📋 [OpenOrdersModal] ❌ Erro:', err)
+      console.error('❌ Erro na primeira consulta:', err)
       setError(err.message || 'Erro ao carregar ordens')
       setOrders([])
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchOrdersInBackground = async (cacheKey: string, exchangeName: string) => {
+    try {
+      const response = await apiService.getOpenOrders(userId, exchangeId)
+      const fetchedOrders = response.orders || []
+      
+      const updateTime = Date.now()
+      ordersCache.set(cacheKey, { 
+        orders: fetchedOrders, 
+        timestamp: updateTime 
+      })
+      
+      // Atualiza UI silenciosamente
+      setOrders(fetchedOrders)
+      setLastUpdate(new Date(updateTime))
+      
+      console.log('✅ Background update completo para', exchangeName, ':', fetchedOrders.length, 'ordens')
+    } catch (err: any) {
+      console.error('⚠️  Erro no background update (mantendo cache):', err)
+      // NÃO mostra erro - mantém dados cacheados
+    }
+  }
+
+  const loadOrders = async () => {
+    // Mantido para compatibilidade (usado em alguns lugares)
+    loadOrdersOptimized()
   }
 
   const getOrderTypeColor = (type: string) => {

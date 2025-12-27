@@ -519,6 +519,7 @@ export const apiService = {
 
   /**
    * 📋 Busca ordens abertas de uma exchange específica
+   * 🚀 ULTRA-OPTIMIZADO: Cache de 30s alinhado com backend
    * @param userId ID do usuário
    * @param exchangeId MongoDB _id da exchange
    * @param symbol (opcional) Par específico (ex: DOGE/USDT)
@@ -530,14 +531,16 @@ export const apiService = {
       // Cache key includes symbol for granular caching
       const cacheKey = `open_orders_${exchangeId}_${symbol || 'all'}`;
       
-      // Check cache first (10 second TTL - orders change frequently but not instantly)
+      // Check cache first (30 second TTL - aligned with backend)
       if (useCache) {
-        const cached = cacheService.get<any>(cacheKey, 10000); // 10s TTL
+        const cached = cacheService.get<any>(cacheKey, 30000); // 30s TTL (same as backend)
         if (cached) {
-          console.log('⚡ Returning open orders from LOCAL cache');
+          console.log('⚡ INSTANT: Returning open orders from LOCAL cache (30s TTL)');
           return cached;
         }
       }
+      
+      console.log('🔄 SLOW PATH: Fetching from backend API...');
       
       let url = `${API_BASE_URL}/orders/open?user_id=${userId}&exchange_id=${exchangeId}`;
       if (symbol) {
@@ -546,8 +549,8 @@ export const apiService = {
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
-        cache: 'no-store' // Always get fresh data from backend
-      }, TIMEOUTS.SLOW); // Increased timeout: fetching orders can take time (30s)
+        cache: 'no-store' // Always get fresh data from backend (which has its own cache)
+      }, TIMEOUTS.NORMAL); // Reduced timeout: 15s (backend is fast with cache)
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -555,9 +558,10 @@ export const apiService = {
       
       const data = await response.json();
       
-      // Cache for 10 seconds to reduce rapid consecutive calls
+      // Cache for 30 seconds (aligned with backend cache)
       if (useCache) {
         cacheService.set(cacheKey, data);
+        console.log('💾 Cached open orders locally for 30s');
       }
       
       return data;
