@@ -15,6 +15,7 @@ import { config } from "@/lib/config"
 import { getExchangeLogo } from "@/lib/exchange-logos"
 import { typography, fontWeights } from "@/lib/typography"
 import { useTokenMonitor } from "@/hooks/use-token-monitor"
+import { useOpenOrdersSync } from "@/hooks/useOpenOrdersSync"
 
 // Lista de stablecoins e moedas fiat que não devem ter variação e botão de trade
 const STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'USDD', 'BRL', 'EUR', 'USD']
@@ -93,6 +94,41 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
 
   // Activate token monitoring
   useTokenMonitor(monitoredTokens)
+
+  // 🔄 AUTO-SYNC: Sincroniza open orders automaticamente quando tokens mudarem
+  const { syncOpenOrders: manualSyncOrders, isSyncing: isSyncingOrders } = useOpenOrdersSync({
+    userId: config.userId,
+    enabled: true, // Sempre habilitado
+    onSyncStart: () => {
+      console.log('🔄 [ExchangesList] Open orders sync started...')
+      setLoadingOrders(true)
+    },
+    onSyncComplete: (results) => {
+      console.log('✅ [ExchangesList] Open orders sync completed:', results)
+      
+      // Atualiza contagem de ordens por exchange
+      const newCounts: Record<string, number> = {}
+      results.forEach((result) => {
+        if (result.success) {
+          newCounts[result.exchangeId] = result.ordersCount
+        }
+      })
+      
+      setOpenOrdersCount(newCounts)
+      setLoadingOrders(false)
+      setHasLoadedOrders(true)
+      setLastOrdersUpdate(new Date())
+      
+      // Notifica parent se houver callback
+      if (onRefreshOrders) {
+        onRefreshOrders()
+      }
+    },
+    onSyncError: (error) => {
+      console.error('❌ [ExchangesList] Open orders sync error:', error)
+      setLoadingOrders(false)
+    }
+  })
 
   // ⚡ Busca contagem de ordens abertas logo após carregar as exchanges (prioridade alta)
   useEffect(() => {
@@ -529,6 +565,25 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
             ]} />
           </View>
         </TouchableOpacity>
+
+        {/* 🔄 Sync Status Indicator - mostra quando estiver sincronizando ordens */}
+        {(isSyncingOrders || loadingOrders) && (
+          <View style={styles.syncIndicator}>
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.syncText, { color: colors.textSecondary }]}>
+              Sincronizando ordens...
+            </Text>
+          </View>
+        )}
+        
+        {/* ✅ Last Sync Time - mostra quando foi a última sincronização */}
+        {!isSyncingOrders && !loadingOrders && lastOrdersUpdate && (
+          <View style={styles.lastSyncContainer}>
+            <Text style={[styles.lastSyncText, { color: colors.textTertiary }]}>
+              Última atualização: {lastOrdersUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.list} collapsable={false}>
@@ -934,6 +989,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
+  },
+  syncIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    opacity: 0.8,
+  },
+  syncText: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
+  },
+  lastSyncContainer: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    alignItems: "flex-end",
+  },
+  lastSyncText: {
+    fontSize: typography.micro - 1,
+    fontWeight: fontWeights.light,
+    fontStyle: "italic",
   },
   list: {
     gap: 10,
