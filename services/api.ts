@@ -522,10 +522,23 @@ export const apiService = {
    * @param userId ID do usuário
    * @param exchangeId MongoDB _id da exchange
    * @param symbol (opcional) Par específico (ex: DOGE/USDT)
+   * @param useCache Se true, usa cache local (default: true)
    * @returns Promise com a lista de ordens abertas
    */
-  async getOpenOrders(userId: string, exchangeId: string, symbol?: string): Promise<any> {
+  async getOpenOrders(userId: string, exchangeId: string, symbol?: string, useCache: boolean = true): Promise<any> {
     try {
+      // Cache key includes symbol for granular caching
+      const cacheKey = `open_orders_${exchangeId}_${symbol || 'all'}`;
+      
+      // Check cache first (10 second TTL - orders change frequently but not instantly)
+      if (useCache) {
+        const cached = cacheService.get<any>(cacheKey, 10000); // 10s TTL
+        if (cached) {
+          console.log('⚡ Returning open orders from LOCAL cache');
+          return cached;
+        }
+      }
+      
       let url = `${API_BASE_URL}/orders/open?user_id=${userId}&exchange_id=${exchangeId}`;
       if (symbol) {
         url += `&symbol=${symbol}`;
@@ -533,14 +546,20 @@ export const apiService = {
       
       const response = await fetchWithTimeout(url, {
         method: 'GET',
-        cache: 'no-store' // Sempre busca dados atualizados de ordens
-      }, TIMEOUTS.NORMAL); // Open orders fetch
+        cache: 'no-store' // Always get fresh data from backend
+      }, TIMEOUTS.SLOW); // Increased timeout: fetching orders can take time (30s)
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      
+      // Cache for 10 seconds to reduce rapid consecutive calls
+      if (useCache) {
+        cacheService.set(cacheKey, data);
+      }
+      
       return data;
     } catch (error) {
       console.error(`Error fetching open orders for exchange ${exchangeId}:`, error);
