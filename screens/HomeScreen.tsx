@@ -8,13 +8,14 @@ import { OpenOrdersModal } from "../components/open-orders-modal"
 import { OrderDetailsModal } from "../components/order-details-modal"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
-import { mockNotifications } from "../types/notifications"
+import { useNotifications } from "../contexts/NotificationsContext"
 import { apiService } from "../services/api"
 import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
   const { refresh: refreshBalance, refreshing } = useBalance()
+  const { unreadCount } = useNotifications()
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
   const [openOrdersModalVisible, setOpenOrdersModalVisible] = useState(false)
   const [orderDetailsModalVisible, setOrderDetailsModalVisible] = useState(false)
@@ -22,11 +23,6 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const [selectedExchangeName, setSelectedExchangeName] = useState<string>("")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const refreshOrdersRef = useRef<(() => void) | null>(null)
-
-  const unreadCount = useMemo(() => 
-    mockNotifications.filter(n => !n.read).length, 
-    []
-  )
 
   const onNotificationsPress = useCallback(() => {
     setNotificationsModalVisible(true)

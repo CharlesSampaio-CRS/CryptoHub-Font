@@ -109,6 +109,8 @@ export const PortfolioChart = memo(function PortfolioChart() {
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => true, // Permite que outros gestos (scroll) tenham prioridade
+        onShouldBlockNativeResponder: () => false, // Não bloqueia eventos nativos (scroll)
         onPanResponderGrant: (evt) => {
           const locationX = evt.nativeEvent.locationX
           findNearestPoint(locationX)

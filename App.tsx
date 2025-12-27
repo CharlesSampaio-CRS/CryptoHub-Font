@@ -24,6 +24,8 @@ import { BalanceProvider, useBalance } from "./contexts/BalanceContext"
 import { PortfolioProvider } from "./contexts/PortfolioContext"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { PrivacyProvider } from "./contexts/PrivacyContext"
+import { NotificationsProvider } from "./contexts/NotificationsContext"
+import { AlertsProvider } from "./contexts/AlertsContext"
 import { LoadingProgress } from "./components/LoadingProgress"
 import { MaintenanceScreen } from "./components/MaintenanceScreen"
 
@@ -241,11 +243,15 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <PrivacyProvider>
-            <BalanceProvider>
-              <PortfolioProvider>
-                <AppNavigator />
-              </PortfolioProvider>
-            </BalanceProvider>
+            <NotificationsProvider>
+              <AlertsProvider>
+                <BalanceProvider>
+                  <PortfolioProvider>
+                    <AppNavigator />
+                  </PortfolioProvider>
+                </BalanceProvider>
+              </AlertsProvider>
+            </NotificationsProvider>
           </PrivacyProvider>
         </AuthProvider>
       </ThemeProvider>

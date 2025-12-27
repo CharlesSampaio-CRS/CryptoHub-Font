@@ -1,9 +1,9 @@
 import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable } from "react-native"
-import { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { typography, fontWeights } from "../lib/typography"
 import { useLanguage } from "../contexts/LanguageContext"
-import { Notification, mockNotifications } from "../types/notifications"
+import { useNotifications } from "../contexts/NotificationsContext"
 
 interface NotificationsModalProps {
   visible: boolean
@@ -13,30 +13,13 @@ interface NotificationsModalProps {
 export function NotificationsModal({ visible, onClose }: NotificationsModalProps) {
   const { colors } = useTheme()
   const { t, language } = useLanguage()
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
-
-  const unreadCount = useMemo(() => 
-    notifications.filter(n => !n.read).length, 
-    [notifications]
-  )
-
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    )
-  }
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    )
-  }
-
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id))
-  }
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification 
+  } = useNotifications()
 
   const formatTimestamp = (date: Date) => {
     const now = new Date()
@@ -86,7 +69,7 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
               </View>
               <View style={styles.headerActions}>
                 {unreadCount > 0 && (
-                  <TouchableOpacity onPress={handleMarkAllAsRead}>
+                  <TouchableOpacity onPress={markAllAsRead}>
                     <Text style={styles.markAllButton}>{t('notifications.markAll')}</Text>
                   </TouchableOpacity>
                 )}
@@ -119,7 +102,7 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
                       borderBottomColor: colors.cardBorder 
                     }
                   ]}
-                  onPress={() => !notification.read && handleMarkAsRead(notification.id)}
+                  onPress={() => !notification.read && markAsRead(notification.id)}
                 >
                   {/* Icon */}
                   <View style={[styles.notificationIcon, { backgroundColor: getTypeColor(notification.type) + '20' }]}>
@@ -148,7 +131,7 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
                         {formatTimestamp(notification.timestamp)}
                       </Text>
                       <TouchableOpacity
-                        onPress={() => handleDeleteNotification(notification.id)}
+                        onPress={() => deleteNotification(notification.id)}
                         style={styles.deleteButton}
                       >
                         <Text style={styles.deleteButtonText}>🗑️</Text>

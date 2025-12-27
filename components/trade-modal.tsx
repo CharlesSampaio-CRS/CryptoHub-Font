@@ -94,12 +94,34 @@ export function TradeModal({
   const handlePercentage = (percentage: number) => {
     if (isBuy) {
       // Compra: usa % do saldo USDT
-      const usdtAmount = (availableBalance * percentage) / 100
+      // Para 100%, usa apenas 99.5% para deixar margem para taxas e arredondamentos
+      const safePercentage = percentage === 100 ? 99.5 : percentage
+      const usdtAmount = (availableBalance * safePercentage) / 100
       const tokenAmount = usdtAmount / parseFloat(price || '1')
+      
+      console.log('💰 Calculando compra:', {
+        percentage,
+        safePercentage,
+        availableBalance,
+        usdtAmount,
+        tokenAmount,
+        price
+      })
+      
       setAmount(tokenAmount.toFixed(8))
     } else {
       // Venda: usa % do saldo de tokens
-      const tokenAmount = (availableBalance * percentage) / 100
+      // Para 100%, usa apenas 99.5% para deixar margem de segurança
+      const safePercentage = percentage === 100 ? 99.5 : percentage
+      const tokenAmount = (availableBalance * safePercentage) / 100
+      
+      console.log('💰 Calculando venda:', {
+        percentage,
+        safePercentage,
+        availableBalance,
+        tokenAmount
+      })
+      
       setAmount(tokenAmount.toFixed(8))
     }
   }
@@ -140,14 +162,17 @@ export function TradeModal({
       return
     }
 
-    if (isBuy && total > availableBalance) {
-      console.log('❌ Saldo USDT insuficiente:', { total, availableBalance })
+    // Adiciona tolerância de 0.1% para erros de arredondamento
+    const tolerance = availableBalance * 0.001
+    
+    if (isBuy && total > (availableBalance + tolerance)) {
+      console.log('❌ Saldo USDT insuficiente:', { total, availableBalance, tolerance })
       Alert.alert('Saldo Insuficiente', `Você precisa de $ ${apiService.formatUSD(total)} USDT`)
       return
     }
 
-    if (!isBuy && amountNum > availableBalance) {
-      console.log('❌ Saldo TOKEN insuficiente:', { amountNum, availableBalance, symbol })
+    if (!isBuy && amountNum > (availableBalance + tolerance)) {
+      console.log('❌ Saldo TOKEN insuficiente:', { amountNum, availableBalance, symbol, tolerance })
       Alert.alert('Saldo Insuficiente', `Você possui apenas ${availableBalance.toFixed(8)} ${symbol}`)
       return
     }
@@ -427,6 +452,11 @@ export function TradeModal({
                   </TouchableOpacity>
                 ))}
               </View>
+              
+              {/* Aviso sobre margem de segurança */}
+              <Text style={[styles.safetyMarginText, { color: colors.textSecondary }]}>
+                💡 100% usa 99.5% do saldo (margem para taxas)
+              </Text>
             </View>
 
             {/* Preview do Total */}
@@ -742,6 +772,13 @@ const styles = StyleSheet.create({
   percentageButtonText: {
     fontSize: typography.body,
     fontWeight: fontWeights.medium,
+  },
+  safetyMarginText: {
+    fontSize: typography.caption,
+    fontStyle: 'italic',
+    opacity: 0.7,
+    marginTop: 8,
+    textAlign: 'center',
   },
   previewCard: {
     padding: 18, // 20→18

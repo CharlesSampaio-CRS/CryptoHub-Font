@@ -14,6 +14,10 @@ import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 import { config } from "@/lib/config"
 import { getExchangeLogo } from "@/lib/exchange-logos"
 import { typography, fontWeights } from "@/lib/typography"
+import { useTokenMonitor } from "@/hooks/use-token-monitor"
+
+// Lista de stablecoins e moedas fiat que não devem ter variação e botão de trade
+const STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'USDD', 'BRL', 'EUR', 'USD']
 
 interface ExchangesListProps {
   onAddExchange?: () => void
@@ -51,6 +55,44 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
   const [loadingVariations, setLoadingVariations] = useState<Record<string, boolean>>({})
   const [lastUpdateTime, setLastUpdateTime] = useState<Record<string, Date>>({})
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
+
+  // 📊 Monitor tokens for price alerts
+  const monitoredTokens = useMemo(() => {
+    const tokens: Array<{ symbol: string; exchange: string; variation24h: number; price: number }> = []
+    
+    if (data?.exchanges) {
+      console.log('🔍 [ExchangesList] Exchanges disponíveis:', data.exchanges.map((ex: any) => ({
+        name: ex.name,
+        exchange_id: ex.exchange_id,
+        tokens_count: ex.tokens ? Object.keys(ex.tokens).length : 0
+      })))
+      
+      data.exchanges.forEach((exchange: any) => {
+        // ✅ tokens é um Record/Object, não array
+        if (exchange.tokens && typeof exchange.tokens === 'object') {
+          Object.entries(exchange.tokens).forEach(([symbol, tokenData]: [string, any]) => {
+            // ✅ Acesso correto: exchangeVariations[exchangeId][symbol]
+            const tokenVariations = exchangeVariations[exchange.exchange_id]?.[symbol]
+            
+            if (tokenVariations?.['24h']?.price_change_percent !== undefined) {
+              tokens.push({
+                symbol: symbol,
+                exchange: exchange.exchange_id,
+                variation24h: parseFloat(tokenVariations['24h'].price_change_percent), // ✅ Converte string para número
+                price: parseFloat(tokenData.price_usd) || 0
+              })
+            }
+          })
+        }
+      })
+    }
+    
+    console.log('🔄 [ExchangesList] monitoredTokens atualizado:', tokens.length, 'tokens', tokens)
+    return tokens
+  }, [data?.exchanges, exchangeVariations])
+
+  // Activate token monitoring
+  useTokenMonitor(monitoredTokens)
 
   // ⚡ Busca contagem de ordens abertas logo após carregar as exchanges (prioridade alta)
   useEffect(() => {
@@ -633,8 +675,11 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                       // Busca variações do mapa de variações
                       const tokenVariations = exchangeVariations[exchange.exchange_id]?.[symbol]
                       
-                      // Pega apenas a variação de 24h
-                      const variation24h = tokenVariations?.['24h']?.price_change_percent
+                      // Verifica se é stablecoin
+                      const isStablecoin = STABLECOINS.includes(symbol.toUpperCase())
+                      
+                      // Pega apenas a variação de 24h (ou 0 para stablecoins)
+                      const variation24h = isStablecoin ? 0 : tokenVariations?.['24h']?.price_change_percent
                       
                       return (
                         <View
@@ -690,47 +735,68 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                               {hideValue(`$${apiService.formatUSD(valueUSD)}`)}
                             </Text>
                             
-                            {/* Variação 24h (se disponível) */}
-                            {variation24h !== undefined && (
-                              <View
+                            {/* Variação 24h (sempre exibir, 0.00% para stablecoins) */}
+                            <View
+                              style={[
+                                styles.variationBadgeCompact,
+                                {
+                                  backgroundColor: isStablecoin 
+                                    ? colors.textSecondary + '15' 
+                                    : (variation24h !== undefined && variation24h >= 0) 
+                                      ? colors.success + '15' 
+                                      : colors.danger + '15',
+                                }
+                              ]}
+                            >
+                              <Text
                                 style={[
-                                  styles.variationBadgeCompact,
+                                  styles.variationTextCompact,
                                   {
-                                    backgroundColor: variation24h >= 0 ? colors.success + '15' : colors.danger + '15',
+                                    color: isStablecoin 
+                                      ? colors.textSecondary 
+                                      : (variation24h !== undefined && variation24h >= 0) 
+                                        ? colors.success 
+                                        : colors.danger,
                                   }
                                 ]}
                               >
-                                <Text
-                                  style={[
-                                    styles.variationTextCompact,
-                                    {
-                                      color: variation24h >= 0 ? colors.success : colors.danger,
-                                    }
-                                  ]}
-                                >
-                                  {variation24h >= 0 ? '▲' : '▼'} {Math.abs(variation24h).toFixed(2)}%
-                                </Text>
-                              </View>
-                            )}
+                                {isStablecoin 
+                                  ? '— 0.00%' 
+                                  : variation24h !== undefined
+                                    ? `${variation24h >= 0 ? '▲' : '▼'} ${Math.abs(variation24h).toFixed(2)}%`
+                                    : '— 0.00%'
+                                }
+                              </Text>
+                            </View>
                             
-                            {/* Trade Button com Tooltip */}
+                            {/* Trade Button com Tooltip (desabilitado para stablecoins) */}
                             <View style={{ position: 'relative' }}>
                               <TouchableOpacity
                                 onPress={(e) => {
                                   e.stopPropagation()
-                                  setSelectedTrade({
-                                    exchangeId: exchange.exchange_id,
-                                    exchangeName: exchange.name,
-                                    symbol: symbol,
-                                    currentPrice: priceUSD,
-                                    balance: { token: parseFloat(token.amount), usdt: usdtBalance }
-                                  })
-                                  setTradeModalVisible(true)
+                                  if (!isStablecoin) {
+                                    setSelectedTrade({
+                                      exchangeId: exchange.exchange_id,
+                                      exchangeName: exchange.name,
+                                      symbol: symbol,
+                                      currentPrice: priceUSD,
+                                      balance: { token: parseFloat(token.amount), usdt: usdtBalance }
+                                    })
+                                    setTradeModalVisible(true)
+                                  }
                                 }}
-                                onLongPress={() => setTooltipVisible(`${exchange.exchange_id}-${symbol}`)}
+                                onLongPress={() => !isStablecoin && setTooltipVisible(`${exchange.exchange_id}-${symbol}`)}
                                 onPressOut={() => setTooltipVisible(null)}
                                 delayLongPress={300}
-                                style={[styles.ordersBadge, { backgroundColor: colors.surface, borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)' }]}
+                                disabled={isStablecoin}
+                                style={[
+                                  styles.ordersBadge, 
+                                  { 
+                                    backgroundColor: colors.surface, 
+                                    borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)',
+                                    opacity: isStablecoin ? 0.3 : 1
+                                  }
+                                ]}
                               >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0 }}>
                                   <Text style={{ color: '#10b981', fontSize: 14, fontWeight: fontWeights.bold, lineHeight: 14, letterSpacing: -1 }}>↑</Text>
@@ -739,7 +805,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                               </TouchableOpacity>
                               
                               {/* Tooltip */}
-                              {tooltipVisible === `${exchange.exchange_id}-${symbol}` && (
+                              {tooltipVisible === `${exchange.exchange_id}-${symbol}` && !isStablecoin && (
                                 <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                                   <Text style={[styles.tooltipText, { color: colors.text }]}>{t('trade.tooltip')}</Text>
                                 </View>
