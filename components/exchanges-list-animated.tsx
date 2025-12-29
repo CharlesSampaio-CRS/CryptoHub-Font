@@ -161,7 +161,8 @@ export function ExchangesListAnimated() {
   const { t } = useLanguage()
   const [expandedExchangeId, setExpandedExchangeId] = useState<string | null>(null)
 
-  if (loading) {
+  // Mostra loading durante estado inicial ou quando está carregando
+  if (loading || (!data && !error)) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Exchanges</Text>

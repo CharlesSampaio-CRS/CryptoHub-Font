@@ -7,6 +7,9 @@ import { OpenOrder } from "../types/orders"
 import { apiService } from "../services/api"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 
+// Cache compartilhado de ordens abertas (compartilhado com ExchangesList)
+export const ordersCache = new Map<string, { orders: OpenOrder[], timestamp: number }>()
+
 interface OpenOrdersModalProps {
   visible: boolean
   onClose: () => void
@@ -27,7 +30,7 @@ export function OpenOrdersModal({
   onOrderCancelled
 }: OpenOrdersModalProps) {
   const { colors } = useTheme()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [orders, setOrders] = useState<OpenOrder[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -267,7 +270,7 @@ export function OpenOrdersModal({
   const getRelativeTime = () => {
     if (!lastUpdate) return ''
     
-    const timeStr = lastUpdate.toLocaleTimeString('pt-BR', { 
+    const timeStr = lastUpdate.toLocaleTimeString(language, { 
       hour: '2-digit', 
       minute: '2-digit'
     })
@@ -373,12 +376,12 @@ export function OpenOrdersModal({
                 </View>
               ) : orders.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Text style={[styles.emptyIcon, { color: colors.textSecondary }]}>�</Text>
+                  <Text style={[styles.emptyIcon, { color: colors.textSecondary }]}>📋</Text>
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                    Nenhuma ordem aberta
+                    {t('orders.empty')}
                   </Text>
                   <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-                    Você não possui ordens abertas nesta exchange
+                    {t('orders.emptyMessage')}
                   </Text>
                 </View>
               ) : (

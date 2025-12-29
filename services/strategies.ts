@@ -1,6 +1,25 @@
 import { config } from "@/lib/config"
+import { secureStorage } from "@/lib/secure-storage"
 
 const API_BASE_URL = config.apiBaseUrl
+
+// Helper para obter o token de autenticação
+async function getAuthHeaders(): Promise<HeadersInit> {
+  try {
+    const token = await secureStorage.getItemAsync('access_token')
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to get auth token:', error)
+  }
+  return {
+    'Content-Type': 'application/json',
+  }
+}
 
 export interface Strategy {
   _id?: string  // MongoDB format
@@ -101,11 +120,10 @@ class StrategiesService {
    * Cria uma nova estratégia usando template (RECOMENDADO)
    */
   async createStrategy(data: CreateStrategyRequest): Promise<Strategy> {
+    const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE_URL}/strategies`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     })
 
@@ -123,11 +141,10 @@ class StrategiesService {
    * Cria estratégia usando modo legado (DEPRECATED)
    */
   async createStrategyLegacy(data: CreateStrategyLegacyRequest): Promise<Strategy> {
+    const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE_URL}/strategies`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     })
 
@@ -159,7 +176,10 @@ class StrategiesService {
     if (filters?.is_active !== undefined) params.append("is_active", String(filters.is_active))
     if (filters?.force_refresh) params.append("force_refresh", "true")
 
-    const response = await fetch(`${API_BASE_URL}/strategies?${params.toString()}`)
+    const headers = await getAuthHeaders()
+    const response = await fetch(`${API_BASE_URL}/strategies?${params.toString()}`, {
+      headers
+    })
 
     if (!response.ok) {
       const error = await response.json()
@@ -179,7 +199,8 @@ class StrategiesService {
       url += '?force_refresh=true'
     }
 
-    const response = await fetch(url)
+    const headers = await getAuthHeaders()
+    const response = await fetch(url, { headers })
 
     if (!response.ok) {
       const error = await response.json()
@@ -194,11 +215,10 @@ class StrategiesService {
    * Atualiza uma estratégia existente
    */
   async updateStrategy(strategyId: string, data: UpdateStrategyRequest): Promise<Strategy> {
+    const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE_URL}/strategies/${strategyId}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     })
 
@@ -222,8 +242,10 @@ class StrategiesService {
       url += `?user_id=${userId}`
     }
     
+    const headers = await getAuthHeaders()
     const response = await fetch(url, {
       method: "DELETE",
+      headers
     })
 
     if (!response.ok) {
@@ -243,11 +265,10 @@ class StrategiesService {
    * Verifica se uma estratégia deve ser acionada
    */
   async checkTrigger(strategyId: string, data: CheckTriggerRequest): Promise<CheckTriggerResponse> {
+    const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE_URL}/strategies/${strategyId}/check`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     })
 
@@ -272,8 +293,9 @@ class StrategiesService {
       params.append("force_refresh", "true")
     }
 
+    const headers = await getAuthHeaders()
     const url = `${API_BASE_URL}/strategies/${strategyId}/stats?${params.toString()}`
-    const response = await fetch(url)
+    const response = await fetch(url, { headers })
 
     if (!response.ok) {
       let errorMessage = "Failed to fetch strategy stats"

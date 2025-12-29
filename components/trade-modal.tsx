@@ -50,8 +50,13 @@ export function TradeModal({
   // Busca limites do mercado (quantidade mínima, custo mínimo)
   useEffect(() => {
     const fetchMarketLimits = async () => {
+      if (!user?.id) {
+        console.warn('⚠️ Usuário não autenticado, não é possível buscar limites do mercado')
+        return
+      }
+      
       try {
-        const data = await apiService.getMarkets(user?.id || 'charles_test_user', exchangeId, 'USDT', symbol)
+        const data = await apiService.getMarkets(user.id, exchangeId, 'USDT', symbol)
         // Procura o par específico (ex: DOGE/USDT)
         const market = data?.markets?.find((m: any) => m.base === symbol && m.quote === 'USDT')
         if (market?.limits) {

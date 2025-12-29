@@ -14,7 +14,7 @@ import { typography, fontWeights } from "@/lib/typography"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors, isDark } = useTheme()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { data, loading, error, refreshing, refresh } = useBalance()
   const { hideValue } = usePrivacy()
   const { evolutionData, currentPeriod } = usePortfolio()
@@ -27,7 +27,8 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     }
   }, [data?.timestamp])
 
-  if (loading) {
+  // Mostra skeleton durante loading inicial ou quando não há dados ainda
+  if (loading || (!data && !error)) {
     return <SkeletonPortfolioOverview />
   }
 
@@ -47,7 +48,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const formatLastUpdated = () => {
     if (!lastUpdateTime) return ''
     
-    const timeStr = lastUpdateTime.toLocaleTimeString('pt-BR', { 
+    const timeStr = lastUpdateTime.toLocaleTimeString(language, { 
       hour: '2-digit', 
       minute: '2-digit' 
     })

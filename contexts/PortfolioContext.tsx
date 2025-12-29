@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { apiService } from '@/services/api'
-import { config } from '@/lib/config'
 import { PortfolioEvolutionResponse } from '@/types/api'
+import { useAuth } from './AuthContext'
 
 interface PortfolioContextType {
   evolutionData: PortfolioEvolutionResponse | null
@@ -14,6 +14,7 @@ interface PortfolioContextType {
 const PortfolioContext = createContext<PortfolioContextType | undefined>(undefined)
 
 export function PortfolioProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
   const [evolutionData, setEvolutionData] = useState<PortfolioEvolutionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,13 +22,19 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
   const loadEvolutionData = useCallback(async (days: number, showLoading = true) => {
     try {
+      if (!user?.id) {
+        console.warn('⚠️ No user ID available')
+        setLoading(false)
+        return
+      }
+      
       if (showLoading) setLoading(true)
       setError(null)
       
       const startTime = Date.now()
-      console.log(`🔄 [PortfolioContext] Buscando evolução de ${days} dias...`)
+      console.log(`🔄 [PortfolioContext] Buscando evolução de ${days} dias para user:`, user.id)
       
-      const data = await apiService.getPortfolioEvolution(config.userId, days)
+      const data = await apiService.getPortfolioEvolution(user.id, days)
       
       const duration = Date.now() - startTime
       console.log(`✅ [PortfolioContext] Evolução carregada em ${duration}ms`)
@@ -43,13 +50,15 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     } finally {
       if (showLoading) setLoading(false)
     }
-  }, [])
+  }, [user?.id])
 
-  // Load on mount - carrega automaticamente ao iniciar
+  // Load on mount - carrega automaticamente quando usuário estiver disponível
   useEffect(() => {
-    console.log('🚀 [PortfolioContext] Inicializando - carregando dados de 7 dias')
-    loadEvolutionData(7)
-  }, [loadEvolutionData])
+    if (user?.id) {
+      console.log('🚀 [PortfolioContext] Inicializando - carregando dados de 7 dias')
+      loadEvolutionData(7)
+    }
+  }, [user?.id, loadEvolutionData])
 
   // Refresh sem mostrar loading (usado no pull-to-refresh)
   const refreshEvolution = useCallback(async (days?: number, showLoadingState = true) => {

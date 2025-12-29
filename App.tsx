@@ -62,11 +62,27 @@ function DataLoader({ children, onDataReady }: { children: React.ReactNode, onDa
       return
     }
 
-    // Aguarda os dados estarem prontos (não loading E dados existem)
-    const balanceReady = !balanceLoading && (balanceData !== null || balanceError !== null)
+    // ✅ NOVO: Considera dados prontos quando:
+    // 1. Loading terminou (!balanceLoading)
+    // 2. E: (tem dados OU tem erro OU usuário novo sem exchanges)
+    const balanceReady = !balanceLoading && (
+      balanceData !== null ||  // Tem dados
+      balanceError !== null ||  // Tem erro (vai mostrar mensagem)
+      (balanceData as any)?.exchanges?.length === 0  // Usuário novo sem exchanges (válido!)
+    )
+
+    console.log('🔍 [DataLoader] Status:', {
+      balanceLoading,
+      hasData: balanceData !== null,
+      hasError: balanceError !== null,
+      exchangesCount: balanceData?.exchanges?.length || 0,
+      balanceReady,
+      hasCalledOnDataReady: hasCalledRef.current
+    })
 
     // Chama onDataReady quando balance terminou de carregar
     if (balanceReady && !hasCalledRef.current) {
+      console.log('✅ [DataLoader] Dados prontos! Liberando interface...')
       hasCalledRef.current = true
       onDataReady()
     }

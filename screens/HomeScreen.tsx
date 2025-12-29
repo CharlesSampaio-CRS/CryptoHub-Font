@@ -9,11 +9,12 @@ import { OrderDetailsModal } from "../components/order-details-modal"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
 import { useNotifications } from "../contexts/NotificationsContext"
+import { useAuth } from "../contexts/AuthContext"
 import { apiService } from "../services/api"
-import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
+  const { user } = useAuth()
   const { refresh: refreshBalance, refreshing } = useBalance()
   const { unreadCount } = useNotifications()
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
@@ -99,7 +100,7 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         onClose={() => setOpenOrdersModalVisible(false)}
         exchangeId={selectedExchangeId}
         exchangeName={selectedExchangeName}
-        userId={config.userId}
+        userId={user?.id || ''}
         onSelectOrder={onSelectOrder}
         onOrderCancelled={async () => {
           // Após cancelar ordem, atualiza APENAS a exchange específica

@@ -6,6 +6,7 @@ import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useBalance } from "@/contexts/BalanceContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { QRScanner } from "./QRScanner"
 import { LogoIcon } from "./LogoIcon"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
@@ -289,6 +290,7 @@ AvailableExchangeCard.displayName = 'AvailableExchangeCard'
 export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
+  const { user } = useAuth()
   const { refreshOnExchangeChange, data: balanceData } = useBalance()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
@@ -327,14 +329,20 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const [loadingDetails, setLoadingDetails] = useState(false)
 
   const fetchExchanges = useCallback(async (forceRefresh: boolean = false) => {
+    if (!user?.id) {
+      console.warn('⚠️ No user ID available')
+      setLoading(false)
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
       
       
       const [availableData, linkedData] = await Promise.all([
-        apiService.getAvailableExchanges(config.userId, forceRefresh),
-        apiService.getLinkedExchanges(config.userId, forceRefresh)
+        apiService.getAvailableExchanges(user.id, forceRefresh),
+        apiService.getLinkedExchanges(user.id, forceRefresh)
       ])
       
       setAvailableExchanges(availableData.exchanges || [])
@@ -345,7 +353,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user?.id])
 
   useEffect(() => {
     fetchExchanges(true) // SEMPRE força refresh para pegar ícones atualizados
@@ -361,6 +369,11 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const handleConnect = useCallback(async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
+    
     try {
       const url = `${config.apiBaseUrl}/exchanges/connect`
       
@@ -370,7 +383,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'charles_test_user',
+          user_id: user.id,
           exchange_id: exchangeId,
         }),
       })
@@ -446,6 +459,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const confirmDisconnect = useCallback(async () => {
     setConfirmModalVisible(false)
     
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
     
     try {
       const url = `${config.apiBaseUrl}/exchanges/disconnect`
@@ -456,7 +473,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'charles_test_user',
+          user_id: user.id,
           exchange_id: confirmExchangeId,
         }),
       })
@@ -491,6 +508,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const confirmDelete = useCallback(async () => {
     setConfirmModalVisible(false)
     
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
     
     try {
       const url = `${config.apiBaseUrl}/exchanges/delete`
@@ -501,7 +522,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'charles_test_user',
+          user_id: user.id,
           exchange_id: confirmExchangeId,
         }),
       })
@@ -630,13 +651,18 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       alert(t('error.passphraseRequired'))
       return
     }
+    
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
 
     try {
       setConnecting(true)
       
       const url = `${config.apiBaseUrl}/exchanges/link`
       const payload = {
-        user_id: config.userId,
+        user_id: user.id,
         exchange_id: selectedExchange._id, // Usando o _id da exchange
         api_key: apiKey.trim(),
         api_secret: apiSecret.trim(),

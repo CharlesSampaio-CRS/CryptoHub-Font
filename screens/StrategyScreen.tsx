@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
+import { useAuth } from "../contexts/AuthContext"
 import { strategiesService, type Strategy as APIStrategy, type Execution } from "../services/strategies"
 import { CreateStrategyModal } from "../components/create-strategy-modal"
 import { StrategyDetailsModal } from "@/components/StrategyDetailsModal"
@@ -29,11 +30,10 @@ interface Strategy {
   }
 }
 
-const USER_ID = "charles_test_user"
-
 export function StrategyScreen() {
   const { colors, isDark } = useTheme()
   const { t } = useLanguage()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<"strategies" | "executions">("strategies")
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,9 +79,15 @@ export function StrategyScreen() {
   }), [isDark])
 
   const loadStrategies = useCallback(async (skipStats: boolean = false) => {
+    if (!user?.id) {
+      console.warn('⚠️ Usuário não autenticado, não é possível carregar estratégias')
+      setLoading(false)
+      return
+    }
+    
     try {
       setLoading(true)
-      const apiStrategies = await strategiesService.getUserStrategies(USER_ID)
+      const apiStrategies = await strategiesService.getUserStrategies(user.id)
       
       
       // Transform API data to local format - Filter out invalid strategies
@@ -107,7 +113,7 @@ export function StrategyScreen() {
             return Promise.resolve(null)
           }
           
-          return strategiesService.getStrategyStats(strategyId, USER_ID)
+          return strategiesService.getStrategyStats(strategyId, user.id)
         })
         statsResults = await Promise.allSettled(statsPromises)
       }
@@ -170,18 +176,23 @@ export function StrategyScreen() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [])
+  }, [user?.id])
 
   const loadExecutions = useCallback(async () => {
+    if (!user?.id) {
+      console.warn('⚠️ Usuário não autenticado, não é possível carregar execuções')
+      return
+    }
+    
     try {
       // Passa a lista de estratégias recém-criadas para pular
-      const apiExecutions = await strategiesService.getUserExecutions(USER_ID, newlyCreatedStrategyIds.current)
+      const apiExecutions = await strategiesService.getUserExecutions(user.id, newlyCreatedStrategyIds.current)
       setExecutions(apiExecutions)
     } catch (error) {
       console.error("Error loading executions:", error)
       setExecutions([])
     }
-  }, [])
+  }, [user?.id])
 
   // Load strategies and executions from API on mount
   useEffect(() => {
@@ -247,13 +258,18 @@ export function StrategyScreen() {
     setConfirmStrategyId("")
     setConfirmStrategyName("")
 
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
+
     try {
       
       // Optimistic update - remove from UI immediately
       setStrategies(prev => prev.filter(s => s.id !== id))
       
       // Call API with user_id parameter
-      await strategiesService.deleteStrategy(id, USER_ID)
+      await strategiesService.deleteStrategy(id, user.id)
       
     } catch (error: any) {
       console.error("Error deleting strategy:", error)
@@ -803,14 +819,14 @@ export function StrategyScreen() {
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
         onSuccess={handleStrategyCreated}
-        userId={USER_ID}
+        userId={user?.id || ''}
       />
 
       {/* Strategy Details Modal */}
       <StrategyDetailsModal
         visible={detailsModalVisible}
         strategyId={selectedStrategyId}
-        userId={USER_ID}
+        userId={user?.id || ''}
         onClose={() => {
           setDetailsModalVisible(false)
           setSelectedStrategyId(null)

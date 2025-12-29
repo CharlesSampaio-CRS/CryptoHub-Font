@@ -1,21 +1,44 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native"
 import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react"
-import { LinearGradient } from "expo-linear-gradient"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { usePrivacy } from "@/contexts/PrivacyContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { SkeletonExchangeItem } from "./SkeletonLoaders"
 import { TokenDetailsModal } from "./token-details-modal"
 import { TradeModal } from "./trade-modal"
 import { ordersCache } from "./open-orders-modal"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
-import { config } from "@/lib/config"
 import { getExchangeLogo } from "@/lib/exchange-logos"
 import { typography, fontWeights } from "@/lib/typography"
 import { useTokenMonitor } from "@/hooks/use-token-monitor"
 import { useOpenOrdersSync } from "@/hooks/useOpenOrdersSync"
+
+// Debug: verificar o que foi importado
+console.log('🔍 [ExchangesList] ordersCache importado:', ordersCache)
+console.log('🔍 [ExchangesList] ordersCache tipo:', typeof ordersCache)
+console.log('🔍 [ExchangesList] ordersCache.set tipo:', typeof ordersCache?.set)
+
+// Garantir que o ordersCache está inicializado
+if (!ordersCache) {
+  console.error('❌ [ExchangesList] ordersCache não está definido! Verifique o import.')
+  throw new Error('ordersCache não foi inicializado corretamente')
+}
+
+// Helper function para usar o cache com segurança
+const safeSetCache = (key: string, value: { orders: any[], timestamp: number }) => {
+  try {
+    if (ordersCache && typeof ordersCache.set === 'function') {
+      ordersCache.set(key, value)
+    } else {
+      console.error('❌ [ExchangesList] ordersCache.set não é uma função', ordersCache)
+    }
+  } catch (error) {
+    console.error('❌ [ExchangesList] Erro ao salvar no cache:', error)
+  }
+}
 
 // Lista de stablecoins e moedas fiat que não devem ter variação e botão de trade
 const STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'USDD', 'BRL', 'EUR', 'USD']
@@ -26,9 +49,10 @@ interface ExchangesListProps {
   onRefreshOrders?: () => void  // Callback para atualizar ordens
 }
 
-export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpenOrdersPress, onRefreshOrders }: ExchangesListProps) {
+export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, onRefreshOrders }: ExchangesListProps) {
   const { colors, isDark } = useTheme()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const { user } = useAuth()
   const { data, loading, error, refresh: refreshBalance } = useBalance()
   const { hideValue } = usePrivacy()
   // Removido: expandedExchanges state - não precisa mais expandir (UX improvement)
@@ -56,6 +80,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
   const [loadingVariations, setLoadingVariations] = useState<Record<string, boolean>>({})
   const [lastUpdateTime, setLastUpdateTime] = useState<Record<string, Date>>({})
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
+  const variationsFetchedRef = useRef<Set<string>>(new Set()) // 🔑 Cache de exchanges já consultadas
 
   // 📊 Monitor tokens for price alerts
   const monitoredTokens = useMemo(() => {
@@ -97,8 +122,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
 
   // 🔄 AUTO-SYNC: Sincroniza open orders automaticamente quando tokens mudarem
   const { syncOpenOrders: manualSyncOrders, isSyncing: isSyncingOrders } = useOpenOrdersSync({
-    userId: config.userId,
-    enabled: true, // Sempre habilitado
+    userId: user?.id || '',
+    enabled: !!user?.id, // Só habilita se tiver user_id
     onSyncStart: () => {
       console.log('🔄 [ExchangesList] Open orders sync started...')
       setLoadingOrders(true)
@@ -106,15 +131,17 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
     onSyncComplete: (results) => {
       console.log('✅ [ExchangesList] Open orders sync completed:', results)
       
-      // Atualiza contagem de ordens por exchange
-      const newCounts: Record<string, number> = {}
-      results.forEach((result) => {
-        if (result.success) {
-          newCounts[result.exchangeId] = result.ordersCount
-        }
+      // Atualiza contagem de ordens por exchange (MANTÉM valores existentes)
+      setOpenOrdersCount(prev => {
+        const updated = { ...prev } // Mantém valores existentes
+        results.forEach((result) => {
+          if (result.success) {
+            updated[result.exchangeId] = result.ordersCount
+          }
+        })
+        return updated
       })
       
-      setOpenOrdersCount(newCounts)
       setLoadingOrders(false)
       setHasLoadedOrders(true)
       setLastOrdersUpdate(new Date())
@@ -167,16 +194,21 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
 
   // Busca as ordens abertas para UMA exchange específica (atualização rápida após criar/cancelar ordem)
   const fetchOpenOrdersForExchange = useCallback(async (exchangeId: string) => {
+    if (!user?.id) {
+      console.warn('⚠️ No user ID available')
+      return
+    }
+    
     console.log('⚡ [ExchangesList] Atualizando ordens da exchange:', exchangeId)
     
     try {
-      const response = await apiService.getOpenOrders(config.userId, exchangeId)
+      const response = await apiService.getOpenOrders(user.id, exchangeId)
       const count = response.count || response.total_orders || 0
       const orders = response.orders || []
       
       // Salva as ordens completas no cache
-      const cacheKey = `${config.userId}_${exchangeId}`
-      ordersCache.set(cacheKey, { 
+      const cacheKey = `${user.id}_${exchangeId}`
+      safeSetCache(cacheKey, {
         orders: orders, 
         timestamp: Date.now()
       })
@@ -193,10 +225,10 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
       console.error('❌ [ExchangesList] Erro ao atualizar ordens de', exchangeId, ':', error.message)
       return { success: false, count: 0 }
     }
-  }, [])
+  }, [user?.id])
 
   const fetchOpenOrdersCount = useCallback(async () => {
-    if (!data?.exchanges || data.exchanges.length === 0) {
+    if (!data?.exchanges || data.exchanges.length === 0 || !user?.id) {
       return
     }
 
@@ -226,16 +258,16 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
       const batchPromises = batch.map(async (exchange) => {
         try {
           console.log('📡 [ExchangesList] Buscando ordens de:', exchange.name)
-          const response = await apiService.getOpenOrders(config.userId, exchange.exchange_id)
+          const response = await apiService.getOpenOrders(user!.id, exchange.exchange_id)
           const count = response.count || response.total_orders || 0
           const orders = response.orders || []
           
           // Salva as ordens completas no cache para uso posterior no modal
-          const cacheKey = `${config.userId}_${exchange.exchange_id}`
+          const cacheKey = `${user!.id}_${exchange.exchange_id}`
           const updateTime = Date.now()
-          ordersCache.set(cacheKey, { 
-            orders: orders, 
-            timestamp: updateTime 
+          safeSetCache(cacheKey, {
+            orders: orders,
+            timestamp: updateTime
           })
           console.log('💾 [ExchangesList] Cache atualizado para', exchange.name, '-', orders.length, 'ordens')
           
@@ -305,18 +337,23 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
 
     console.log('🔄 [ExchangesList] Atualizando ordens de:', exchange.name)
     
+    if (!user?.id) {
+      console.warn('⚠️ No user ID available')
+      return
+    }
+    
     // Marca como loading para esta exchange
     setLoadingOrdersByExchange(prev => ({ ...prev, [exchangeId]: true }))
 
     try {
-      const response = await apiService.getOpenOrders(config.userId, exchangeId)
+      const response = await apiService.getOpenOrders(user.id, exchangeId)
       const count = response.count || response.total_orders || 0
       const orders = response.orders || []
       
       // Atualiza cache
-      const cacheKey = `${config.userId}_${exchangeId}`
-      ordersCache.set(cacheKey, { 
-        orders: orders, 
+      const cacheKey = `${user.id}_${exchangeId}`
+      safeSetCache(cacheKey, {
+        orders: orders,
         timestamp: Date.now() 
       })
       
@@ -336,12 +373,23 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
   }, [data?.exchanges])
 
   // Busca variações de preço para uma exchange específica
-  const fetchExchangeVariations = useCallback(async (exchangeId: string) => {
+  const fetchExchangeVariations = useCallback(async (exchangeId: string, forceRefresh = false) => {
+    // 🔑 Cache: Evita buscar variações múltiplas vezes para a mesma exchange
+    if (!forceRefresh && variationsFetchedRef.current.has(exchangeId)) {
+      // console.log('⚡ [Variations] Usando cache para exchange:', exchangeId)
+      return
+    }
+
     const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
     
     if (!exchange || !exchange.tokens) {
       return
     }
+
+    // Marca como em busca no cache
+    variationsFetchedRef.current.add(exchangeId)
+
+    // console.log('📊 [Variations] Buscando variações para exchange:', exchangeId)
 
     // Cancela requisição anterior se existir
     if (abortControllersRef.current.has(exchangeId)) {
@@ -395,7 +443,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
         const batch = tokensLimited.slice(i, i + BATCH_SIZE)
         
         const batchPromises = batch.map(symbol =>
-          apiService.getTokenDetails(exchangeId, symbol, config.userId)
+          apiService.getTokenDetails(exchangeId, symbol, user?.id || '')
             .catch(error => {
               // Ignora erros de timeout para não bloquear os outros
               return null
@@ -436,13 +484,24 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
       // Aguarda um pouco para não sobrecarregar
       const timer = setTimeout(() => {
         data.exchanges.forEach(exchange => {
-          fetchExchangeVariations(exchange.exchange_id)
+          fetchExchangeVariations(exchange.exchange_id, false) // false = usa cache
         })
       }, 1000)
 
       return () => clearTimeout(timer)
     }
-  }, [loading, data?.exchanges, fetchExchangeVariations])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, data?.exchanges]) // 🔑 Removido fetchExchangeVariations das deps para evitar loop
+
+  // 🔄 Limpa cache de variações a cada 5 minutos para permitir refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // console.log('🔄 [Variations] Limpando cache de variações')
+      variationsFetchedRef.current.clear()
+    }, 5 * 60 * 1000) // 5 minutos
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Expõe função de atualizar ordens através de callback e window global
   useEffect(() => {
@@ -519,7 +578,8 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
     ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza escuro
     : ['rgba(250, 250, 250, 1)', 'rgba(252, 252, 252, 1)', 'rgba(250, 250, 250, 1)']  // Light mode - cinza claríssimo quase branco
 
-  if (loading) {
+  // Mostra skeleton durante loading inicial ou quando não há dados ainda (estado inicial)
+  if (loading || (!data && !error)) {
     return (
       <View style={styles.container}>
         <SkeletonExchangeItem />
@@ -532,7 +592,18 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
   if (error || !data) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.errorText, { color: colors.danger }]}>{error || t('home.noData')}</Text>
+        {error ? (
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+              {t('exchanges.noExchanges') || 'Nenhuma exchange vinculada'}
+            </Text>
+            <Text style={[styles.emptyStateDescription, { color: colors.textSecondary }]}>
+              {t('exchanges.addFirstExchange') || 'Adicione sua primeira exchange para começar a monitorar seus investimentos'}
+            </Text>
+          </View>
+        )}
       </View>
     )
   }
@@ -566,21 +637,13 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
           </View>
         </TouchableOpacity>
 
-        {/* 🔄 Sync Status Indicator - mostra quando estiver sincronizando ordens */}
-        {(isSyncingOrders || loadingOrders) && (
-          <View style={styles.syncIndicator}>
-            <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.syncText, { color: colors.textSecondary }]}>
-              Sincronizando ordens...
-            </Text>
-          </View>
-        )}
+        {/* Removido: Sync Status Indicator - agora é silencioso */}
         
         {/* ✅ Last Sync Time - mostra quando foi a última sincronização */}
         {!isSyncingOrders && !loadingOrders && lastOrdersUpdate && (
           <View style={styles.lastSyncContainer}>
             <Text style={[styles.lastSyncText, { color: colors.textTertiary }]}>
-              Última atualização: {lastOrdersUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              {t('orders.lastSync')}: {lastOrdersUpdate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
         )}
@@ -665,10 +728,11 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, onOpen
                   
                   {/* Badge de ordens abertas */}
                   {(() => {
-                    const count = openOrdersCount[exchange.exchange_id]
+                    const count = openOrdersCount[exchange.exchange_id] || 0
                     const isLoadingThisExchange = loadingOrdersByExchange[exchange.exchange_id]
                     const hasCallback = !!onOpenOrdersPress
-                    return (count > 0 || isLoadingThisExchange) && hasCallback ? (
+                    // Sempre mostra o botão se houver callback, mesmo com 0 ordens
+                    return hasCallback ? (
                       <TouchableOpacity
                         onPress={(e) => {
                           e.stopPropagation()
@@ -1002,14 +1066,17 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.regular,
   },
   lastSyncContainer: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    alignItems: "flex-end",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    alignItems: "flex-start",
   },
   lastSyncText: {
-    fontSize: typography.micro - 1,
-    fontWeight: fontWeights.light,
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
     fontStyle: "italic",
+    opacity: 0.7,
   },
   list: {
     gap: 10,
@@ -1331,5 +1398,24 @@ const styles = StyleSheet.create({
   tooltipText: {
     fontSize: typography.caption,
     fontWeight: fontWeights.medium,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 48,
+  },
+  emptyStateTitle: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.semibold,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptyStateDescription: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })

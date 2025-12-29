@@ -56,14 +56,14 @@ export function useOpenOrdersSync({
 
   const syncOpenOrders = useCallback(async (force = false) => {
     if (!enabled || !balanceData || isSyncingRef.current) {
-      console.log('🔄 [OpenOrdersSync] Skipping sync (disabled, no data, or already syncing)')
+      // Silencioso: console.log('🔄 [OpenOrdersSync] Skipping sync (disabled, no data, or already syncing)')
       return
     }
 
     // Debounce: evita syncs muito frequentes (exceto se force=true)
     const now = Date.now()
     if (!force && now - lastSyncTimestampRef.current < SYNC_DEBOUNCE_MS) {
-      console.log('🔄 [OpenOrdersSync] Skipping sync (debounced - too soon since last sync)')
+      // Silencioso: console.log('🔄 [OpenOrdersSync] Skipping sync (debounced - too soon since last sync)')
       return
     }
 
@@ -71,7 +71,7 @@ export function useOpenOrdersSync({
     lastSyncTimestampRef.current = now
     
     const startTime = Date.now()
-    console.log('🔄 [OpenOrdersSync] Starting automatic open orders sync...')
+    // Silencioso: console.log('🔄 [OpenOrdersSync] Starting automatic open orders sync...')
     onSyncStart?.()
 
     try {
@@ -166,13 +166,14 @@ export function useOpenOrdersSync({
       const cachedCount = results.filter(r => r.fromCache).length
       const totalOrders = results.reduce((sum, r) => sum + r.ordersCount, 0)
 
-      console.log(`✅ [OpenOrdersSync] Completed in ${totalTime}ms:`, {
-        exchanges: exchanges.length,
-        success: successCount,
-        cached: cachedCount,
-        totalOrders,
-        avgTimeMs: Math.round(totalTime / exchanges.length)
-      })
+      // Silencioso: apenas em caso de erro será logado
+      // console.log(`✅ [OpenOrdersSync] Completed in ${totalTime}ms:`, {
+      //   exchanges: exchanges.length,
+      //   success: successCount,
+      //   cached: cachedCount,
+      //   totalOrders,
+      //   avgTimeMs: Math.round(totalTime / exchanges.length)
+      // })
 
       onSyncComplete?.(results)
 
@@ -205,12 +206,12 @@ export function useOpenOrdersSync({
 
     // Se o balance não mudou de verdade, não faz nada
     if (balanceHash === lastBalanceHashRef.current) {
-      console.log('🔄 [OpenOrdersSync] Balance unchanged, skipping auto-sync')
+      // Silencioso: console.log('🔄 [OpenOrdersSync] Balance unchanged, skipping auto-sync')
       return
     }
 
     lastBalanceHashRef.current = balanceHash
-    console.log('🔄 [OpenOrdersSync] Balance changed, scheduling auto-sync in 500ms...')
+    // Silencioso: console.log('🔄 [OpenOrdersSync] Balance changed, scheduling auto-sync in 500ms...')
 
     // Aguarda 500ms após mudança de balance para iniciar sync
     // Isso permite que a UI renderize primeiro E evita múltiplas chamadas

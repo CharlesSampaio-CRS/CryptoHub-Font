@@ -10,6 +10,7 @@ import {
 } from "react-native"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { apiService } from "@/services/api"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
 import { config } from "@/lib/config"
@@ -87,6 +88,7 @@ interface TokenDetails {
 export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: TokenDetailsModalProps) {
   const { colors } = useTheme()
   const { t } = useLanguage()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tokenData, setTokenData] = useState<TokenDetails | null>(null)
@@ -98,12 +100,17 @@ export function TokenDetailsModal({ visible, onClose, exchangeId, symbol }: Toke
   }, [visible, exchangeId, symbol])
 
   const loadTokenDetails = async () => {
+    if (!user?.id) {
+      setError('Usuário não autenticado')
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
       
       const response = await fetch(
-        `${config.apiBaseUrl}/exchanges/${exchangeId}/token/${symbol}?user_id=${config.userId}&include_variations=true`
+        `${config.apiBaseUrl}/exchanges/${exchangeId}/token/${symbol}?user_id=${user.id}&include_variations=true`
       )
       
       if (!response.ok) {

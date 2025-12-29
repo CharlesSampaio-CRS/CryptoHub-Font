@@ -1,0 +1,14 @@
+Starting project at /Users/charles.roberto/Documents/projects/crs-saturno/crypto-exchange-aggregator
+Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.
+Starting Metro Bundler
+Unable to run simctl:
+Error: xcrun simctl help exited with non-zero code: 72
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-picker/picker@2.11.4 - expected version: 2.11.1
+  expo@54.0.29 - expected version: ~54.0.30
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 683ms node_modules/expo/AppEntry.js (612 modules)
+ LOG  [web] Logs will appear in the browser console

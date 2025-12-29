@@ -1,6 +1,7 @@
 import { BalanceResponse, AvailableExchangesResponse, LinkedExchangesResponse, PortfolioEvolutionResponse } from '@/types/api';
 import { config } from '@/lib/config';
 import { cacheService, CacheService, CACHE_TTL } from './cache-service';
+import { secureStorage } from '@/lib/secure-storage';
 
 const API_BASE_URL = config.apiBaseUrl;
 
@@ -30,6 +31,24 @@ const TIMEOUTS = {
 
 const MAX_RETRIES = 2;
 
+// Helper para obter o token de autenticação
+async function getAuthHeaders(): Promise<HeadersInit> {
+  try {
+    const token = await secureStorage.getItemAsync('access_token');
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to get auth token:', error);
+  }
+  return {
+    'Content-Type': 'application/json',
+  };
+}
+
 // Helper para adicionar timeout às requisições com retry
 async function fetchWithTimeout(
   url: string, 
@@ -39,10 +58,20 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const startTime = Date.now();
   
+  // Adiciona headers de autenticação automaticamente
+  const authHeaders = await getAuthHeaders();
+  const mergedOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...authHeaders,
+      ...options.headers,
+    },
+  };
+  
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await Promise.race([
-        fetch(url, options),
+        fetch(url, mergedOptions),
         new Promise<Response>((_, reject) =>
           setTimeout(() => {
             reject(new Error(`Request timeout after ${timeout}ms`));
@@ -83,15 +112,16 @@ export const apiService = {
       if (!forceRefresh) {
         const cached = cacheService.get<BalanceResponse>(cacheKey, CACHE_TTL.BALANCES);
         if (cached) {
-          console.log('⚡ Returning balances from LOCAL cache');
           return cached;
         }
       }
       
       const timestamp = Date.now();
       const forceParam = forceRefresh ? '&force_refresh=true' : '';
+      const url = `${API_BASE_URL}/balances?user_id=${userId}${forceParam}&_t=${timestamp}`;
+      
       const response = await fetchWithTimeout(
-        `${API_BASE_URL}/balances?user_id=${userId}${forceParam}&_t=${timestamp}`,
+        url,
         {
           cache: forceRefresh ? 'no-store' : 'default'
         },
