@@ -8,9 +8,9 @@ import { usePrivacy } from '../contexts/PrivacyContext'
 import { typography, fontWeights } from '../lib/typography'
 
 const { width } = Dimensions.get('window')
-const CHART_SIZE = Math.min(width - 80, 180)
+const CHART_SIZE = Math.min(width - 80, 200) // 180→200
 const RADIUS = CHART_SIZE / 2
-const STROKE_WIDTH = 18
+const STROKE_WIDTH = 22 // 18→22
 
 // Paleta de cores frias e harmoniosas (azuis, cinzas, tons gelados)
 const EXCHANGE_COLORS = [
@@ -273,7 +273,7 @@ export const ExchangesPieChart = memo(function ExchangesPieChart() {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 24,
-    padding: 24,
+    padding: 28, // 24→28
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -281,18 +281,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   content: {
-    gap: 16,
+    gap: 20, // 16→20
   },
   title: {
-    fontSize: typography.bodyLarge,
-    fontWeight: fontWeights.regular,
-    letterSpacing: 0.2,
+    fontSize: typography.h3, // bodyLarge→h3 (20px)
+    fontWeight: fontWeights.medium, // regular→medium
+    letterSpacing: 0.3, // 0.2→0.3
   },
   chartContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     alignSelf: 'center',
+    paddingVertical: 10,
   },
   centerText: {
     position: 'absolute',
@@ -300,72 +301,80 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centerLabel: {
-    fontSize: typography.display,
-    fontWeight: fontWeights.light,
+    fontSize: typography.display, // Mantém 32px
+    fontWeight: fontWeights.regular, // light→regular
     letterSpacing: -1,
   },
   centerValue: {
-    fontSize: typography.caption,
-    fontWeight: fontWeights.regular,
-    marginTop: 4,
+    fontSize: typography.body, // caption→body (16px)
+    fontWeight: fontWeights.medium, // regular→medium
+    marginTop: 6, // 4→6
   },
   centerPercentage: {
-    fontSize: typography.micro,
-    fontWeight: fontWeights.regular,
-    marginTop: 2,
+    fontSize: typography.caption, // micro→caption (14px)
+    fontWeight: fontWeights.medium, // regular→medium
+    marginTop: 4, // 2→4
   },
   legend: {
-    gap: 10,
+    gap: 14, // 10→14
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12, // 10→12
+    minHeight: 44, // Touch target
+    paddingVertical: 4,
   },
   exchangeIconContainer: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 32, // 22→32
+    height: 32, // 22→32
+    borderRadius: 16, // 11→16
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   exchangeIcon: {
-    width: 20,
-    height: 20,
+    width: 28, // 20→28
+    height: 28, // 20→28
   },
   legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16, // 12→16
+    height: 16, // 12→16
+    borderRadius: 8, // 6→8
   },
   legendTextContainer: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   legendName: {
-    fontSize: typography.bodySmall,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.body, // bodySmall→body (16px)
+    fontWeight: fontWeights.medium, // regular→medium
     flex: 1,
   },
   legendPercentage: {
-    fontSize: typography.bodySmall,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.body, // bodySmall→body (16px)
+    fontWeight: fontWeights.medium, // regular→medium
+    minWidth: 60,
+    textAlign: 'right',
   },
   selectedIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10, // 8→10
+    height: 10, // 8→10
+    borderRadius: 5, // 4→5
   },
   emptyState: {
-    paddingVertical: 40,
+    paddingVertical: 48, // 40→48
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: typography.body,
+    fontSize: typography.bodyLarge, // body→bodyLarge (17px)
     textAlign: 'center',
+    lineHeight: 24,
   },
 })

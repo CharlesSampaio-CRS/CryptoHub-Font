@@ -1,5 +1,5 @@
-import { StyleSheet, ScrollView, SafeAreaView, Animated, RefreshControl } from "react-native"
-import { useRef, useState, useMemo, useCallback, memo, useEffect } from "react"
+import { StyleSheet, ScrollView, SafeAreaView, RefreshControl } from "react-native"
+import { useRef, useState, useMemo, useCallback, memo } from "react"
 import { Header } from "../components/Header"
 import { PortfolioOverview } from "../components/PortfolioOverview"
 import { ExchangesList } from "../components/ExchangesList"
@@ -8,45 +8,22 @@ import { OpenOrdersModal } from "../components/open-orders-modal"
 import { OrderDetailsModal } from "../components/order-details-modal"
 import { useTheme } from "../contexts/ThemeContext"
 import { useBalance } from "../contexts/BalanceContext"
-import { usePortfolio } from "../contexts/PortfolioContext"
-import { mockNotifications } from "../types/notifications"
-import { QuickChart } from "../components/QuickChart"
-import { ExchangesPieChart } from "../components/ExchangesPieChart"
+import { useNotifications } from "../contexts/NotificationsContext"
+import { useAuth } from "../contexts/AuthContext"
 import { apiService } from "../services/api"
-import { config } from "../lib/config"
 
 export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
   const { colors } = useTheme()
+  const { user } = useAuth()
   const { refresh: refreshBalance, refreshing } = useBalance()
-  const { refreshEvolution } = usePortfolio()
-  const scrollY = useRef(new Animated.Value(0)).current
-  const [isScrollingDown, setIsScrollingDown] = useState(false)
+  const { unreadCount } = useNotifications()
   const [notificationsModalVisible, setNotificationsModalVisible] = useState(false)
-  const [availableExchangesCount, setAvailableExchangesCount] = useState(0)
   const [openOrdersModalVisible, setOpenOrdersModalVisible] = useState(false)
   const [orderDetailsModalVisible, setOrderDetailsModalVisible] = useState(false)
   const [selectedExchangeId, setSelectedExchangeId] = useState<string>("")
   const [selectedExchangeName, setSelectedExchangeName] = useState<string>("")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const lastScrollY = useRef(0)
-
-  const unreadCount = useMemo(() => 
-    mockNotifications.filter(n => !n.read).length, 
-    []
-  )
-
-  useEffect(() => {
-    loadAvailableExchanges()
-  }, [])
-
-  const loadAvailableExchanges = async () => {
-    try {
-      const data = await apiService.getAvailableExchanges(config.userId)
-      setAvailableExchangesCount(data.exchanges?.length || 0)
-    } catch (error) {
-      console.error('Error loading available exchanges:', error)
-    }
-  }
+  const refreshOrdersRef = useRef<(() => void) | null>(null)
 
   const onNotificationsPress = useCallback(() => {
     setNotificationsModalVisible(true)
@@ -75,47 +52,22 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
     setOrderDetailsModalVisible(true)
   }, [])
 
-  // Refresh completo: balances + evolution
+  // Refresh completo: apenas balances
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      refreshBalance(),
-      refreshEvolution()
-    ])
-  }, [refreshBalance, refreshEvolution])
-
-  const handleScroll = useMemo(() => Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: true,
-      listener: (event: any) => {
-        const currentScrollY = event.nativeEvent.contentOffset.y
-        
-        // Detectar direção do scroll
-        if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-          setIsScrollingDown(true)
-        } else if (currentScrollY < lastScrollY.current) {
-          setIsScrollingDown(false)
-        }
-        
-        lastScrollY.current = currentScrollY
-      },
-    }
-  ), [])
+    await refreshBalance()
+  }, [refreshBalance])
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Header 
-        hideIcons={isScrollingDown} 
         onNotificationsPress={onNotificationsPress}
         onProfilePress={onProfilePress}
         unreadCount={unreadCount}
       />
-      <Animated.ScrollView
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         removeClippedSubviews={true}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -128,14 +80,15 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         }
       >
         <PortfolioOverview />
-        <QuickChart />
-        <ExchangesPieChart />
         <ExchangesList 
           onAddExchange={onAddExchange}
-          availableExchangesCount={availableExchangesCount}
           onOpenOrdersPress={onOpenOrdersPress}
+          onRefreshOrders={() => {
+            // Salva referência para a função de refresh
+            refreshOrdersRef.current = (window as any).__exchangesListRefreshOrders
+          }}
         />
-      </Animated.ScrollView>
+      </ScrollView>
 
       <NotificationsModal 
         visible={notificationsModalVisible}
@@ -147,8 +100,16 @@ export const HomeScreen = memo(function HomeScreen({ navigation }: any) {
         onClose={() => setOpenOrdersModalVisible(false)}
         exchangeId={selectedExchangeId}
         exchangeName={selectedExchangeName}
-        userId={config.userId}
+        userId={user?.id || ''}
         onSelectOrder={onSelectOrder}
+        onOrderCancelled={async () => {
+          // Após cancelar ordem, atualiza APENAS a exchange específica
+          console.log('🔄 [HomeScreen] Ordem cancelada, atualizando ordens abertas da exchange...')
+          const refreshSingleExchange = (window as any).__exchangesListRefreshOrdersForExchange
+          if (refreshSingleExchange && selectedExchangeId) {
+            await refreshSingleExchange(selectedExchangeId)
+          }
+        }}
       />
 
       <OrderDetailsModal
@@ -172,8 +133,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-    gap: 16,
+    padding: 12,
+    paddingBottom: 80,
+    gap: 12,
   },
 })

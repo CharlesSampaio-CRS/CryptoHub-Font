@@ -1,164 +1,163 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native"
 import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react"
-import { LinearGradient } from "expo-linear-gradient"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useBalance } from "@/contexts/BalanceContext"
 import { usePrivacy } from "@/contexts/PrivacyContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { SkeletonExchangeItem } from "./SkeletonLoaders"
 import { TokenDetailsModal } from "./token-details-modal"
+import { TradeModal } from "./trade-modal"
+import { ordersCache } from "./open-orders-modal"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
-import { config } from "@/lib/config"
 import { getExchangeLogo } from "@/lib/exchange-logos"
 import { typography, fontWeights } from "@/lib/typography"
+import { useTokenMonitor } from "@/hooks/use-token-monitor"
+import { useOpenOrdersSync } from "@/hooks/useOpenOrdersSync"
+
+// Debug: verificar o que foi importado
+console.log('🔍 [ExchangesList] ordersCache importado:', ordersCache)
+console.log('🔍 [ExchangesList] ordersCache tipo:', typeof ordersCache)
+console.log('🔍 [ExchangesList] ordersCache.set tipo:', typeof ordersCache?.set)
+
+// Garantir que o ordersCache está inicializado
+if (!ordersCache) {
+  console.error('❌ [ExchangesList] ordersCache não está definido! Verifique o import.')
+  throw new Error('ordersCache não foi inicializado corretamente')
+}
+
+// Helper function para usar o cache com segurança
+const safeSetCache = (key: string, value: { orders: any[], timestamp: number }) => {
+  try {
+    if (ordersCache && typeof ordersCache.set === 'function') {
+      ordersCache.set(key, value)
+    } else {
+      console.error('❌ [ExchangesList] ordersCache.set não é uma função', ordersCache)
+    }
+  } catch (error) {
+    console.error('❌ [ExchangesList] Erro ao salvar no cache:', error)
+  }
+}
+
+// Lista de stablecoins e moedas fiat que não devem ter variação e botão de trade
+const STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'USDD', 'BRL', 'EUR', 'USD']
 
 interface ExchangesListProps {
   onAddExchange?: () => void
-  availableExchangesCount?: number
   onOpenOrdersPress?: (exchangeId: string, exchangeName: string) => void
+  onRefreshOrders?: () => void  // Callback para atualizar ordens
 }
 
-export const ExchangesList = memo(function ExchangesList({ onAddExchange, availableExchangesCount = 0, onOpenOrdersPress }: ExchangesListProps) {
+export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, onRefreshOrders }: ExchangesListProps) {
   const { colors, isDark } = useTheme()
-  const { t } = useLanguage()
-  const { data, loading, error } = useBalance()
+  const { t, language } = useLanguage()
+  const { user } = useAuth()
+  const { data, loading, error, refresh: refreshBalance } = useBalance()
   const { hideValue } = usePrivacy()
-  const [expandedExchanges, setExpandedExchanges] = useState<Set<string>>(new Set()) // Múltiplas exchanges expandidas
-  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(true) // ✅ Começa ATIVADO (oculta zeradas)
+  // Removido: expandedExchanges state - não precisa mais expandir (UX improvement)
+  const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(true)
   const [selectedToken, setSelectedToken] = useState<{ exchangeId: string; symbol: string } | null>(null)
   const [tokenModalVisible, setTokenModalVisible] = useState(false)
-  const [loadingVariations, setLoadingVariations] = useState<string | null>(null)
-  const [exchangeVariations, setExchangeVariations] = useState<Record<string, Record<string, any>>>({})
-  const [lastUpdateTime, setLastUpdateTime] = useState<Record<string, Date>>({})
+  const [tradeModalVisible, setTradeModalVisible] = useState(false)
+  const [selectedTrade, setSelectedTrade] = useState<{
+    exchangeId: string
+    exchangeName: string
+    symbol: string
+    currentPrice: number
+    balance: { token: number; usdt: number }
+  } | null>(null)
+  const [tooltipVisible, setTooltipVisible] = useState<string | null>(null)
   const [openOrdersCount, setOpenOrdersCount] = useState<Record<string, number>>({})
   const [loadingOrders, setLoadingOrders] = useState(false)
+  const [loadingOrdersByExchange, setLoadingOrdersByExchange] = useState<Record<string, boolean>>({})
   const [hasLoadedOrders, setHasLoadedOrders] = useState(false)
   const [lastOrdersUpdate, setLastOrdersUpdate] = useState<Date | null>(null)
   const ordersIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const fetchedExchangesRef = useRef<Set<string>>(new Set())
+  
+  // Estados para variações de preço
+  const [exchangeVariations, setExchangeVariations] = useState<Record<string, Record<string, any>>>({})
+  const [loadingVariations, setLoadingVariations] = useState<Record<string, boolean>>({})
+  const [lastUpdateTime, setLastUpdateTime] = useState<Record<string, Date>>({})
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
+  const variationsFetchedRef = useRef<Set<string>>(new Set()) // 🔑 Cache de exchanges já consultadas
 
-  // Função otimizada para buscar variações de uma exchange
-  const fetchExchangeVariations = useCallback(async (exchangeId: string) => {
-    const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
+  // 📊 Monitor tokens for price alerts
+  const monitoredTokens = useMemo(() => {
+    const tokens: Array<{ symbol: string; exchange: string; variation24h: number; price: number }> = []
     
-    if (!exchange || !exchange.tokens) {
-      return
-    }
-
-    // Cancela requisição anterior se existir
-    if (abortControllersRef.current.has(exchangeId)) {
-      abortControllersRef.current.get(exchangeId)?.abort()
-    }
-
-    // Cria novo AbortController para esta requisição
-    const abortController = new AbortController()
-    abortControllersRef.current.set(exchangeId, abortController)
-
-    try {
-      const tokenSymbols = Object.keys(exchange.tokens)
+    if (data?.exchanges) {
+      console.log('🔍 [ExchangesList] Exchanges disponíveis:', data.exchanges.map((ex: any) => ({
+        name: ex.name,
+        exchange_id: ex.exchange_id,
+        tokens_count: ex.tokens ? Object.keys(ex.tokens).length : 0
+      })))
       
-      // Lista de tokens que NÃO precisam de consulta (stablecoins e moedas fiat)
-      const EXCLUDED_TOKENS = ['USDT', 'BRL', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'EUR', 'USDD']
-      
-      // Filtra e ordena tokens por valor (maiores primeiro)
-      const tokensWithValue = tokenSymbols
-        .filter(symbol => !EXCLUDED_TOKENS.includes(symbol.toUpperCase()))
-        .map(symbol => ({
-          symbol,
-          value: (exchange.tokens[symbol] as any)?.total_value_usd || 0
-        }))
-        .sort((a, b) => b.value - a.value)
-      
-      const tokensToFetch = tokensWithValue.map(t => t.symbol)
-      
-      // Se não houver tokens para buscar, apenas marca como concluído
-      if (tokensToFetch.length === 0) {
-        setExchangeVariations(prev => ({ ...prev, [exchangeId]: {} }))
-        setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
-        return
-      }
-      
-      // Limita a 10 tokens mais valiosos se houver muitos
-      const tokensLimited = tokensToFetch.slice(0, 10)
-      
-      // Busca em lotes de 3 tokens por vez (reduzido de 5 para evitar timeout)
-      const BATCH_SIZE = 3
-      const variationsMap: Record<string, any> = {}
-      
-      for (let i = 0; i < tokensLimited.length; i += BATCH_SIZE) {
-        // Verifica se foi cancelado
-        if (abortController.signal.aborted) {
-          return
-        }
-
-        const batch = tokensLimited.slice(i, i + BATCH_SIZE)
-        
-        const batchPromises = batch.map(symbol =>
-          apiService.getTokenDetails(exchangeId, symbol, config.userId)
-            .catch(error => {
-              // Ignora erros de timeout para não bloquear os outros
-              return null
-            })
-        )
-        
-        const batchResults = await Promise.all(batchPromises)
-        
-        // Processa resultados do lote
-        batchResults.forEach((tokenData, index) => {
-          if (tokenData && tokenData.change) {
-            const symbol = batch[index]
-            variationsMap[symbol] = tokenData.change
-          }
-        })
-
-        // Atualiza parcialmente a cada lote (feedback visual progressivo)
-        if (Object.keys(variationsMap).length > 0) {
-          setExchangeVariations(prev => ({ 
-            ...prev, 
-            [exchangeId]: { ...prev[exchangeId], ...variationsMap }
-          }))
-        }
-      }
-      
-      setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
-    } catch (error: any) {
-      // Silently handle errors
-    } finally {
-      abortControllersRef.current.delete(exchangeId)
-    }
-  }, [data])
-
-  // Auto-refresh das variações a cada 2 minutos para TODAS as exchanges expandidas
-  useEffect(() => {
-    if (expandedExchanges.size === 0) return
-
-    // Atualiza imediatamente as exchanges já buscadas
-    expandedExchanges.forEach(exchangeId => {
-      if (fetchedExchangesRef.current.has(exchangeId)) {
-        fetchExchangeVariations(exchangeId)
-      }
-    })
-
-    // Configura intervalo de 2 minutos
-    const interval = setInterval(() => {
-      expandedExchanges.forEach(exchangeId => {
-        if (fetchedExchangesRef.current.has(exchangeId)) {
-          fetchExchangeVariations(exchangeId)
+      data.exchanges.forEach((exchange: any) => {
+        // ✅ tokens é um Record/Object, não array
+        if (exchange.tokens && typeof exchange.tokens === 'object') {
+          Object.entries(exchange.tokens).forEach(([symbol, tokenData]: [string, any]) => {
+            // ✅ Acesso correto: exchangeVariations[exchangeId][symbol]
+            const tokenVariations = exchangeVariations[exchange.exchange_id]?.[symbol]
+            
+            if (tokenVariations?.['24h']?.price_change_percent !== undefined) {
+              tokens.push({
+                symbol: symbol,
+                exchange: exchange.exchange_id,
+                variation24h: parseFloat(tokenVariations['24h'].price_change_percent), // ✅ Converte string para número
+                price: parseFloat(tokenData.price_usd) || 0
+              })
+            }
+          })
         }
       })
-    }, 2 * 60 * 1000) // 2 minutos
-
-    return () => {
-      clearInterval(interval)
-      // Cancela todas as requisições pendentes ao desmontar
-      abortControllersRef.current.forEach(controller => controller.abort())
-      abortControllersRef.current.clear()
     }
-  }, [expandedExchanges, fetchExchangeVariations])
+    
+    console.log('🔄 [ExchangesList] monitoredTokens atualizado:', tokens.length, 'tokens', tokens)
+    return tokens
+  }, [data?.exchanges, exchangeVariations])
 
-  // Busca contagem de ordens abertas - OTIMIZADO para máxima velocidade
+  // Activate token monitoring
+  useTokenMonitor(monitoredTokens)
+
+  // 🔄 AUTO-SYNC: Sincroniza open orders automaticamente quando tokens mudarem
+  const { syncOpenOrders: manualSyncOrders, isSyncing: isSyncingOrders } = useOpenOrdersSync({
+    userId: user?.id || '',
+    enabled: !!user?.id, // Só habilita se tiver user_id
+    onSyncStart: () => {
+      console.log('🔄 [ExchangesList] Open orders sync started...')
+      setLoadingOrders(true)
+    },
+    onSyncComplete: (results) => {
+      console.log('✅ [ExchangesList] Open orders sync completed:', results)
+      
+      // Atualiza contagem de ordens por exchange (MANTÉM valores existentes)
+      setOpenOrdersCount(prev => {
+        const updated = { ...prev } // Mantém valores existentes
+        results.forEach((result) => {
+          if (result.success) {
+            updated[result.exchangeId] = result.ordersCount
+          }
+        })
+        return updated
+      })
+      
+      setLoadingOrders(false)
+      setHasLoadedOrders(true)
+      setLastOrdersUpdate(new Date())
+      
+      // Notifica parent se houver callback
+      if (onRefreshOrders) {
+        onRefreshOrders()
+      }
+    },
+    onSyncError: (error) => {
+      console.error('❌ [ExchangesList] Open orders sync error:', error)
+      setLoadingOrders(false)
+    }
+  })
+
+  // ⚡ Busca contagem de ordens abertas logo após carregar as exchanges (prioridade alta)
   useEffect(() => {
     // Só executa quando: dados prontos + não loading + não buscou ainda
     if (!loading && data?.exchanges && data.exchanges.length > 0 && !hasLoadedOrders && !loadingOrders) {
@@ -193,104 +192,332 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
     }
   }, [hasLoadedOrders, data?.exchanges])
 
-  const fetchOpenOrdersCount = async () => {
-    if (!data?.exchanges || data.exchanges.length === 0) {
+  // Busca as ordens abertas para UMA exchange específica (atualização rápida após criar/cancelar ordem)
+  const fetchOpenOrdersForExchange = useCallback(async (exchangeId: string) => {
+    if (!user?.id) {
+      console.warn('⚠️ No user ID available')
+      return
+    }
+    
+    console.log('⚡ [ExchangesList] Atualizando ordens da exchange:', exchangeId)
+    
+    try {
+      const response = await apiService.getOpenOrders(user.id, exchangeId)
+      const count = response.count || response.total_orders || 0
+      const orders = response.orders || []
+      
+      // Salva as ordens completas no cache
+      const cacheKey = `${user.id}_${exchangeId}`
+      safeSetCache(cacheKey, {
+        orders: orders, 
+        timestamp: Date.now()
+      })
+      
+      // Atualiza contagem no estado
+      setOpenOrdersCount(prev => ({
+        ...prev,
+        [exchangeId]: count
+      }))
+      
+      console.log(`✅ [ExchangesList] Exchange ${exchangeId} atualizada: ${count} ordens`)
+      return { success: true, count, orders }
+    } catch (error: any) {
+      console.error('❌ [ExchangesList] Erro ao atualizar ordens de', exchangeId, ':', error.message)
+      return { success: false, count: 0 }
+    }
+  }, [user?.id])
+
+  const fetchOpenOrdersCount = useCallback(async () => {
+    if (!data?.exchanges || data.exchanges.length === 0 || !user?.id) {
+      return
+    }
+
+    // Evita múltiplas chamadas simultâneas
+    if (loadingOrders) {
+      console.log('⚠️ [ExchangesList] Já está carregando ordens, ignorando...')
       return
     }
 
     setLoadingOrders(true)
+    console.log('🔄 [ExchangesList] Iniciando busca PARALELA de ordens para', data.exchanges.length, 'exchanges')
     
-    // ⚡ BUSCA EM PARALELO - Todas ao mesmo tempo!
-    const promises = data.exchanges.map(async (exchange: any) => {
-      try {
-        const response = await apiService.getOpenOrders(config.userId, exchange.exchange_id)
-        const count = response.count || response.total_orders || 0
-        
-        // ⚡ Atualiza estado IMEDIATAMENTE para esta exchange
-        setOpenOrdersCount(prev => ({
-          ...prev,
-          [exchange.exchange_id]: count
-        }))
-        
-        return { exchangeId: exchange.exchange_id, count, success: true }
-      } catch (error: any) {
-        // Define 0 mesmo com erro
-        setOpenOrdersCount(prev => ({
-          ...prev,
-          [exchange.exchange_id]: 0
-        }))
-        
-        return { exchangeId: exchange.exchange_id, count: 0, success: false, error }
-      }
+    const startTime = Date.now()
+    let successCount = 0
+    let failCount = 0
+    let totalOrders = 0
+    
+    // 🚀 Busca em lotes de 3 exchanges por vez (paralelo controlado)
+    const BATCH_SIZE = 3
+    
+    for (let i = 0; i < data.exchanges.length; i += BATCH_SIZE) {
+      const batch = data.exchanges.slice(i, i + BATCH_SIZE)
+      
+      console.log(`📦 [ExchangesList] Processando lote ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(data.exchanges.length / BATCH_SIZE)}`)
+      
+      // Cria promises para todas as exchanges do lote
+      const batchPromises = batch.map(async (exchange) => {
+        try {
+          console.log('📡 [ExchangesList] Buscando ordens de:', exchange.name)
+          const response = await apiService.getOpenOrders(user!.id, exchange.exchange_id)
+          const count = response.count || response.total_orders || 0
+          const orders = response.orders || []
+          
+          // Salva as ordens completas no cache para uso posterior no modal
+          const cacheKey = `${user!.id}_${exchange.exchange_id}`
+          const updateTime = Date.now()
+          safeSetCache(cacheKey, {
+            orders: orders,
+            timestamp: updateTime
+          })
+          console.log('💾 [ExchangesList] Cache atualizado para', exchange.name, '-', orders.length, 'ordens')
+          
+          return { 
+            success: true, 
+            exchangeId: exchange.exchange_id,
+            exchangeName: exchange.name,
+            count, 
+            orders 
+          }
+        } catch (error: any) {
+          console.error('❌ [ExchangesList] Erro ao buscar ordens de', exchange.name, ':', error.message)
+          return { 
+            success: false, 
+            exchangeId: exchange.exchange_id,
+            exchangeName: exchange.name,
+            count: 0 
+          }
+        }
+      })
+      
+      // Aguarda todas as promises do lote completarem (mesmo se algumas falharem)
+      const batchResults = await Promise.allSettled(batchPromises)
+      
+      // Processa resultados do lote
+      batchResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const data = result.value
+          
+          // Atualiza contagem no estado
+          setOpenOrdersCount(prev => ({
+            ...prev,
+            [data.exchangeId]: data.count
+          }))
+          
+          if (data.success) {
+            successCount++
+            totalOrders += data.count
+            console.log('✅ [ExchangesList]', data.exchangeName, ':', data.count, 'ordens')
+          } else {
+            failCount++
+          }
+        } else {
+          failCount++
+          console.error('❌ [ExchangesList] Promise rejeitada:', result.reason)
+        }
+      })
+    }
+    
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2)
+    console.log('📊 [ExchangesList] Busca concluída em', elapsed, 's - Resumo:', {
+      sucesso: successCount,
+      falha: failCount,
+      totalOrdens: totalOrders
     })
-
-    // Aguarda todas as requisições terminarem
-    const results = await Promise.all(promises)
-    
-    const successCount = results.filter(r => r.success).length
-    const failCount = results.filter(r => !r.success).length
-    const totalOrders = results.reduce((sum, r) => sum + r.count, 0)
     
     // Atualiza timestamp da última atualização
     setLastOrdersUpdate(new Date())
     setLoadingOrders(false)
     setHasLoadedOrders(true)
-  }
+  }, [data?.exchanges, loadingOrders])
 
-  // Toggle de expansão/colapso individual de exchanges
-  const toggleExpandExchange = useCallback(async (exchangeId: string) => {
-    const isCurrentlyExpanded = expandedExchanges.has(exchangeId)
+  // Função para atualizar ordens de uma exchange específica (usada após cancelar ordem)
+  const refreshSingleExchangeOrders = useCallback(async (exchangeId: string) => {
+    const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
+    if (!exchange) return
+
+    console.log('🔄 [ExchangesList] Atualizando ordens de:', exchange.name)
     
-    // Se está colapsando, cancela requisição pendente
-    if (isCurrentlyExpanded) {
-      const controller = abortControllersRef.current.get(exchangeId)
-      if (controller) {
-        controller.abort()
-        abortControllersRef.current.delete(exchangeId)
-      }
-      setLoadingVariations(prev => prev === exchangeId ? null : prev)
+    if (!user?.id) {
+      console.warn('⚠️ No user ID available')
+      return
     }
     
-    setExpandedExchanges(prev => {
-      const newSet = new Set(prev)
-      if (isCurrentlyExpanded) {
-        newSet.delete(exchangeId) // Remove = colapsa
-      } else {
-        newSet.add(exchangeId) // Adiciona = expande
-      }
-      return newSet
-    })
+    // Marca como loading para esta exchange
+    setLoadingOrdersByExchange(prev => ({ ...prev, [exchangeId]: true }))
+
+    try {
+      const response = await apiService.getOpenOrders(user.id, exchangeId)
+      const count = response.count || response.total_orders || 0
+      const orders = response.orders || []
+      
+      // Atualiza cache
+      const cacheKey = `${user.id}_${exchangeId}`
+      safeSetCache(cacheKey, {
+        orders: orders,
+        timestamp: Date.now() 
+      })
+      
+      // Atualiza contagem
+      setOpenOrdersCount(prev => ({
+        ...prev,
+        [exchangeId]: count
+      }))
+      
+      console.log('✅ [ExchangesList] Ordens atualizadas:', exchange.name, '-', count, 'ordens')
+    } catch (error: any) {
+      console.error('❌ [ExchangesList] Erro ao atualizar ordens:', error.message)
+    } finally {
+      // Remove loading
+      setLoadingOrdersByExchange(prev => ({ ...prev, [exchangeId]: false }))
+    }
+  }, [data?.exchanges])
+
+  // Busca variações de preço para uma exchange específica
+  const fetchExchangeVariations = useCallback(async (exchangeId: string, forceRefresh = false) => {
+    // 🔑 Cache: Evita buscar variações múltiplas vezes para a mesma exchange
+    if (!forceRefresh && variationsFetchedRef.current.has(exchangeId)) {
+      // console.log('⚡ [Variations] Usando cache para exchange:', exchangeId)
+      return
+    }
+
+    const exchange = data?.exchanges?.find((ex: any) => ex.exchange_id === exchangeId)
     
-    // Se está expandindo, verifica se precisa buscar variações
-    if (!isCurrentlyExpanded) {
-      const hasFetched = fetchedExchangesRef.current.has(exchangeId)
-      const hasVariations = exchangeVariations[exchangeId]
-      const lastUpdate = lastUpdateTime[exchangeId]
+    if (!exchange || !exchange.tokens) {
+      return
+    }
+
+    // Marca como em busca no cache
+    variationsFetchedRef.current.add(exchangeId)
+
+    // console.log('📊 [Variations] Buscando variações para exchange:', exchangeId)
+
+    // Cancela requisição anterior se existir
+    if (abortControllersRef.current.has(exchangeId)) {
+      abortControllersRef.current.get(exchangeId)?.abort()
+    }
+
+    // Cria novo AbortController para esta requisição
+    const abortController = new AbortController()
+    abortControllersRef.current.set(exchangeId, abortController)
+
+    setLoadingVariations(prev => ({ ...prev, [exchangeId]: true }))
+
+    try {
+      const tokenSymbols = Object.keys(exchange.tokens)
       
-      // Só busca se:
-      // 1. Nunca buscou antes OU
-      // 2. Não tem variações em cache OU  
-      // 3. Cache é muito antigo (> 5 minutos)
-      const shouldFetch = !hasFetched || 
-                         !hasVariations || 
-                         !lastUpdate ||
-                         (Date.now() - lastUpdate.getTime() > 5 * 60 * 1000)
+      // Lista de tokens que NÃO precisam de consulta (stablecoins e moedas fiat)
+      const EXCLUDED_TOKENS = ['USDT', 'BRL', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'FDUSD', 'EUR', 'USDD']
       
-      if (shouldFetch) {
-        fetchedExchangesRef.current.add(exchangeId)
+      // Filtra e ordena tokens por valor (maiores primeiro)
+      const tokensWithValue = tokenSymbols
+        .filter(symbol => !EXCLUDED_TOKENS.includes(symbol.toUpperCase()))
+        .map(symbol => ({
+          symbol,
+          value: parseFloat((exchange.tokens[symbol] as any)?.value_usd || '0')
+        }))
+        .sort((a, b) => b.value - a.value)
+      
+      const tokensToFetch = tokensWithValue.map(t => t.symbol)
+      
+      // Se não houver tokens para buscar, apenas marca como concluído
+      if (tokensToFetch.length === 0) {
+        setExchangeVariations(prev => ({ ...prev, [exchangeId]: {} }))
+        setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
+        setLoadingVariations(prev => ({ ...prev, [exchangeId]: false }))
+        return
+      }
+      
+      // Limita a 10 tokens mais valiosos
+      const tokensLimited = tokensToFetch.slice(0, 10)
+      
+      // Busca em lotes de 3 tokens por vez
+      const BATCH_SIZE = 3
+      const variationsMap: Record<string, any> = {}
+      
+      for (let i = 0; i < tokensLimited.length; i += BATCH_SIZE) {
+        // Verifica se foi cancelado
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        const batch = tokensLimited.slice(i, i + BATCH_SIZE)
         
-        // Busca variações em background sem bloquear a UI
-        setLoadingVariations(exchangeId)
-        fetchExchangeVariations(exchangeId)
-          .catch(() => {
-            // Silently handle errors
-          })
-          .finally(() => {
-            setLoadingVariations(null)
-          })
+        const batchPromises = batch.map(symbol =>
+          apiService.getTokenDetails(exchangeId, symbol, user?.id || '')
+            .catch(error => {
+              // Ignora erros de timeout para não bloquear os outros
+              return null
+            })
+        )
+        
+        const batchResults = await Promise.all(batchPromises)
+        
+        // Processa resultados do lote
+        batchResults.forEach((tokenData, index) => {
+          if (tokenData && tokenData.change) {
+            const symbol = batch[index]
+            variationsMap[symbol] = tokenData.change
+          }
+        })
+
+        // Atualiza parcialmente a cada lote (feedback visual progressivo)
+        if (Object.keys(variationsMap).length > 0) {
+          setExchangeVariations(prev => ({ 
+            ...prev, 
+            [exchangeId]: { ...prev[exchangeId], ...variationsMap }
+          }))
+        }
       }
+      
+      setLastUpdateTime(prev => ({ ...prev, [exchangeId]: new Date() }))
+    } catch (error: any) {
+      console.error('Erro ao buscar variações:', error)
+    } finally {
+      setLoadingVariations(prev => ({ ...prev, [exchangeId]: false }))
+      abortControllersRef.current.delete(exchangeId)
     }
-  }, [expandedExchanges, fetchExchangeVariations, exchangeVariations, lastUpdateTime])
+  }, [data?.exchanges])
+
+  // Busca variações automaticamente quando os dados estão prontos
+  useEffect(() => {
+    if (!loading && data?.exchanges && data.exchanges.length > 0) {
+      // Aguarda um pouco para não sobrecarregar
+      const timer = setTimeout(() => {
+        data.exchanges.forEach(exchange => {
+          fetchExchangeVariations(exchange.exchange_id, false) // false = usa cache
+        })
+      }, 1000)
+
+      return () => clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, data?.exchanges]) // 🔑 Removido fetchExchangeVariations das deps para evitar loop
+
+  // 🔄 Limpa cache de variações a cada 5 minutos para permitir refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // console.log('🔄 [Variations] Limpando cache de variações')
+      variationsFetchedRef.current.clear()
+    }, 5 * 60 * 1000) // 5 minutos
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Expõe função de atualizar ordens através de callback e window global
+  useEffect(() => {
+    // Expõe globalmente - TODAS as exchanges
+    (window as any).__exchangesListRefreshOrders = fetchOpenOrdersCount
+    
+    // Também chama o callback se existir (para atualizar o ref no HomeScreen)
+    if (onRefreshOrders) {
+      onRefreshOrders()
+    }
+  }, [fetchOpenOrdersCount, onRefreshOrders])
+
+  // Expõe função de atualizar uma exchange específica globalmente
+  useEffect(() => {
+    (window as any).__exchangesListRefreshOrdersForExchange = refreshSingleExchangeOrders
+  }, [refreshSingleExchangeOrders])
 
   const toggleZeroBalanceExchanges = useCallback(() => {
     setHideZeroBalanceExchanges(prev => !prev)
@@ -328,22 +555,33 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
     card: { backgroundColor: colors.surface, borderColor: colors.border },
-    toggle: { backgroundColor: colors.toggleInactive, borderColor: colors.toggleInactive },
-    toggleActive: { backgroundColor: colors.toggleActive, borderColor: colors.toggleActive },
-    toggleThumb: { backgroundColor: colors.toggleThumb },
+    toggle: { 
+      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(220, 220, 220, 0.5)', 
+      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(200, 200, 200, 0.4)' 
+    },
+    toggleActive: { 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.5)', 
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.7)' 
+    },
+    toggleThumb: { 
+      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(120, 120, 120, 0.85)' 
+    },
+    toggleThumbActive: { 
+      backgroundColor: isDark ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)' 
+    },
     tokensContainer: { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
     logoContainer: { backgroundColor: '#ffffff', borderColor: colors.border }, // Fundo branco em ambos os modos para os ícones
-  }), [colors])
+  }), [colors, isDark])
 
   // Cores do gradiente para os cards - tons neutros
   const cardGradientColors: readonly [string, string, ...string[]] = isDark 
     ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza escuro
     : ['rgba(250, 250, 250, 1)', 'rgba(252, 252, 252, 1)', 'rgba(250, 250, 250, 1)']  // Light mode - cinza claríssimo quase branco
 
-  if (loading) {
+  // Mostra skeleton durante loading inicial ou quando não há dados ainda (estado inicial)
+  if (loading || (!data && !error)) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
         <SkeletonExchangeItem />
         <SkeletonExchangeItem />
         <SkeletonExchangeItem />
@@ -354,33 +592,24 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
   if (error || !data) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
-        <Text style={[styles.errorText, { color: colors.danger }]}>{error || t('home.noData')}</Text>
+        {error ? (
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+              {t('exchanges.noExchanges') || 'Nenhuma exchange vinculada'}
+            </Text>
+            <Text style={[styles.emptyStateDescription, { color: colors.textSecondary }]}>
+              {t('exchanges.addFirstExchange') || 'Adicione sua primeira exchange para começar a monitorar seus investimentos'}
+            </Text>
+          </View>
+        )}
       </View>
     )
   }
   
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('exchanges.title')}</Text>
-        {availableExchangesCount > 0 && onAddExchange && (
-          <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={onAddExchange}>
-            <Text style={[styles.addButtonText, { color: colors.primary }]}>{t('exchanges.addButton')}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Info sobre variações */}
-      <View style={[styles.infoBox, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-        <View style={styles.infoIconContainer}>
-          <Text style={styles.infoIconYellow}>i</Text>
-        </View>
-        <Text style={[styles.infoText, { color: colors.text }]}>
-          {t('portfolio.variationsNote')}
-        </Text>
-      </View>
-
       {/* Toggle de Filtro */}
       <View style={styles.filtersContainer}>
         <TouchableOpacity 
@@ -399,9 +628,25 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
             )}
           </View>
           <View style={[styles.toggle, themedStyles.toggle, hideZeroBalanceExchanges && [styles.toggleActive, themedStyles.toggleActive]]}>
-            <View style={[styles.toggleThumb, themedStyles.toggleThumb, hideZeroBalanceExchanges && styles.toggleThumbActive]} />
+            <View style={[
+              styles.toggleThumb, 
+              themedStyles.toggleThumb, 
+              hideZeroBalanceExchanges && styles.toggleThumbActive,
+              hideZeroBalanceExchanges && themedStyles.toggleThumbActive
+            ]} />
           </View>
         </TouchableOpacity>
+
+        {/* Removido: Sync Status Indicator - agora é silencioso */}
+        
+        {/* ✅ Last Sync Time - mostra quando foi a última sincronização */}
+        {!isSyncingOrders && !loadingOrders && lastOrdersUpdate && (
+          <View style={styles.lastSyncContainer}>
+            <Text style={[styles.lastSyncText, { color: colors.textTertiary }]}>
+              {t('orders.lastSync')}: {lastOrdersUpdate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.list} collapsable={false}>
@@ -427,27 +672,7 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
             if (isStablecoinA && !isStablecoinB) return 1
             if (!isStablecoinA && isStablecoinB) return -1
             
-            // Se ambos são ou não são stablecoins, verificar variações
-            const variationsA = exchangeVariations[exchange.exchange_id]?.[symbolA]
-            const variationsB = exchangeVariations[exchange.exchange_id]?.[symbolB]
-            
-            // Verifica se tem alguma variação disponível
-            const hasVariationA = variationsA && (
-              variationsA['1h']?.price_change_percent !== undefined ||
-              variationsA['4h']?.price_change_percent !== undefined ||
-              variationsA['24h']?.price_change_percent !== undefined
-            )
-            const hasVariationB = variationsB && (
-              variationsB['1h']?.price_change_percent !== undefined ||
-              variationsB['4h']?.price_change_percent !== undefined ||
-              variationsB['24h']?.price_change_percent !== undefined
-            )
-            
-            // Tokens com variação vêm primeiro (mas só entre não-stablecoins)
-            if (hasVariationA && !hasVariationB) return -1
-            if (!hasVariationA && hasVariationB) return 1
-            
-            // Se ambos têm ou não têm variação, ordenar por valor
+            // Ordenar por valor (maior primeiro)
             const valueA = parseFloat(tokenA.value_usd)
             const valueB = parseFloat(tokenB.value_usd)
             return valueB - valueA
@@ -457,96 +682,90 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           const tokenCount = exchange.token_count !== undefined ? exchange.token_count : tokens.length
           const balance = parseFloat(exchange.total_usd)
           const logoSource = getExchangeLogo(exchange.name)
-          
-          // Verifica se esta exchange está no Set de expandidas
-          const isExpanded = expandedExchanges.has(exchange.exchange_id)
-          
-          const isLoadingVariations = loadingVariations === exchange.exchange_id || loadingVariations === 'all'
 
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
-              <TouchableOpacity
-                style={styles.cardWrapper}
-                activeOpacity={0.7}
-                onPress={() => toggleExpandExchange(exchange.exchange_id)}
+              {/* Header da Exchange - Mesmo estilo dos tokens */}
+              <View
+                style={[
+                  styles.tokenItemCompact,
+                  { 
+                    backgroundColor: colors.surface,
+                    borderBottomColor: colors.border,
+                  }
+                ]}
               >
-                <LinearGradient
-                  colors={cardGradientColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.card, { borderColor: colors.border }]}
-                >
-                  <View style={styles.cardContent}>
-                    <View style={styles.leftSection}>
-                      <View style={[styles.logoContainer, themedStyles.logoContainer]}>
-                        {logoSource ? (
-                          <Image 
-                            source={logoSource} 
-                            style={styles.logoImage}
-                            resizeMode="contain"
-                            fadeDuration={0}
-                            defaultSource={logoSource}
-                          />
-                        ) : (
-                          <Text style={styles.logoFallback}>💰</Text>
-                        )}
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.exchangeNameRow}>
-                          <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.name}</Text>
-                          
-                          {/* Badge de ordens abertas */}
-                          {(() => {
-                            const count = openOrdersCount[exchange.exchange_id]
-                            const hasCallback = !!onOpenOrdersPress
-                            return count > 0 && hasCallback ? (
-                              <TouchableOpacity
-                                onPress={(e) => {
-                                  e.stopPropagation()
-                                  onOpenOrdersPress(exchange.exchange_id, exchange.name)
-                                }}
-                                style={[styles.ordersBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}
-                              >
-                                <Text style={[styles.ordersBadgeText, { color: colors.primary }]}>
-                                  {t('orders.badge')}: {count}
-                                </Text>
-                              </TouchableOpacity>
-                            ) : null
-                          })()}
-                          
-                          {(exchange as any).status === 'inactive' && (exchange as any).inactive_reason && (
-                            <TouchableOpacity 
-                              onPress={() => {
-                                Alert.alert(
-                                  `⚠️ ${t('alert.exchangeInactive')}`,
-                                  (exchange as any).inactive_reason,
-                                  [{ text: t('common.ok'), style: 'default' }]
-                                )
-                              }}
-                              style={styles.infoIconButton}
-                            >
-                              <Text style={[styles.infoIconText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>ℹ️</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                        <Text style={[styles.assetsCount, { color: colors.textSecondary }]}>
-                          {tokenCount} {tokenCount === 1 ? t('exchanges.asset') : t('exchanges.assets')}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.rightSection}>
-                      <Text style={[styles.balance, { color: colors.text }]}>
-                        {hideValue(apiService.formatUSD(balance))}
-                      </Text>
-                      <Text style={[styles.expandIcon, { color: colors.textSecondary }]}>{isExpanded ? '▲' : '▼'}</Text>
-                    </View>
+                <View style={styles.tokenCompactRow}>
+                  {/* Logo da Exchange */}
+                  <View style={[styles.logoContainer, themedStyles.logoContainer]}>
+                    {logoSource ? (
+                      <Image 
+                        source={logoSource} 
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                        fadeDuration={0}
+                        defaultSource={logoSource}
+                      />
+                    ) : (
+                      <Text style={styles.logoFallback}>💰</Text>
+                    )}
                   </View>
-                </LinearGradient>
-              </TouchableOpacity>
+                  
+                  {/* Nome da Exchange */}
+                  <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
+                    {exchange.name}
+                  </Text>
+                  
+                  {/* Quantidade de assets */}
+                  <Text style={[styles.tokenAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {tokenCount} {tokenCount === 1 ? 'asset' : 'assets'}
+                  </Text>
+                  
+                  {/* Saldo Total */}
+                  <Text style={[styles.tokenValueCompact, { color: colors.text }]} numberOfLines={1}>
+                    {hideValue(`$${apiService.formatUSD(balance)}`)}
+                  </Text>
+                  
+                  {/* Badge de ordens abertas */}
+                  {(() => {
+                    const count = openOrdersCount[exchange.exchange_id] || 0
+                    const isLoadingThisExchange = loadingOrdersByExchange[exchange.exchange_id]
+                    const hasCallback = !!onOpenOrdersPress
+                    // Sempre mostra o botão se houver callback, mesmo com 0 ordens
+                    return hasCallback ? (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation()
+                          if (!isLoadingThisExchange) {
+                            onOpenOrdersPress(exchange.exchange_id, exchange.name)
+                          }
+                        }}
+                        style={[
+                          styles.variationBadgeCompact,
+                          { 
+                            backgroundColor: isLoadingThisExchange ? 'transparent' : colors.primary + '15',
+                            borderWidth: isLoadingThisExchange ? 0 : 0.5,
+                            borderColor: isLoadingThisExchange ? 'transparent' : colors.primary,
+                            marginLeft: 8,
+                          }
+                        ]}
+                        disabled={isLoadingThisExchange}
+                      >
+                        {isLoadingThisExchange ? (
+                          <AnimatedLogoIcon size={12} />
+                        ) : (
+                          <Text style={[styles.variationTextCompact, { color: colors.primary }]}>
+                            {t('orders.badge').toLowerCase()}: {count}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    ) : null
+                  })()}
+                </View>
+              </View>
 
-              {isExpanded && (
-                <View
+              {/* Lista de Tokens */}
+              <View
                   style={[
                     styles.tokensContainer,
                     { 
@@ -556,145 +775,175 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
                     }
                   ]}
                 >
-                  {isLoadingVariations && !lastUpdateTime[exchange.exchange_id] ? (
-                    <View style={styles.loadingVariationsContainer}>
-                      <AnimatedLogoIcon size={16} />
-                      <Text style={[styles.lastUpdate, { color: colors.textSecondary, marginBottom: 0 }]}>
-                        {t('token.loadingVariations')}
-                      </Text>
-                    </View>
-                  ) : lastUpdateTime[exchange.exchange_id] ? (
-                    <Text style={[styles.lastUpdate, { color: colors.textSecondary }]}>
-                      {t('portfolio.updatedAt')}: {lastUpdateTime[exchange.exchange_id].toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  ) : null}
                   {tokens.length === 0 ? (
                     <Text style={[styles.noTokensText, { color: colors.textSecondary }]}>{t('home.noData')}</Text>
                   ) : (
                     <>
-                      {tokens.map(([symbol, token]) => {
-                      const amount = parseFloat(token.amount)
-                      const priceUSD = parseFloat(token.price_usd)
+                      {tokens.slice(0, 10).map(([symbol, token], tokenIndex) => {
                       const valueUSD = parseFloat(token.value_usd)
+                      const priceUSD = parseFloat(token.price_usd)
                       
-                      // Busca variações do mapa de variações carregado via API
+                      // Saldo USDT na exchange (precisa buscar do token USDT)
+                      const usdtToken = tokens.find(([sym]) => sym === 'USDT')
+                      const usdtBalance = usdtToken ? parseFloat(usdtToken[1].amount) : 0
+                      
+                      // Verifica se o token está disponível para trade
+                      const tokenBalance = parseFloat(token.amount)
+                      const isAvailableForTrade = usdtBalance > 0 || tokenBalance > 0
+                      
+                      // Busca variações do mapa de variações
                       const tokenVariations = exchangeVariations[exchange.exchange_id]?.[symbol]
                       
-                      // Coleta TODAS as variações disponíveis (1h, 4h, 24h)
-                      const variations: Array<{ value: number; label: string }> = []
+                      // Verifica se é stablecoin
+                      const isStablecoin = STABLECOINS.includes(symbol.toUpperCase())
                       
-                      if (tokenVariations) {
-                        if (tokenVariations['1h']?.price_change_percent !== undefined) {
-                          variations.push({
-                            value: parseFloat(tokenVariations['1h'].price_change_percent),
-                            label: '1h'
-                          })
-                        }
-                        if (tokenVariations['4h']?.price_change_percent !== undefined) {
-                          variations.push({
-                            value: parseFloat(tokenVariations['4h'].price_change_percent),
-                            label: '4h'
-                          })
-                        }
-                        if (tokenVariations['24h']?.price_change_percent !== undefined) {
-                          variations.push({
-                            value: parseFloat(tokenVariations['24h'].price_change_percent),
-                            label: '24h'
-                          })
-                        }
-                      }
+                      // Pega apenas a variação de 24h (ou 0 para stablecoins)
+                      const variation24h = isStablecoin ? 0 : tokenVariations?.['24h']?.price_change_percent
                       
                       return (
-                        <TouchableOpacity
+                        <View
                           key={symbol}
                           style={[
-                            styles.tokenItem,
+                            styles.tokenItemCompact,
                             { 
                               backgroundColor: colors.surface,
                               borderBottomColor: colors.border,
-                              paddingHorizontal: 12,
-                              paddingVertical: 10,
-                              borderRadius: 10,
-                              marginBottom: 8,
+                              zIndex: 1000 - tokenIndex,
+                              elevation: 1000 - tokenIndex,
                             }
                           ]}
-                          onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
-                          activeOpacity={0.7}
                         >
-                          {/* Linha 1: [TOKEN] Quantidade → Valor Total (direita) */}
-                          <View style={styles.tokenTopRow}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                              <View style={[
-                                styles.tokenSymbolBadge,
-                                { 
-                                  backgroundColor: colors.primaryLight + '20',
-                                  borderColor: colors.primary + '40',
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 4,
-                                  marginRight: 8,
-                                }
-                              ]}>
-                                <Text style={[styles.tokenSymbol, { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }]}>
-                                  {symbol}
+                          {/* Linha única: Nome + Quantidade + Valor + Variação 24h + Trade */}
+                          <View style={styles.tokenCompactRow}>
+                            {/* TOKEN - clicável para abrir modal de detalhes com Tooltip de preço */}
+                            <View style={{ position: 'relative', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <TouchableOpacity
+                                onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
+                                onLongPress={() => setTooltipVisible(`price-${exchange.exchange_id}-${symbol}`)}
+                                onPressOut={() => setTooltipVisible(null)}
+                                delayLongPress={300}
+                                activeOpacity={0.7}
+                                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                              >
+                                {/* Indicador de disponibilidade */}
+                                {isAvailableForTrade && (
+                                  <View style={[styles.availabilityIndicator, { backgroundColor: '#10b981' }]} />
+                                )}
+                                <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
+                                  {symbol.toLowerCase()}
                                 </Text>
-                              </View>
-                              <Text style={[styles.tokenAmount, { color: colors.textSecondary, fontSize: 12 }]}>
-                                {hideValue(apiService.formatTokenAmount(token.amount))}
+                              </TouchableOpacity>
+                              
+                              {/* Tooltip de Preço */}
+                              {tooltipVisible === `price-${exchange.exchange_id}-${symbol}` && (
+                                <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                  <Text style={[styles.tooltipText, { color: colors.text }]}>
+                                    ${apiService.formatUSD(priceUSD)}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            
+                            {/* Quantidade - não clicável */}
+                            <Text style={[styles.tokenAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                              {hideValue(apiService.formatTokenAmount(token.amount))}
+                            </Text>
+                            
+                            {/* Valor USD - não clicável */}
+                            <Text style={[styles.tokenValueCompact, { color: colors.textSecondary }]} numberOfLines={1}>
+                              {hideValue(`$${apiService.formatUSD(valueUSD)}`)}
+                            </Text>
+                            
+                            {/* Variação 24h (sempre exibir, 0.00% para stablecoins) */}
+                            <View
+                              style={[
+                                styles.variationBadgeCompact,
+                                {
+                                  backgroundColor: isStablecoin 
+                                    ? colors.textSecondary + '15' 
+                                    : (variation24h !== undefined && variation24h >= 0) 
+                                      ? colors.success + '15' 
+                                      : colors.danger + '15',
+                                }
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.variationTextCompact,
+                                  {
+                                    color: isStablecoin 
+                                      ? colors.textSecondary 
+                                      : (variation24h !== undefined && variation24h >= 0) 
+                                        ? colors.success 
+                                        : colors.danger,
+                                  }
+                                ]}
+                              >
+                                {isStablecoin 
+                                  ? '— 0.00%' 
+                                  : variation24h !== undefined
+                                    ? `${variation24h >= 0 ? '▲' : '▼'} ${Math.abs(variation24h).toFixed(2)}%`
+                                    : '— 0.00%'
+                                }
                               </Text>
                             </View>
-                            <Text style={[styles.tokenValue, { color: colors.text, fontSize: 14, fontWeight: '600' }]}>
-                              {hideValue(apiService.formatUSD(valueUSD))}
-                            </Text>
+                            
+                            {/* Trade Button com Tooltip (desabilitado para stablecoins) */}
+                            <View style={{ position: 'relative' }}>
+                              <TouchableOpacity
+                                onPress={(e) => {
+                                  e.stopPropagation()
+                                  if (!isStablecoin) {
+                                    setSelectedTrade({
+                                      exchangeId: exchange.exchange_id,
+                                      exchangeName: exchange.name,
+                                      symbol: symbol,
+                                      currentPrice: priceUSD,
+                                      balance: { token: parseFloat(token.amount), usdt: usdtBalance }
+                                    })
+                                    setTradeModalVisible(true)
+                                  }
+                                }}
+                                onLongPress={() => !isStablecoin && setTooltipVisible(`${exchange.exchange_id}-${symbol}`)}
+                                onPressOut={() => setTooltipVisible(null)}
+                                delayLongPress={300}
+                                disabled={isStablecoin}
+                                style={[
+                                  styles.ordersBadge, 
+                                  { 
+                                    backgroundColor: colors.surface, 
+                                    borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)',
+                                    opacity: isStablecoin ? 0.3 : 1
+                                  }
+                                ]}
+                              >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0 }}>
+                                  <Text style={{ color: '#10b981', fontSize: 14, fontWeight: fontWeights.bold, lineHeight: 14, letterSpacing: -1 }}>↑</Text>
+                                  <Text style={{ color: '#ef4444', fontSize: 14, fontWeight: fontWeights.bold, lineHeight: 14, letterSpacing: -1 }}>↓</Text>
+                                </View>
+                              </TouchableOpacity>
+                              
+                              {/* Tooltip */}
+                              {tooltipVisible === `${exchange.exchange_id}-${symbol}` && !isStablecoin && (
+                                <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                  <Text style={[styles.tooltipText, { color: colors.text }]}>{t('trade.tooltip')}</Text>
+                                </View>
+                              )}
+                            </View>
                           </View>
-                          
-                          {/* Linha 2: Preço unitário → Variações (direita) */}
-                          <View style={styles.tokenBottomRow}>
-                            {priceUSD > 0 && (
-                              <Text style={[styles.tokenPrice, { color: colors.textSecondary, fontSize: 11 }]}>
-                                {hideValue(apiService.formatUSD(priceUSD))}
-                              </Text>
-                            )}
-                            {variations.length > 0 && (
-                              <View style={styles.variationsContainer}>
-                                {variations.map((variation, idx) => {
-                                  const isPositive = variation.value >= 0
-                                  return (
-                                    <View 
-                                      key={variation.label}
-                                      style={[
-                                        styles.priceChangeContainer,
-                                        { 
-                                          backgroundColor: isPositive ? colors.success + '15' : colors.danger + '15',
-                                          paddingHorizontal: 6,
-                                          paddingVertical: 2,
-                                          borderRadius: 4,
-                                          marginLeft: idx === 0 ? 0 : 4,
-                                        }
-                                      ]}
-                                    >
-                                      <Text style={[
-                                        styles.priceChangeText,
-                                        { 
-                                          color: isPositive ? colors.success : colors.danger,
-                                          fontSize: 10,
-                                          fontWeight: '600',
-                                        }
-                                      ]}>
-                                        {isPositive ? '▲' : '▼'} {Math.abs(variation.value).toFixed(2)}% {variation.label}
-                                      </Text>
-                                    </View>
-                                  )
-                                })}
-                              </View>
-                            )}
-                          </View>
-                        </TouchableOpacity>
+                        </View>
                       )
                     })}
+                    
+                    {/* Indicador "+X mais" se houver mais de 10 tokens */}
+                    {tokens.length > 10 && (
+                      <Text style={[styles.moreTokensText, { color: colors.textSecondary }]}>
+                        +{tokens.length - 10} {t('exchanges.moreAssets')}
+                      </Text>
+                    )}
                     </>
                   )}
                 </View>
-              )}
             </View>
           )
         })}
@@ -709,39 +958,36 @@ export const ExchangesList = memo(function ExchangesList({ onAddExchange, availa
           symbol={selectedToken.symbol}
         />
       )}
+
+      {/* Modal de Trade */}
+      {selectedTrade && (
+        <TradeModal
+          visible={tradeModalVisible}
+          onClose={() => setTradeModalVisible(false)}
+          exchangeId={selectedTrade.exchangeId}
+          exchangeName={selectedTrade.exchangeName}
+          symbol={selectedTrade.symbol}
+          currentPrice={selectedTrade.currentPrice}
+          balance={selectedTrade.balance}
+          onOrderCreated={async () => {
+            // Atualiza APENAS a exchange da ordem criada
+            console.log('🔄 [ExchangesList] Ordem criada, atualizando exchange:', selectedTrade.exchangeId)
+            await fetchOpenOrdersForExchange(selectedTrade.exchangeId)
+          }}
+        />
+      )}
     </View>
   )
 })
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 4,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: typography.bodyLarge,
-    fontWeight: fontWeights.regular,
-    letterSpacing: 0.2,
-  },
-  addButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 2,
-  },
-  addButtonText: {
-    fontSize: typography.bodySmall,
-    fontWeight: fontWeights.semibold,
+    marginTop: 0,
   },
   filtersContainer: {
     paddingHorizontal: 4,
     paddingVertical: 8,
-    marginBottom: 12,
+    marginBottom: 4,
     gap: 6,
   },
   toggleRow: {
@@ -759,11 +1005,13 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: typography.caption,
     fontWeight: fontWeights.regular,
+    opacity: 0.65,
   },
   hiddenCount: {
     fontSize: typography.micro,
     fontWeight: fontWeights.regular,
     fontStyle: "italic",
+    opacity: 0.5,
   },
   toggle: {
     width: 44,
@@ -772,35 +1020,70 @@ const styles = StyleSheet.create({
     padding: 2,
     justifyContent: "center",
     borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   toggleActive: {
     // Colors from theme
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   toggleThumb: {
     width: 18,
     height: 18,
     borderRadius: 9,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   toggleThumbActive: {
     transform: [{ translateX: 20 }],
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  syncIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    opacity: 0.8,
+  },
+  syncText: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
+  },
+  lastSyncContainer: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    alignItems: "flex-start",
+  },
+  lastSyncText: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
+    fontStyle: "italic",
+    opacity: 0.7,
   },
   list: {
     gap: 10,
   },
-  cardWrapper: {
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
   card: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 0,
   },
   cardMargin: {
@@ -817,26 +1100,27 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logoContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    padding: 5,
-    borderWidth: 0.5,
+    padding: 3,
+    borderWidth: 0,
   },
   logoImage: {
     width: "100%",
     height: "100%",
   },
   logoFallback: {
-    fontSize: typography.body,
+    fontSize: typography.bodySmall,
   },
   exchangeName: {
     fontSize: typography.body,
     fontWeight: fontWeights.regular,
     marginBottom: 2,
+    letterSpacing: 0,
   },
   exchangeNameRow: {
     flexDirection: "row",
@@ -845,15 +1129,15 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   ordersBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 8,
-    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 6,
+    borderWidth: 0.5,
   },
   ordersBadgeText: {
-    fontSize: typography.tiny,
-    fontWeight: fontWeights.bold,
+    fontSize: typography.micro,
+    fontWeight: fontWeights.medium,
     letterSpacing: 0.3,
   },
   infoIconButton: {
@@ -864,15 +1148,15 @@ const styles = StyleSheet.create({
     fontSize: typography.h4,
   },
   assetsCount: {
-    fontSize: typography.tiny,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.micro,
+    fontWeight: fontWeights.light,
   },
   rightSection: {
     alignItems: "flex-end",
   },
   balance: {
-    fontSize: typography.bodyLarge,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.body,
+    fontWeight: fontWeights.light,
     marginBottom: 2,
   },
   change: {
@@ -893,13 +1177,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: 20,
   },
-  expandIcon: {
-    fontSize: typography.micro,
-  },
   tokensContainer: {
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 10,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
     borderWidth: 0,
   },
   infoBox: {
@@ -951,16 +1232,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     opacity: 0.5,
   },
-  loadingVariationsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
   noTokensText: {
     fontSize: typography.caption,
     textAlign: "center",
     paddingVertical: 10,
+  },
+  moreTokensText: {
+    fontSize: typography.caption,
+    textAlign: "center",
+    paddingVertical: 8,
+    fontStyle: "italic",
   },
   tokenItem: {
     flexDirection: "column",
@@ -1002,8 +1283,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenAmount: {
-    fontSize: typography.micro,
-    fontWeight: fontWeights.light,
+    fontSize: typography.tiny,
+    fontWeight: fontWeights.regular,
   },
   tokenPriceSeparator: {
     fontSize: typography.tiny,
@@ -1015,7 +1296,7 @@ const styles = StyleSheet.create({
   },
   tokenValue: {
     fontSize: typography.bodySmall,
-    fontWeight: fontWeights.regular,
+    fontWeight: fontWeights.medium,
   },
   tokenValueZero: {
     // Applied via inline style
@@ -1026,7 +1307,7 @@ const styles = StyleSheet.create({
   variationsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
     gap: 4,
   },
   priceChangeContainer: {
@@ -1036,6 +1317,54 @@ const styles = StyleSheet.create({
   },
   priceChangeText: {
     textAlign: "center",
+  },
+  // 🆕 Estilos compactos para layout horizontal simplificado
+  tokenItemCompact: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  tokenCompactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  tokenSymbolCompact: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+    letterSpacing: 0.2,
+    minWidth: 48,
+    textAlign: "left",
+  },
+  availabilityIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  tokenAmountCompact: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
+    flex: 1,
+    textAlign: "left",
+  },
+  tokenValueCompact: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+    minWidth: 60,
+    textAlign: "right",
+  },
+  variationBadgeCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  variationTextCompact: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.bold,
+    textAlign: "center",
+    letterSpacing: 0.2,
   },
   loadingTokens: {
     flexDirection: "row",
@@ -1047,5 +1376,46 @@ const styles = StyleSheet.create({
   loadingTokensText: {
     fontSize: typography.bodySmall,
     fontWeight: fontWeights.regular,
+  },
+  tooltip: {
+    position: "absolute",
+    bottom: -30,
+    left: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 4.65,
+    elevation: 999,
+    zIndex: 9999,
+  },
+  tooltipText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 48,
+  },
+  emptyStateTitle: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.semibold,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptyStateDescription: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })

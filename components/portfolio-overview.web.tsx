@@ -14,7 +14,7 @@ export function PortfolioOverview() {
     <Card className="p-6 bg-card">
       <div className="space-y-4">
         <div>
-          <p className="text-sm text-muted-foreground font-medium">Patrimônio Total</p>
+          <p className="text-sm text-muted-foreground font-medium">Total</p>
           <div className="flex items-baseline gap-2 mt-1">
             <h2 className="text-4xl font-bold text-foreground font-mono tracking-tight">
               ${totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

@@ -9,11 +9,12 @@ import { usePortfolio } from "@/contexts/PortfolioContext"
 import { apiService } from "@/services/api"
 import { SkeletonPortfolioOverview } from "./SkeletonLoaders"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
+import { PortfolioChart } from "./PortfolioChart"
 import { typography, fontWeights } from "@/lib/typography"
 
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const { colors, isDark } = useTheme()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { data, loading, error, refreshing, refresh } = useBalance()
   const { hideValue } = usePrivacy()
   const { evolutionData, currentPeriod } = usePortfolio()
@@ -26,7 +27,8 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     }
   }, [data?.timestamp])
 
-  if (loading) {
+  // Mostra skeleton durante loading inicial ou quando não há dados ainda
+  if (loading || (!data && !error)) {
     return <SkeletonPortfolioOverview />
   }
 
@@ -46,7 +48,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const formatLastUpdated = () => {
     if (!lastUpdateTime) return ''
     
-    const timeStr = lastUpdateTime.toLocaleTimeString('pt-BR', { 
+    const timeStr = lastUpdateTime.toLocaleTimeString(language, { 
       hour: '2-digit', 
       minute: '2-digit' 
     })
@@ -83,7 +85,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const gradientColors: readonly [string, string, ...string[]] = isDark 
     ? ['rgba(26, 26, 26, 0.95)', 'rgba(38, 38, 38, 0.95)', 'rgba(26, 26, 26, 0.95)']  // Dark mode - preto/cinza escuro
     : ['rgba(250, 250, 250, 1)', 'rgba(252, 252, 252, 1)', 'rgba(250, 250, 250, 1)']  // Light mode - cinza claríssimo quase branco
-
+  
   return (
     <View style={styles.containerWrapper}>
       <LinearGradient
@@ -92,16 +94,6 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
         end={{ x: 1, y: 1 }}
         style={[styles.container, { borderColor: colors.border }]}
       >
-        {/* Info sobre cálculo do patrimônio */}
-        <View style={[styles.infoBox, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-          <View style={styles.infoIconContainer}>
-            <Text style={styles.infoIconYellow}>i</Text>
-          </View>
-          <Text style={[styles.infoText, { color: colors.text }]}>
-            {t('portfolio.basedOnBalance')}
-          </Text>
-        </View>
-
         <View style={styles.header}>
           <Text style={[styles.label, { color: colors.text }]}>{t('home.portfolio')}</Text>
           <TouchableOpacity 
@@ -122,14 +114,18 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
         <View style={styles.valueContainer}>
           <Text style={[styles.value, { color: colors.text }]}>
-            {hideValue(formattedValue)}
+            {hideValue(`$${formattedValue}`)}
           </Text>
           <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
             {formatLastUpdated()}
           </Text>
         </View>
 
-        <View style={[styles.changeContainer, { borderTopColor: colors.borderLight }]}>
+        {/* Portfolio Chart */}
+        <PortfolioChart />
+
+        {/* PNL Container - separado com borda superior */}
+        <View style={[styles.changeContainer, { borderTopColor: colors.border }]}>
           <Text style={[
             styles.badgeText, 
             { color: isPositive ? colors.success : colors.danger }
@@ -141,7 +137,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             styles.changeValue,
             { color: isPositive ? colors.success : colors.danger }
           ]}>
-            {hideValue(`${isPositive ? "+" : ""}${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
+            {hideValue(`${isPositive ? "+" : ""}$${apiService.formatUSD(Math.abs(pnl.changeUsd))}`)}
           </Text>
           <Text style={[styles.timeframe, { color: colors.textSecondary }]}>
             {t('portfolio.lastDays').replace('{days}', currentPeriod.toString())}
@@ -154,68 +150,38 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
 
 const styles = StyleSheet.create({
   containerWrapper: {
-    marginBottom: 16,
-  },
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
     marginBottom: 12,
-    borderWidth: 0.5,
-    opacity: 0.8,
-  },
-  infoIconContainer: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#FFA500",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  infoIconYellow: {
-    fontSize: typography.tiny,
-    fontWeight: fontWeights.bold,
-    color: "#FFFFFF",
-  },
-  infoText: {
-    fontSize: typography.micro,
-    fontWeight: fontWeights.light,
-    flex: 1,
-    lineHeight: 14,
   },
   container: {
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   label: {
-    fontSize: typography.body,
+    fontSize: typography.caption,
     fontWeight: fontWeights.regular,
     letterSpacing: 0.3,
     textTransform: "uppercase",
     opacity: 0.7,
   },
   refreshButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -231,38 +197,38 @@ const styles = StyleSheet.create({
   valueContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    gap: 8,
-    marginBottom: 20,
+    gap: 6,
+    marginBottom: 8,
   },
   value: {
-    fontSize: typography.displayLarge,
+    fontSize: typography.display,
     fontWeight: fontWeights.light,
-    letterSpacing: -1.5,
+    letterSpacing: -1,
   },
   lastUpdated: {
     fontSize: typography.tiny,
-    fontWeight: fontWeights.regular,
+    fontWeight: fontWeights.light,
     opacity: 0.5,
   },
   changeContainer: {
+    paddingTop: 8,
+    borderTopWidth: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
+    gap: 6,
   },
   badgeText: {
-    fontSize: typography.bodyLarge,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
   },
   changeValue: {
-    fontSize: typography.bodyLarge,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
     flex: 1,
   },
   timeframe: {
-    fontSize: typography.bodySmall,
-    fontWeight: fontWeights.regular,
+    fontSize: typography.caption,
+    fontWeight: fontWeights.light,
   },
   errorText: {
     fontSize: typography.body,

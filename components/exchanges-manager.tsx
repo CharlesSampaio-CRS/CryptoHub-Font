@@ -6,9 +6,11 @@ import { config } from "@/lib/config"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useBalance } from "@/contexts/BalanceContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { QRScanner } from "./QRScanner"
 import { LogoIcon } from "./LogoIcon"
 import { AnimatedLogoIcon } from "./AnimatedLogoIcon"
+import { typography, fontWeights } from "@/lib/typography"
 import Svg, { Path } from "react-native-svg"
 
 // Mapeamento dos logos locais das exchanges
@@ -48,19 +50,31 @@ const LinkedExchangeCard = memo(({
   onDelete: (id: string, name: string) => void
   onPress: () => void
 }) => {
+  const [showMenu, setShowMenu] = useState(false)
   const exchangeNameLower = linkedExchange.name.toLowerCase()
   const localIcon = exchangeLogos[exchangeNameLower]
   const exchangeId = linkedExchange.exchange_id
   const isActive = linkedExchange.status === 'active'
+  const isDark = colors.isDark
 
-  // Themed styles for toggle
+  // Themed styles for toggle (seguindo padrão do HomeScreen)
   const themedToggleStyles = useMemo(() => ({
-    toggleButton: { backgroundColor: colors.toggleInactive },
-    toggleButtonActive: { backgroundColor: colors.toggleActive },
-    toggleThumb: { backgroundColor: colors.toggleThumb },
-  }), [colors])
+    toggleButton: { 
+      backgroundColor: isDark ? 'rgba(60, 60, 60, 0.4)' : 'rgba(200, 200, 200, 0.3)',
+      borderColor: isDark ? 'rgba(80, 80, 80, 0.3)' : 'rgba(180, 180, 180, 0.2)',
+    },
+    toggleButtonActive: { 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)',
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.3)',
+    },
+    toggleThumb: { 
+      backgroundColor: isDark ? 'rgba(140, 140, 140, 0.9)' : 'rgba(100, 100, 100, 0.7)',
+    },
+    toggleThumbActive: { 
+      backgroundColor: isDark ? 'rgba(96, 165, 250, 0.9)' : 'rgba(59, 130, 246, 0.8)',
+    },
+  }), [isDark])
   
-  // Memoizar a formatação da data
   const formattedDate = useMemo(() => {
     return new Date(linkedExchange.linked_at).toLocaleDateString('pt-BR')
   }, [linkedExchange.linked_at])
@@ -79,40 +93,45 @@ const LinkedExchangeCard = memo(({
   }), [colors])
 
   return (
-    <TouchableOpacity 
-      key={exchangeId + '_' + index} 
-      style={[styles.card, themedStyles.card]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.cardLeft}>
-          <View style={styles.iconContainer}>
-            {localIcon ? (
-              <Image 
-                source={localIcon} 
-                style={styles.exchangeIcon}
-                resizeMode="contain"
-              />
-            ) : linkedExchange.icon ? (
-              <Image 
-                source={{ uri: linkedExchange.icon }} 
-                style={styles.exchangeIcon}
-                resizeMode="contain"
-              />
-            ) : (
-              <Text style={styles.iconText}>🔗</Text>
-            )}
-          </View>
-          <View style={styles.exchangeNameContainer}>
-            <Text style={[styles.exchangeName, { color: colors.text }]}>
-              {linkedExchange.name}
-            </Text>
-          </View>
+    <View style={[styles.compactCard, { backgroundColor: colors.surface, zIndex: 1000 - index, elevation: 1000 - index }]}>
+      <TouchableOpacity 
+        style={styles.compactRow}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        {/* Ícone */}
+        <View style={[styles.compactIconContainer, isDark && { backgroundColor: '#FFFFFF' }]}>
+          {localIcon ? (
+            <Image 
+              source={localIcon} 
+              style={styles.compactIcon}
+              resizeMode="contain"
+            />
+          ) : linkedExchange.icon ? (
+            <Image 
+              source={{ uri: linkedExchange.icon }} 
+              style={styles.compactIcon}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={styles.iconText}>🔗</Text>
+          )}
         </View>
+        
+        {/* Nome */}
+        <Text style={[styles.compactName, { color: colors.text }]} numberOfLines={1}>
+          {linkedExchange.name}
+        </Text>
+        
+        {/* Data */}
+        <Text style={[styles.compactDate, { color: colors.textSecondary }]} numberOfLines={1}>
+          {formattedDate}
+        </Text>
+        
+        {/* Toggle */}
         <TouchableOpacity 
           style={[
-            styles.toggleButton, 
+            styles.compactToggle, 
             themedToggleStyles.toggleButton,
             isActive && themedToggleStyles.toggleButtonActive
           ]}
@@ -123,70 +142,42 @@ const LinkedExchangeCard = memo(({
           activeOpacity={0.7}
         >
           <View style={[
-            styles.toggleThumb, 
+            styles.compactToggleThumb, 
             themedToggleStyles.toggleThumb,
-            isActive && styles.toggleThumbActive
+            isActive && themedToggleStyles.toggleThumbActive
           ]} />
         </TouchableOpacity>
-      </View>
-      
-      <View style={styles.cardDetails}>
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('exchanges.connectedAt')}</Text>
-          <Text style={[styles.detailValue, { color: colors.text }]}>
-            {formattedDate}
-          </Text>
-        </View>
         
-        {/* Mostrar motivo da inativação se existir */}
-        {!isActive && linkedExchange.inactive_reason && (
-          <View style={[styles.infoBox, { 
-            backgroundColor: colors.isDark ? '#7F1D1D' : '#FEE2E2',
-            borderColor: colors.isDark ? '#DC2626' : '#EF4444'
-          }]}>
-            <View style={[styles.infoIconContainer, { backgroundColor: colors.isDark ? '#DC2626' : '#EF4444' }]}>
-              <Text style={styles.infoIconYellow}>!</Text>
-            </View>
-            <Text style={[styles.infoText, { 
-              color: colors.isDark ? '#FCA5A5' : '#DC2626' 
-            }]}>
-              {linkedExchange.inactive_reason}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Footer com status e delete */}
-      <View style={styles.exchangeFooter}>
-        <View style={[
-          styles.statusBadge,
-          isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
-        ]}>
-          
-          <View style={[
-            styles.statusDot,
-            isActive ? themedStyles.statusDotActive : themedStyles.statusDotInactive
-          ]} />
-          <Text style={[
-            styles.statusText,
-            { color: colors.text }
-          ]}>
-            {isActive ? t('strategy.active') : t('strategy.inactive')}
-          </Text>
-        </View>
-        
+        {/* Menu três pontos */}
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={styles.menuButton}
           onPress={(e) => {
             e.stopPropagation()
-            onDelete(exchangeId, linkedExchange.name)
+            setShowMenu(!showMenu)
           }}
           activeOpacity={0.7}
         >
-          <Text style={styles.deleteIcon}>🗑️</Text>
+          <Text style={[styles.menuIcon, { color: colors.textSecondary }]}>⋮</Text>
         </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      
+      {/* Menu dropdown */}
+      {showMenu && (
+        <View style={[styles.menuDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={styles.deleteMenuItem}
+            onPress={(e) => {
+              e.stopPropagation()
+              setShowMenu(false)
+              onDelete(exchangeId, linkedExchange.name)
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.deleteMenuText, { color: colors.danger }]}>{t('exchanges.delete')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   )
 })
 
@@ -208,67 +199,89 @@ const AvailableExchangeCard = memo(({
   onConnect: (exchange: any) => void
   onPress: () => void
 }) => {
+  const [showTooltip, setShowTooltip] = useState(false)
   const localIcon = exchangeLogos[exchange.nome.toLowerCase()]
+  const isDark = colors.isDark
   
   const themedStyles = useMemo(() => ({
     card: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
     },
   }), [colors])
 
   return (
-    <TouchableOpacity 
-      key={exchange._id} 
-      style={[styles.card, themedStyles.card]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.cardLeft}>
-          <View style={styles.iconContainer}>
-            {localIcon ? (
-              <Image 
-                source={localIcon} 
-                style={styles.exchangeIcon}
-                resizeMode="contain"
-              />
-            ) : exchange.icon ? (
-              <Image 
-                source={{ uri: exchange.icon }} 
-                style={styles.exchangeIcon}
-                resizeMode="contain"
-              />
-            ) : (
-              <Text style={styles.iconText}>🔗</Text>
-            )}
-          </View>
-          <View>
-            <Text style={[styles.exchangeName, { color: colors.text }]}>{exchange.nome}</Text>
-          </View>
+    <View style={[styles.availableCard, themedStyles.card]}>
+      <TouchableOpacity 
+        style={styles.availableRow}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        {/* Ícone */}
+        <View style={[styles.availableIconContainer, isDark && { backgroundColor: '#FFFFFF' }]}>
+          {localIcon ? (
+            <Image 
+              source={localIcon} 
+              style={styles.availableIcon}
+              resizeMode="contain"
+            />
+          ) : exchange.icon ? (
+            <Image 
+              source={{ uri: exchange.icon }} 
+              style={styles.availableIcon}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={styles.iconText}>🔗</Text>
+          )}
         </View>
+        
+        {/* Nome */}
+        <Text style={[styles.availableName, { color: colors.text }]} numberOfLines={1}>
+          {exchange.nome}
+        </Text>
+        
+        {/* Info sobre passphrase */}
+        {exchange.requires_passphrase && (
+          <TouchableOpacity
+            onLongPress={() => setShowTooltip(true)}
+            onPressOut={() => setShowTooltip(false)}
+            delayLongPress={300}
+            style={styles.infoIconButton}
+          >
+            <Text style={[styles.availableInfo, { color: colors.primary }]}>
+              ℹ️
+            </Text>
+            {showTooltip && (
+              <View style={[styles.passphraseTooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.passphraseTooltipText, { color: colors.text }]}>
+                  {t('exchanges.requiresPassphrase')}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+        
+        {/* Badge de status ou botão conectar */}
         {isLinked ? (
-          <View style={[styles.connectedBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-            <Text style={[styles.connectedBadgeText, { color: colors.success }]}>✓ Conectada</Text>
+          <View style={[styles.connectedBadgeCompact, { backgroundColor: colors.success + '15' }]}>
+            <Text style={[styles.connectedBadgeTextCompact, { color: colors.success }]}>✓</Text>
           </View>
         ) : (
           <TouchableOpacity 
-            style={[styles.connectButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
+            style={[styles.connectBadge, { backgroundColor: 'transparent', borderWidth: 0.5, borderColor: '#3B82F6' }]}
             onPress={(e) => {
               e.stopPropagation()
               onConnect(exchange)
             }}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.connectButtonText, { color: colors.primary }]}>{t('exchanges.connect')}</Text>
+            <Text style={[styles.connectBadgeText, { color: '#3B82F6' }]}>
+              {t('exchanges.connect')}
+            </Text>
           </TouchableOpacity>
         )}
-      </View>
-      {exchange.requires_passphrase && (
-        <View style={[styles.infoBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
-          <Text style={[styles.infoText, { color: colors.primary }]}>ℹ️ Requer passphrase</Text>
-        </View>
-      )}
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   )
 })
 
@@ -277,6 +290,7 @@ AvailableExchangeCard.displayName = 'AvailableExchangeCard'
 export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProps) {
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
+  const { user } = useAuth()
   const { refreshOnExchangeChange, data: balanceData } = useBalance()
   const [availableExchanges, setAvailableExchanges] = useState<AvailableExchange[]>([])
   const [linkedExchanges, setLinkedExchanges] = useState<LinkedExchange[]>([])
@@ -315,14 +329,20 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const [loadingDetails, setLoadingDetails] = useState(false)
 
   const fetchExchanges = useCallback(async (forceRefresh: boolean = false) => {
+    if (!user?.id) {
+      console.warn('⚠️ No user ID available')
+      setLoading(false)
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
       
       
       const [availableData, linkedData] = await Promise.all([
-        apiService.getAvailableExchanges(config.userId, forceRefresh),
-        apiService.getLinkedExchanges(config.userId, forceRefresh)
+        apiService.getAvailableExchanges(user.id, forceRefresh),
+        apiService.getLinkedExchanges(user.id, forceRefresh)
       ])
       
       setAvailableExchanges(availableData.exchanges || [])
@@ -333,7 +353,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user?.id])
 
   useEffect(() => {
     fetchExchanges(true) // SEMPRE força refresh para pegar ícones atualizados
@@ -349,6 +369,11 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const handleConnect = useCallback(async (exchangeId: string, exchangeName: string) => {
     setOpenMenuId(null)
     
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
+    
     try {
       const url = `${config.apiBaseUrl}/exchanges/connect`
       
@@ -358,7 +383,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'charles_test_user',
+          user_id: user.id,
           exchange_id: exchangeId,
         }),
       })
@@ -434,6 +459,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const confirmDisconnect = useCallback(async () => {
     setConfirmModalVisible(false)
     
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
     
     try {
       const url = `${config.apiBaseUrl}/exchanges/disconnect`
@@ -444,7 +473,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'charles_test_user',
+          user_id: user.id,
           exchange_id: confirmExchangeId,
         }),
       })
@@ -479,6 +508,10 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   const confirmDelete = useCallback(async () => {
     setConfirmModalVisible(false)
     
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
     
     try {
       const url = `${config.apiBaseUrl}/exchanges/delete`
@@ -489,7 +522,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'charles_test_user',
+          user_id: user.id,
           exchange_id: confirmExchangeId,
         }),
       })
@@ -618,13 +651,18 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       alert(t('error.passphraseRequired'))
       return
     }
+    
+    if (!user?.id) {
+      alert('Erro: usuário não autenticado')
+      return
+    }
 
     try {
       setConnecting(true)
       
       const url = `${config.apiBaseUrl}/exchanges/link`
       const payload = {
-        user_id: config.userId,
+        user_id: user.id,
         exchange_id: selectedExchange._id, // Usando o _id da exchange
         api_key: apiKey.trim(),
         api_secret: apiSecret.trim(),
@@ -682,11 +720,11 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     retryButtonText: { color: colors.textInverse },
     
     // Tabs
-    tab: { backgroundColor: colors.tabInactive, borderColor: colors.border },
-    tabInactive: { backgroundColor: colors.tabInactive, borderColor: colors.border },
-    tabActive: { backgroundColor: colors.tabActive, borderColor: colors.tabActive },
-    tabText: { color: colors.tabText },
-    tabTextActive: { color: colors.tabTextActive },
+    tabs: { borderBottomColor: colors.border },
+    tab: { borderBottomColor: 'transparent' },
+    tabActive: { borderBottomColor: colors.primary },
+    tabText: { color: colors.textSecondary },
+    tabTextActive: { color: colors.text, fontWeight: '600' },
     
     // Status
     statusTextActive: { color: colors.primary },
@@ -694,11 +732,6 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     statusActive: { color: colors.primary },
     statusInactive: { color: colors.danger },
     exchangeCountry: { color: colors.textSecondary },
-    
-    // Toggle
-    toggleButton: { backgroundColor: colors.toggleInactive },
-    toggleButtonActive: { backgroundColor: colors.toggleActive },
-    toggleThumb: { backgroundColor: colors.toggleThumb },
     
     // Details
     detailLabel: { color: colors.textSecondary },
@@ -726,7 +759,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
     primaryButtonText: { color: colors.primary },
     
     // Exchange Info
-    exchangeInfo: { backgroundColor: colors.surfaceSecondary },
+    exchangeInfo: { backgroundColor: colors.surfaceSecondary, padding: 16 },
     
     // Modal Exchange Country
     modalExchangeCountry: { color: colors.textSecondary },
@@ -781,7 +814,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
   }
 
   return (
-    <View style={[styles.container, themedStyles.container]}>
+    <SafeAreaView style={[styles.container, themedStyles.container]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
@@ -799,9 +832,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, themedStyles.tabs]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'linked' ? themedStyles.tabActive : themedStyles.tabInactive]}
+          style={[styles.tab, activeTab === 'linked' ? themedStyles.tabActive : themedStyles.tab]}
           onPress={() => setActiveTab('linked')}
         >
           <Text style={[styles.tabText, activeTab === 'linked' ? themedStyles.tabTextActive : themedStyles.tabText]}>
@@ -809,7 +842,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'available' ? themedStyles.tabActive : themedStyles.tabInactive]}
+          style={[styles.tab, activeTab === 'available' ? themedStyles.tabActive : themedStyles.tab]}
           onPress={() => setActiveTab('available')}
         >
           <Text style={[styles.tabText, activeTab === 'available' ? themedStyles.tabTextActive : themedStyles.tabText]}>
@@ -820,9 +853,9 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
 
       {/* Content */}
       <ScrollView 
-        style={styles.content}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={true}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         {activeTab === 'linked' ? (
           linkedExchanges.length === 0 ? (
@@ -960,6 +993,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                 </TouchableOpacity>
               </View>
 
+              <ScrollView style={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
               {selectedExchange && (
               <>
                 {/* Info da Exchange */}
@@ -1100,12 +1134,13 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
                     {connecting ? (
                       <AnimatedLogoIcon size={20} />
                     ) : (
-                      <Text style={styles.submitButtonText}>{t('exchanges.connect')}</Text>
+                      <Text style={[styles.submitButtonText, { color: colors.primary }]}>{t('exchanges.connect')}</Text>
                     )}
                   </TouchableOpacity>
                 </View>
               </>
             )}
+            </ScrollView>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -1758,7 +1793,7 @@ export function ExchangesManager({ initialTab = 'linked' }: ExchangesManagerProp
             : 'Escanear Passphrase'
         }
       />
-    </View>
+    </SafeAreaView>
   )
 }
 
@@ -1839,36 +1874,44 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: typography.h3,
     fontWeight: "300",
     letterSpacing: -0.2,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
     fontWeight: "300",
   },
   tabs: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    gap: 8,
+    gap: 24,
     marginBottom: 12,
+    borderBottomWidth: 1,
   },
   tab: {
-    flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 4,
     alignItems: "center",
-    borderWidth: 1,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   tabActive: {
   },
   tabText: {
-    fontSize: 13,
+    fontSize: typography.body,
     fontWeight: "400",
   },
   tabTextActive: {
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 12,
+    paddingBottom: 80,
+    gap: 12,
   },
   content: {
     flex: 1,
@@ -1879,10 +1922,9 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Espaço extra no final para o scroll
   },
   card: {
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 12,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 0,
   },
   cardHeader: {
     flexDirection: "row",
@@ -1896,26 +1938,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#ffffff',
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    padding: 3,
+    borderWidth: 0,
   },
   iconText: {
     fontSize: 20,
   },
   exchangeIcon: {
-    width: 36,
-    height: 36,
+    width: "100%",
+    height: "100%",
   },
   exchangeNameContainer: {
     flex: 1,
   },
   exchangeName: {
-    fontSize: 15,
+    fontSize: typography.body,
     fontWeight: "400",
     marginBottom: 4,
   },
@@ -1950,7 +1994,7 @@ const styles = StyleSheet.create({
     // Cor definida dinamicamente via themedStyles
   },
   statusText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: "400",
   },
   statusTextActive: {
@@ -1970,21 +2014,44 @@ const styles = StyleSheet.create({
   },
   // Toggle Button
   toggleButton: {
-    width: 46,
-    height: 26,
-    borderRadius: 13,
+    width: 44,
+    height: 24,
+    borderRadius: 12,
     padding: 2,
     justifyContent: "center",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   toggleButtonActive: {
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   toggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   toggleThumbActive: {
-    alignSelf: "flex-end",
+    transform: [{ translateX: 20 }],
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   // Exchange Footer
   exchangeFooter: {
@@ -2010,10 +2077,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   detailValue: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: "400",
   },
   connectedBadge: {
@@ -2023,7 +2090,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   connectedBadgeText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: "400",
   },
   connectButton: {
@@ -2033,7 +2100,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   connectButtonText: {
-    fontSize: 13,
+    fontSize: typography.bodySmall,
     fontWeight: "600",
   },
   infoBox: {
@@ -2112,6 +2179,10 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
     height: "85%",
   },
+  modalScrollContent: {
+    flex: 1,
+    padding: 20,
+  },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2134,7 +2205,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 16,
     borderRadius: 12,
     marginBottom: 24,
   },
@@ -2481,5 +2551,174 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     lineHeight: 20,
+  },
+  // Estilos compactos para linked exchanges
+  compactCard: {
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+  },
+  compactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  compactIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  compactIcon: {
+    width: '100%',
+    height: '100%',
+  },
+  compactName: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+    flex: 1,
+  },
+  compactDate: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
+    width: 80,
+  },
+  compactToggle: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    padding: 2,
+    justifyContent: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  compactToggleThumb: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+  },
+  menuButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuIcon: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  menuDropdown: {
+    position: 'absolute',
+    right: 8,
+    top: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+    minWidth: 140,
+  },
+  deleteMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    justifyContent: 'center',
+  },
+  deleteMenuText: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.medium,
+  },
+  // Estilos para exchanges disponíveis (compacto)
+  availableCard: {
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+  },
+  availableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  availableIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  availableIcon: {
+    width: '100%',
+    height: '100%',
+  },
+  availableName: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+    flex: 1,
+  },
+  availableInfo: {
+    fontSize: typography.body,
+    marginLeft: 4,
+  },
+  infoIconButton: {
+    padding: 4,
+    position: 'relative',
+  },
+  passphraseTooltip: {
+    position: 'absolute',
+    bottom: -35,
+    left: -50,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    minWidth: 120,
+    zIndex: 9999,
+    elevation: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  passphraseTooltipText: {
+    fontSize: typography.caption,
+    textAlign: 'center',
+  },
+  connectedBadgeCompact: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  connectedBadgeTextCompact: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.2,
+  },
+  connectBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  connectBadgeText: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
 })

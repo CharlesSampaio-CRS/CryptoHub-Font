@@ -175,7 +175,7 @@ const darkColors: ThemeColors = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light') // Default to light
+  const [theme, setTheme] = useState<Theme>('dark') // Default to dark
   const [isLoading, setIsLoading] = useState(true)
 
   // Load theme from storage on mount

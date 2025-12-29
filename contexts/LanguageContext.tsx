@@ -22,8 +22,8 @@ const translations = {
     
     // Home Screen
     'home.title': 'CryptoHub',
-    'home.subtitle': 'Seus investimentos unificados',
-    'home.portfolio': 'Patrimônio Total',
+    'home.subtitle': 'Investimentos unificados',
+    'home.portfolio': 'Total',
     'home.last24h': 'últimas 24h',
     'home.performance': 'Desempenho',
     'home.exchanges': 'Minhas Corretoras',
@@ -93,7 +93,7 @@ const translations = {
     'strategy.new': '+ Nova',
     'strategy.strategies': 'estratégias',
     'strategy.strategy': 'estratégia',
-    'strategy.executions': 'execuções',
+    'strategy.executions': 'Execuções',
     'strategy.execution': 'execução',
     'strategy.empty': 'Nenhuma estratégia criada',
     'strategy.emptyDesc': 'Crie sua primeira estratégia automatizada',
@@ -161,13 +161,28 @@ const translations = {
 
     // Orders
     'orders.badge': 'Ordens',
-    'orders.title': 'Ordens Abertas',
+    'orders.title': 'Abertas',
     'orders.empty': 'Nenhuma ordem aberta',
     'orders.emptyMessage': 'Você não possui ordens abertas nesta exchange',
-    'orders.autoUpdate': 'Atualização automática a cada 5min',
+    'orders.autoUpdate': 'Atualização automática a cada 5 min',
+    'orders.lastSync': 'Última atualização',
     'orders.loading': 'Carregando ordens...',
     'orders.error': 'Erro ao carregar ordens',
     'orders.retry': 'Tentar novamente',
+    'orders.cancelAll': 'Cancelar Todas',
+    'orders.cancelAllTitle': '⚠️ Cancelar Todas as Ordens',
+    'orders.cancelAllMessage': 'Deseja realmente cancelar TODAS as {count} ordem(ns) abertas nesta exchange?',
+    'orders.cancelAllWarning': '⚠️ Esta ação não pode ser desfeita!',
+    'orders.cancelAllNo': 'Não',
+    'orders.cancelAllYes': 'Sim, Cancelar Todas',
+    'orders.cancel': 'Cancelar',
+    'orders.edit': 'Editar',
+    'orders.editTitle': 'Editar Ordem',
+    'orders.newPrice': 'Novo Preço',
+    'orders.newAmount': 'Nova Quantidade',
+    'orders.save': 'Salvar',
+    'orders.editSuccess': 'Ordem editada com sucesso!',
+    'orders.editError': 'Erro ao editar ordem',
     'orders.price': 'Preço',
     'orders.amount': 'Quantidade',
     'orders.filled': 'Executado',
@@ -189,9 +204,20 @@ const translations = {
     'orders.details.trades': 'Trades Executados',
     'orders.details.trade': 'Trade',
     'orders.details.close': 'Fechar',
+    'orders.count': 'ordens',
+    'orders.countSingular': 'ordem',
+    
+    // Trade
+    'trade.tooltip': 'Negociar',
+    'trade.title': 'Trade',
+    
+    // Exchanges tooltips and misc
+    'exchanges.requiresPassphrase': 'Requer passphrase',
+    
     'exchanges.status': 'Status:',
     'exchanges.activate': 'Ativar',
     'exchanges.hidden': 'ocultas',
+    'exchanges.moreAssets': 'mais',
     'exchanges.deactivate': 'Desativar',
     'exchanges.activateConfirm': 'Tem certeza que deseja ativar a corretora',
     'exchanges.deactivateConfirm': 'Tem certeza que deseja desativar a corretora',
@@ -373,7 +399,7 @@ const translations = {
     
     // Home Screen
     'home.title': 'CryptoHub',
-    'home.subtitle': 'Your unified investments',
+    'home.subtitle': 'Unified investments',
     'home.portfolio': 'Total Portfolio',
     'home.last24h': 'last 24h',
     'home.performance': 'Performance',
@@ -446,7 +472,7 @@ const translations = {
     'strategy.new': '+ New',
     'strategy.strategies': 'strategies',
     'strategy.strategy': 'strategy',
-    'strategy.executions': 'executions',
+    'strategy.executions': 'Executions',
     'strategy.execution': 'execution',
     'strategy.empty': 'No strategies created',
     'strategy.emptyDesc': 'Create your first automated strategy',
@@ -515,6 +541,7 @@ const translations = {
     'exchanges.status': 'Status:',
     'exchanges.activate': 'Activate',
     'exchanges.hidden': 'hidden',
+    'exchanges.moreAssets': 'more',
     'exchanges.deactivate': 'Deactivate',
     'exchanges.activateConfirm': 'Are you sure you want to activate the exchange',
     'exchanges.deactivateConfirm': 'Are you sure you want to deactivate the exchange',
@@ -523,13 +550,28 @@ const translations = {
     
     // Orders
     'orders.badge': 'Orders',
-    'orders.title': 'Open Orders',
+    'orders.title': 'Opens',
     'orders.empty': 'No open orders',
     'orders.emptyMessage': 'You have no open orders on this exchange',
-    'orders.autoUpdate': 'Auto-update every 5min',
+    'orders.autoUpdate': 'Auto-update every 5 min',
+    'orders.lastSync': 'Last update',
     'orders.loading': 'Loading orders...',
     'orders.error': 'Error loading orders',
     'orders.retry': 'Try again',
+    'orders.cancelAll': 'Cancel All',
+    'orders.cancelAllTitle': '⚠️ Cancel All Orders',
+    'orders.cancelAllMessage': 'Do you really want to cancel ALL {count} open order(s) on this exchange?',
+    'orders.cancelAllWarning': '⚠️ This action cannot be undone!',
+    'orders.cancelAllNo': 'No',
+    'orders.cancelAllYes': 'Yes, Cancel All',
+    'orders.cancel': 'Cancel',
+    'orders.edit': 'Edit',
+    'orders.editTitle': 'Edit Order',
+    'orders.newPrice': 'New Price',
+    'orders.newAmount': 'New Amount',
+    'orders.save': 'Save',
+    'orders.editSuccess': 'Order edited successfully!',
+    'orders.editError': 'Error editing order',
     'orders.price': 'Price',
     'orders.amount': 'Amount',
     'orders.filled': 'Filled',
@@ -551,6 +593,15 @@ const translations = {
     'orders.details.trades': 'Executed Trades',
     'orders.details.trade': 'Trade',
     'orders.details.close': 'Close',
+    'orders.count': 'orders',
+    'orders.countSingular': 'order',
+    
+    // Trade
+    'trade.tooltip': 'Trade',
+    'trade.title': 'Trade',
+    
+    // Exchanges tooltips and misc
+    'exchanges.requiresPassphrase': 'Requires passphrase',
     
     // Token Details
     'token.details': 'Token Details',
@@ -720,7 +771,7 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('pt-BR')
+  const [language, setLanguage] = useState<Language>('en-US')
   const [isLoading, setIsLoading] = useState(true)
 
   // Load language from storage on mount
