@@ -58,7 +58,24 @@ check_docker() {
 create_network() {
     if ! docker network inspect "$NETWORK_NAME" > /dev/null 2>&1; then
         print_info "Criando network $NETWORK_NAME..."
-        docker network create "$NETWORK_NAME"
+        if ! docker network create "$NETWORK_NAME" 2>&1; then
+            print_error "Falha ao criar network!"
+            print_error ""
+            print_error "Este é um problema comum do Docker no Ubuntu relacionado ao iptables."
+            print_error ""
+            print_info "SOLUÇÕES RÁPIDAS:"
+            print_error ""
+            print_info "1. Reiniciar o Docker (mais simples):"
+            echo "   sudo systemctl restart docker"
+            print_error ""
+            print_info "2. Usar o script de correção (recomendado):"
+            echo "   sudo ./fix-docker-network.sh"
+            print_error ""
+            print_info "3. Executar correção completa:"
+            echo "   sudo ./fix-docker-network.sh all"
+            print_error ""
+            exit 1
+        fi
         print_success "Network criada"
     else
         print_info "Network $NETWORK_NAME já existe"
