@@ -12,8 +12,9 @@ export const config = {
   
   /**
    * URL base do Kong Security API (OAuth/JWT)
+   * NOTA: Por enquanto, usando o backend Python para auth até implementar no Rust
    */
-  kongBaseUrl: 'http://localhost:8080/api',
+  kongBaseUrl: 'http://localhost:5000/api/v1',
 }
 
 /**

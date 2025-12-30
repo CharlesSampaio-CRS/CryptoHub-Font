@@ -32,15 +32,17 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     return <SkeletonPortfolioOverview />
   }
 
-  if (error || !data) {
+  if (error || !data || !data.summary) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.errorText, { color: colors.danger }]}>{error || t('home.noData')}</Text>
+        <Text style={[styles.errorText, { color: colors.danger }]}>
+          {error || t('home.noData')}
+        </Text>
       </View>
     )
   }
 
-  const totalValue = parseFloat(data.summary.total_usd)
+  const totalValue = parseFloat(data.summary.total_usd || '0')
   const formattedValue = apiService.formatUSD(totalValue)
   
   

@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 're    if (user?.id && !hasFetchedInitialRef.current) {
-      hasFetchedInitialRef.current = true // Marca como fetched ANTES da chamada async'
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Platform } from 'react-native'
 import { apiService } from '@/services/api'
 import { BalanceResponse } from '@/types/api'

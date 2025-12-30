@@ -649,6 +649,24 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
         )}
       </View>
 
+      {/* Mostra mensagem quando não há exchanges */}
+      {filteredExchanges.length === 0 && (
+        <View style={styles.emptyStateContainer}>
+          <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+            {hideZeroBalanceExchanges 
+              ? (t('exchanges.allExchangesHidden') || 'Todas as exchanges estão ocultas')
+              : (t('exchanges.noExchanges') || 'Nenhuma exchange vinculada')
+            }
+          </Text>
+          <Text style={[styles.emptyStateDescription, { color: colors.textSecondary }]}>
+            {hideZeroBalanceExchanges
+              ? (t('exchanges.disableFilterToSee') || 'Desative o filtro para ver exchanges com saldo zero')
+              : (t('exchanges.addFirstExchange') || 'Adicione sua primeira exchange para começar a monitorar seus investimentos')
+            }
+          </Text>
+        </View>
+      )}
+
       <View style={styles.list} collapsable={false}>
         {filteredExchanges.map((exchange, index) => {
           const allTokens = Object.entries(exchange.tokens || {}) as [string, any][]

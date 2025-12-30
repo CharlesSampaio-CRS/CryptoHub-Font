@@ -148,7 +148,11 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await loginWithGoogle()
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || t('login.googleError'))
+      if (Platform.OS === 'web') {
+        alert(error.message || t('login.googleError'))
+      } else {
+        Alert.alert(t('common.error'), error.message || t('login.googleError'))
+      }
     }
   }
 
@@ -156,7 +160,11 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await loginWithApple()
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || t('login.appleError'))
+      if (Platform.OS === 'web') {
+        alert(error.message || t('login.appleError'))
+      } else {
+        Alert.alert(t('common.error'), error.message || t('login.appleError'))
+      }
     }
   }
 

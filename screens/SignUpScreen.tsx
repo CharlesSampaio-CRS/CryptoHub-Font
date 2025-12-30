@@ -96,7 +96,11 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     try {
       await registerWithGoogle()
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || t('signup.googleSignupFailed'))
+      if (Platform.OS === 'web') {
+        alert(error.message || t('signup.googleSignupFailed'))
+      } else {
+        Alert.alert(t('common.error'), error.message || t('signup.googleSignupFailed'))
+      }
     }
   }
 
@@ -104,7 +108,11 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     try {
       await registerWithApple()
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || t('signup.appleSignupFailed'))
+      if (Platform.OS === 'web') {
+        alert(error.message || t('signup.appleSignupFailed'))
+      } else {
+        Alert.alert(t('common.error'), error.message || t('signup.appleSignupFailed'))
+      }
     }
   }
 
