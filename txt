@@ -1,0 +1,4 @@
+ℹ Criando network crypto-network...
+Error response from daemon: add inter-network communication rule:  (iptables failed: iptables --wait -t filter -A DOCKER-ISOLATION-STAGE-1 -i br-93e50b7dabb4 ! -o br-93e50b7dabb4 -j DOCKER-ISOLATION-STAGE-2: iptables v1.8.10 (nf_tables): Chain 'DOCKER-ISOLATION-STAGE-2' does not exist
+Try `iptables -h' or 'iptables --help' for more information.
+ (exit status 2))
