@@ -800,6 +800,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                     const count = openOrdersCount[exchange.exchange_id] || 0
                     const isLoadingThisExchange = loadingOrdersByExchange[exchange.exchange_id]
                     const hasCallback = !!onOpenOrdersPress
+                    const tooltipKey = `orders_${exchange.exchange_id}`
                     // Sempre mostra o botão se houver callback, mesmo com 0 ordens
                     return hasCallback ? (
                       <TouchableOpacity
@@ -809,13 +810,16 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                             onOpenOrdersPress(exchange.exchange_id, exchange.name)
                           }
                         }}
+                        onLongPress={() => {
+                          setTooltipVisible(tooltipKey)
+                          setTimeout(() => setTooltipVisible(null), 2000)
+                        }}
                         style={[
-                          styles.variationBadgeCompact,
+                          styles.ordersButton,
                           { 
-                            backgroundColor: isLoadingThisExchange ? 'transparent' : colors.primary + '15',
-                            borderWidth: isLoadingThisExchange ? 0 : 0.5,
-                            borderColor: isLoadingThisExchange ? 'transparent' : colors.primary,
-                            marginLeft: 8,
+                            backgroundColor: isLoadingThisExchange ? 'transparent' : (count > 0 ? colors.primary + '15' : colors.surfaceSecondary),
+                            borderWidth: 1,
+                            borderColor: isLoadingThisExchange ? 'transparent' : (count > 0 ? colors.primary : colors.border),
                           }
                         ]}
                         disabled={isLoadingThisExchange}
@@ -823,9 +827,20 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                         {isLoadingThisExchange ? (
                           <AnimatedLogoIcon size={12} />
                         ) : (
-                          <Text style={[styles.variationTextCompact, { color: colors.primary }]}>
-                            {t('orders.badge').toLowerCase()}: {count}
-                          </Text>
+                          <>
+                            <Text style={[styles.ordersButtonText, { color: count > 0 ? colors.primary : colors.textSecondary }]}>
+                              {count}
+                            </Text>
+                            {tooltipVisible === tooltipKey && (
+                              <View style={[styles.ordersTooltip, { backgroundColor: colors.text }]}>
+                                <Text style={[styles.ordersTooltipText, { color: colors.surface }]}>
+                                  {count === 0 ? t('orders.noOrders') || 'Sem ordens abertas' : 
+                                   count === 1 ? t('orders.oneOrder') || '1 ordem aberta' : 
+                                   `${count} ${t('orders.multipleOrders') || 'ordens abertas'}`}
+                                </Text>
+                              </View>
+                            )}
+                          </>
                         )}
                       </TouchableOpacity>
                     ) : null
@@ -1680,6 +1695,41 @@ const styles = StyleSheet.create({
     fontSize: typography.micro,
     fontWeight: fontWeights.bold,
     textTransform: 'uppercase',
+  },
+  ordersButton: {
+    minWidth: 32,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    marginLeft: 8,
+    position: 'relative',
+  },
+  ordersButtonText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.bold,
+    lineHeight: 16,
+  },
+  ordersTooltip: {
+    position: 'absolute',
+    top: -36,
+    right: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+    minWidth: 120,
+  },
+  ordersTooltipText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+    textAlign: 'center',
   },
 })
 
