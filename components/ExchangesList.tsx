@@ -741,6 +741,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
           const tokenCount = exchange.token_count !== undefined ? exchange.token_count : tokens.length
           const balance = parseFloat(exchange.total_usd)
           const logoSource = getExchangeLogo(exchange.name)
+          const hasError = (exchange as any).success === false || !!(exchange as any).error
 
           return (
             <View key={exchange.exchange_id} style={index !== filteredExchanges.length - 1 && styles.cardMargin}>
@@ -751,6 +752,8 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                   { 
                     backgroundColor: colors.surface,
                     borderBottomColor: colors.border,
+                    borderLeftWidth: hasError ? 3 : 0,
+                    borderLeftColor: hasError ? '#ef4444' : 'transparent',
                   }
                 ]}
               >
@@ -760,7 +763,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                     {logoSource ? (
                       <Image 
                         source={logoSource} 
-                        style={styles.logoImage}
+                        style={[styles.logoImage, hasError && { opacity: 0.5 }]}
                         resizeMode="contain"
                         fadeDuration={0}
                         defaultSource={logoSource}
@@ -771,9 +774,16 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                   </View>
                   
                   {/* Nome da Exchange */}
-                  <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
-                    {exchange.name}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+                    <Text style={[styles.tokenSymbolCompact, { color: hasError ? colors.textSecondary : colors.text }]} numberOfLines={1}>
+                      {exchange.name}
+                    </Text>
+                    {hasError && (
+                      <View style={[styles.errorBadge, { backgroundColor: '#fee2e2' }]}>
+                        <Text style={[styles.errorBadgeText, { color: '#dc2626' }]}>ERRO</Text>
+                      </View>
+                    )}
+                  </View>
                   
                   {/* Quantidade de assets */}
                   <Text style={[styles.tokenAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -1661,5 +1671,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  errorBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  errorBadgeText: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.bold,
+    textTransform: 'uppercase',
+  },
 })
+
 

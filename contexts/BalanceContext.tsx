@@ -49,10 +49,24 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
       }
       setError(null)
       
+      console.log(`📊 [BalanceContext] Fetching balances (forceRefresh: ${forceRefresh}, useSummary: ${useSummary})`)
+      
       // Usa summary (rápido) ou balances completo (com tokens)
       const response = useSummary 
         ? await apiService.getBalancesSummary(user.id, forceRefresh)
         : await apiService.getBalances(user.id, forceRefresh)
+      
+      // ✅ Log detalhado das exchanges recebidas
+      const successfulExchanges = response.exchanges?.filter((ex: any) => ex.success !== false) || []
+      const failedExchanges = response.exchanges?.filter((ex: any) => ex.success === false) || []
+      
+      console.log(`✅ [BalanceContext] ${successfulExchanges.length} exchanges loaded successfully:`, 
+        successfulExchanges.map((ex: any) => ex.name))
+      
+      if (failedExchanges.length > 0) {
+        console.warn(`⚠️ [BalanceContext] ${failedExchanges.length} exchanges failed to load:`, 
+          failedExchanges.map((ex: any) => `${ex.name}: ${ex.error}`))
+      }
       
       setData(response)
       
@@ -64,8 +78,31 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
         }, 100)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch balances')
-      console.error('Error fetching balances:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch balances'
+      console.error('❌ [BalanceContext] Error fetching balances:', errorMsg)
+      
+      // 🔄 FALLBACK: Se falhar, tenta usar cache expirado se disponível
+      if (!data && user?.id) {
+        console.log('🔄 [BalanceContext] Tentando usar cache expirado como fallback...')
+        try {
+          // Tenta buscar do cache local mesmo que expirado
+          const cacheKey = useSummary 
+            ? `balance_summary_${user.id}`
+            : `balance_${user.id}`
+          const cachedData = localStorage.getItem(cacheKey)
+          if (cachedData) {
+            const parsed = JSON.parse(cachedData)
+            console.log('💾 [BalanceContext] Usando cache expirado como fallback')
+            setData(parsed.data)
+            setError(`${errorMsg} (usando cache antigo)`)
+            return
+          }
+        } catch (cacheErr) {
+          console.error('❌ [BalanceContext] Falha ao usar cache como fallback:', cacheErr)
+        }
+      }
+      
+      setError(errorMsg)
     } finally {
       // Aguarda um pouco para garantir que a UI atualize antes de parar a animação
       await new Promise(resolve => setTimeout(resolve, 500))
