@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Pressable } from "react-native"
 import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -59,6 +59,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
   const [hideZeroBalanceExchanges, setHideZeroBalanceExchanges] = useState(true)
   const [selectedToken, setSelectedToken] = useState<{ exchangeId: string; symbol: string } | null>(null)
   const [tokenModalVisible, setTokenModalVisible] = useState(false)
+  const [tokenInfoVisible, setTokenInfoVisible] = useState<string | null>(null) // Para mostrar info agregada do token
   const [tradeModalVisible, setTradeModalVisible] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<{
     exchangeId: string
@@ -524,6 +525,17 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
   }, [])
 
   const handleTokenPress = useCallback((exchangeId: string, symbol: string) => {
+    // Agora mostra informações agregadas do token
+    const key = `${symbol}`
+    if (tokenInfoVisible === key) {
+      setTokenInfoVisible(null)
+    } else {
+      setTokenInfoVisible(key)
+    }
+  }, [tokenInfoVisible])
+
+  const handleVariationPress = useCallback((exchangeId: string, symbol: string) => {
+    // Abre o modal de detalhes do token
     setSelectedToken({ exchangeId, symbol })
     setTokenModalVisible(true)
   }, [])
@@ -551,6 +563,29 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
       : data.exchanges
     return filtered
   }, [data, data?.timestamp, hideZeroBalanceExchanges])
+
+  // Calcular totais agregados por token (soma de todas as exchanges)
+  const tokenAggregates = useMemo(() => {
+    const aggregates: Record<string, { totalAmount: number; totalUSD: number; exchanges: number }> = {}
+    
+    if (data?.exchanges) {
+      data.exchanges.forEach((exchange: any) => {
+        if (exchange.tokens && typeof exchange.tokens === 'object') {
+          Object.entries(exchange.tokens).forEach(([symbol, tokenData]: [string, any]) => {
+            if (!aggregates[symbol]) {
+              aggregates[symbol] = { totalAmount: 0, totalUSD: 0, exchanges: 0 }
+            }
+            
+            aggregates[symbol].totalAmount += parseFloat(tokenData.amount) || 0
+            aggregates[symbol].totalUSD += parseFloat(tokenData.value_usd) || 0
+            aggregates[symbol].exchanges += 1
+          })
+        }
+      })
+    }
+    
+    return aggregates
+  }, [data])
 
   // Estilos dinâmicos baseados no tema
   const themedStyles = useMemo(() => ({
@@ -609,7 +644,15 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
   }
   
   return (
-    <View style={styles.container}>
+    <Pressable 
+      style={styles.container} 
+      onPress={() => {
+        // Fecha o tooltip de informações do token ao clicar fora
+        if (tokenInfoVisible) {
+          setTokenInfoVisible(null)
+        }
+      }}
+    >
       {/* Toggle de Filtro */}
       <View style={styles.filtersContainer}>
         <TouchableOpacity 
@@ -833,13 +876,13 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                         >
                           {/* Linha única: Nome + Quantidade + Valor + Variação 24h + Trade */}
                           <View style={styles.tokenCompactRow}>
-                            {/* TOKEN - clicável para abrir modal de detalhes com Tooltip de preço */}
+                            {/* TOKEN - clicável para mostrar info agregada */}
                             <View style={{ position: 'relative', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                               <TouchableOpacity
-                                onPress={() => handleTokenPress(exchange.exchange_id, symbol)}
-                                onLongPress={() => setTooltipVisible(`price-${exchange.exchange_id}-${symbol}`)}
-                                onPressOut={() => setTooltipVisible(null)}
-                                delayLongPress={300}
+                                onPress={(e) => {
+                                  e.stopPropagation()
+                                  handleTokenPress(exchange.exchange_id, symbol)
+                                }}
                                 activeOpacity={0.7}
                                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                               >
@@ -852,13 +895,25 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                                 </Text>
                               </TouchableOpacity>
                               
-                              {/* Tooltip de Preço */}
-                              {tooltipVisible === `price-${exchange.exchange_id}-${symbol}` && (
-                                <View style={[styles.tooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                  <Text style={[styles.tooltipText, { color: colors.text }]}>
-                                    ${apiService.formatUSD(priceUSD)}
+                              {/* Tooltip de Info Agregada do Token */}
+                              {tokenInfoVisible === symbol && tokenAggregates[symbol] && (
+                                <Pressable 
+                                  onPress={(e) => e.stopPropagation()}
+                                  style={[styles.tokenInfoTooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                                >
+                                  <Text style={[styles.tokenInfoTitle, { color: colors.text }]}>
+                                    {symbol.toUpperCase()}
                                   </Text>
-                                </View>
+                                  <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
+                                    {t('token.total') || 'Total'}: {hideValue(apiService.formatTokenAmount(tokenAggregates[symbol].totalAmount.toString()))}
+                                  </Text>
+                                  <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
+                                    {t('token.value') || 'Valor'}: {hideValue(`$${apiService.formatUSD(tokenAggregates[symbol].totalUSD)}`)}
+                                  </Text>
+                                  <Text style={[styles.tokenInfoSmall, { color: colors.textSecondary }]}>
+                                    {tokenAggregates[symbol].exchanges} {tokenAggregates[symbol].exchanges === 1 ? 'exchange' : 'exchanges'}
+                                  </Text>
+                                </Pressable>
                               )}
                             </View>
                             
@@ -872,8 +927,10 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                               {hideValue(`$${apiService.formatUSD(valueUSD)}`)}
                             </Text>
                             
-                            {/* Variação 24h (sempre exibir, 0.00% para stablecoins) */}
-                            <View
+                            {/* Variação 24h - clicável para abrir modal de detalhes */}
+                            <TouchableOpacity
+                              onPress={() => handleVariationPress(exchange.exchange_id, symbol)}
+                              activeOpacity={0.7}
                               style={[
                                 styles.variationBadgeCompact,
                                 {
@@ -904,7 +961,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                                     : '— 0.00%'
                                 }
                               </Text>
-                            </View>
+                            </TouchableOpacity>
                             
                             {/* Trade Button com Tooltip (desabilitado para stablecoins) */}
                             <View style={{ position: 'relative' }}>
@@ -994,7 +1051,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
           }}
         />
       )}
-    </View>
+    </Pressable>
   )
 })
 
@@ -1416,6 +1473,40 @@ const styles = StyleSheet.create({
   tooltipText: {
     fontSize: typography.caption,
     fontWeight: fontWeights.medium,
+  },
+  tokenInfoTooltip: {
+    position: "absolute",
+    top: 30,
+    left: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
+    elevation: 9999, // Máximo z-index no Android
+    zIndex: 9999, // Máximo z-index no iOS/Web
+    minWidth: 180,
+    gap: 4,
+  },
+  tokenInfoTitle: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.bold,
+    marginBottom: 4,
+  },
+  tokenInfoText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.medium,
+  },
+  tokenInfoSmall: {
+    fontSize: typography.micro,
+    fontWeight: fontWeights.regular,
+    marginTop: 2,
   },
   emptyStateContainer: {
     flex: 1,
