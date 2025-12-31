@@ -535,7 +535,8 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
       // Captura a posição do elemento clicado
       const target = event.currentTarget || event.target
       target.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
-        setTooltipPosition({ x: pageX, y: pageY + height + 5 }) // 5px abaixo do elemento
+        // Posiciona AO LADO DIREITO do token: pageX + width + 10px de margem
+        setTooltipPosition({ x: pageX + width + 10, y: pageY })
       })
       setTokenInfoVisible(key)
     }
