@@ -60,6 +60,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
   const [selectedToken, setSelectedToken] = useState<{ exchangeId: string; symbol: string } | null>(null)
   const [tokenModalVisible, setTokenModalVisible] = useState(false)
   const [tokenInfoVisible, setTokenInfoVisible] = useState<string | null>(null) // Para mostrar info agregada do token
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null) // Posição do tooltip
   const [tradeModalVisible, setTradeModalVisible] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<{
     exchangeId: string
@@ -524,12 +525,18 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
     setHideZeroBalanceExchanges(prev => !prev)
   }, [])
 
-  const handleTokenPress = useCallback((exchangeId: string, symbol: string) => {
+  const handleTokenPress = useCallback((exchangeId: string, symbol: string, event: any) => {
     // Agora mostra informações agregadas do token
     const key = `${symbol}`
     if (tokenInfoVisible === key) {
       setTokenInfoVisible(null)
+      setTooltipPosition(null)
     } else {
+      // Captura a posição do elemento clicado
+      const target = event.currentTarget || event.target
+      target.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        setTooltipPosition({ x: pageX, y: pageY + height + 5 }) // 5px abaixo do elemento
+      })
       setTokenInfoVisible(key)
     }
   }, [tokenInfoVisible])
@@ -650,6 +657,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
         // Fecha o tooltip de informações do token ao clicar fora
         if (tokenInfoVisible) {
           setTokenInfoVisible(null)
+          setTooltipPosition(null)
         }
       }}
     >
@@ -877,45 +885,22 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                           {/* Linha única: Nome + Quantidade + Valor + Variação 24h + Trade */}
                           <View style={styles.tokenCompactRow}>
                             {/* TOKEN - clicável para mostrar info agregada */}
-                            <View style={{ position: 'relative', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <TouchableOpacity
-                                onPress={(e) => {
-                                  e.stopPropagation()
-                                  handleTokenPress(exchange.exchange_id, symbol)
-                                }}
-                                activeOpacity={0.7}
-                                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                              >
-                                {/* Indicador de disponibilidade */}
-                                {isAvailableForTrade && (
-                                  <View style={[styles.availabilityIndicator, { backgroundColor: '#10b981' }]} />
-                                )}
-                                <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
-                                  {symbol.toLowerCase()}
-                                </Text>
-                              </TouchableOpacity>
-                              
-                              {/* Tooltip de Info Agregada do Token */}
-                              {tokenInfoVisible === symbol && tokenAggregates[symbol] && (
-                                <Pressable 
-                                  onPress={(e) => e.stopPropagation()}
-                                  style={[styles.tokenInfoTooltip, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                                >
-                                  <Text style={[styles.tokenInfoTitle, { color: colors.text }]}>
-                                    {symbol.toUpperCase()}
-                                  </Text>
-                                  <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
-                                    {t('token.total') || 'Total'}: {hideValue(apiService.formatTokenAmount(tokenAggregates[symbol].totalAmount.toString()))}
-                                  </Text>
-                                  <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
-                                    {t('token.value') || 'Valor'}: {hideValue(`$${apiService.formatUSD(tokenAggregates[symbol].totalUSD)}`)}
-                                  </Text>
-                                  <Text style={[styles.tokenInfoSmall, { color: colors.textSecondary }]}>
-                                    {tokenAggregates[symbol].exchanges} {tokenAggregates[symbol].exchanges === 1 ? 'exchange' : 'exchanges'}
-                                  </Text>
-                                </Pressable>
+                            <TouchableOpacity
+                              onPress={(e) => {
+                                e.stopPropagation()
+                                handleTokenPress(exchange.exchange_id, symbol, e)
+                              }}
+                              activeOpacity={0.7}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                            >
+                              {/* Indicador de disponibilidade */}
+                              {isAvailableForTrade && (
+                                <View style={[styles.availabilityIndicator, { backgroundColor: '#10b981' }]} />
                               )}
-                            </View>
+                              <Text style={[styles.tokenSymbolCompact, { color: colors.text }]} numberOfLines={1}>
+                                {symbol.toLowerCase()}
+                              </Text>
+                            </TouchableOpacity>
                             
                             {/* Quantidade - não clicável */}
                             <Text style={[styles.tokenAmountCompact, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -1032,6 +1017,35 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
           exchangeId={selectedToken.exchangeId}
           symbol={selectedToken.symbol}
         />
+      )}
+
+      {/* Tooltip Flutuante de Info Agregada do Token */}
+      {tokenInfoVisible && tokenAggregates[tokenInfoVisible] && tooltipPosition && (
+        <Pressable 
+          onPress={(e) => e.stopPropagation()}
+          style={[
+            styles.tokenInfoTooltipFloating, 
+            { 
+              backgroundColor: colors.surface, 
+              borderColor: colors.border,
+              top: tooltipPosition.y,
+              left: tooltipPosition.x,
+            }
+          ]}
+        >
+          <Text style={[styles.tokenInfoTitle, { color: colors.text }]}>
+            {tokenInfoVisible.toUpperCase()}
+          </Text>
+          <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
+            {t('token.total') || 'Total'}: {hideValue(apiService.formatTokenAmount(tokenAggregates[tokenInfoVisible].totalAmount.toString()))}
+          </Text>
+          <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
+            {t('token.value') || 'Valor'}: {hideValue(`$${apiService.formatUSD(tokenAggregates[tokenInfoVisible].totalUSD)}`)}
+          </Text>
+          <Text style={[styles.tokenInfoSmall, { color: colors.textSecondary }]}>
+            {tokenAggregates[tokenInfoVisible].exchanges} {tokenAggregates[tokenInfoVisible].exchanges === 1 ? 'exchange' : 'exchanges'}
+          </Text>
+        </Pressable>
       )}
 
       {/* Modal de Trade */}
@@ -1493,6 +1507,26 @@ const styles = StyleSheet.create({
     zIndex: 9999, // Máximo z-index no iOS/Web
     minWidth: 180,
     gap: 4,
+  },
+  tokenInfoTooltipFloating: {
+    position: "absolute",
+    // top e left serão definidos dinamicamente
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 99999, // Máximo z-index no Android
+    zIndex: 99999, // Máximo z-index no iOS/Web
+    gap: 6,
+    minWidth: 200,
+    maxWidth: 300,
   },
   tokenInfoTitle: {
     fontSize: typography.body,
