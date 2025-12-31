@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Pressable } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Pressable, Modal } from "react-native"
 import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react"
 import { apiService } from "@/services/api"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -60,6 +60,8 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
   const [selectedToken, setSelectedToken] = useState<{ exchangeId: string; symbol: string } | null>(null)
   const [tokenModalVisible, setTokenModalVisible] = useState(false)
   const [tokenInfoVisible, setTokenInfoVisible] = useState<string | null>(null) // Para mostrar info agregada do token
+  const [tokenInfoModalVisible, setTokenInfoModalVisible] = useState(false) // Modal de info agregada
+  const [selectedExchangeId, setSelectedExchangeId] = useState<string | null>(null) // Exchange do token clicado
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null) // Posição do tooltip
   const [tradeModalVisible, setTradeModalVisible] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<{
@@ -526,21 +528,12 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
   }, [])
 
   const handleTokenPress = useCallback((exchangeId: string, symbol: string, event: any) => {
-    // Agora mostra informações agregadas do token
+    // Agora abre modal com informações agregadas do token
     const key = `${symbol}`
-    if (tokenInfoVisible === key) {
-      setTokenInfoVisible(null)
-      setTooltipPosition(null)
-    } else {
-      // Captura a posição do elemento clicado
-      const target = event.currentTarget || event.target
-      target.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
-        // Posiciona AO LADO DIREITO do token: pageX + width + 10px de margem
-        setTooltipPosition({ x: pageX + width + 10, y: pageY })
-      })
-      setTokenInfoVisible(key)
-    }
-  }, [tokenInfoVisible])
+    setTokenInfoVisible(key)
+    setSelectedExchangeId(exchangeId) // Guarda qual exchange foi clicada
+    setTokenInfoModalVisible(true)
+  }, [])
 
   const handleVariationPress = useCallback((exchangeId: string, symbol: string) => {
     // Abre o modal de detalhes do token
@@ -655,11 +648,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
     <Pressable 
       style={styles.container} 
       onPress={() => {
-        // Fecha o tooltip de informações do token ao clicar fora
-        if (tokenInfoVisible) {
-          setTokenInfoVisible(null)
-          setTooltipPosition(null)
-        }
+        // Não precisa mais fechar tooltip aqui (agora é modal)
       }}
     >
       {/* Toggle de Filtro */}
@@ -1020,34 +1009,76 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
         />
       )}
 
-      {/* Tooltip Flutuante de Info Agregada do Token */}
-      {tokenInfoVisible && tokenAggregates[tokenInfoVisible] && tooltipPosition && (
+      {/* Modal de Info Agregada do Token */}
+      <Modal
+        visible={tokenInfoModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setTokenInfoModalVisible(false)
+          setTokenInfoVisible(null)
+          setSelectedExchangeId(null)
+        }}
+      >
         <Pressable 
-          onPress={(e) => e.stopPropagation()}
-          style={[
-            styles.tokenInfoTooltipFloating, 
-            { 
-              backgroundColor: colors.surface, 
-              borderColor: colors.border,
-              top: tooltipPosition.y,
-              left: tooltipPosition.x,
-            }
-          ]}
+          style={styles.modalOverlay}
+          onPress={() => {
+            setTokenInfoModalVisible(false)
+            setTokenInfoVisible(null)
+            setSelectedExchangeId(null)
+          }}
         >
-          <Text style={[styles.tokenInfoTitle, { color: colors.text }]}>
-            {tokenInfoVisible.toUpperCase()}
-          </Text>
-          <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
-            {t('token.total') || 'Total'}: {hideValue(apiService.formatTokenAmount(tokenAggregates[tokenInfoVisible].totalAmount.toString()))}
-          </Text>
-          <Text style={[styles.tokenInfoText, { color: colors.textSecondary }]}>
-            {t('token.value') || 'Valor'}: {hideValue(`$${apiService.formatUSD(tokenAggregates[tokenInfoVisible].totalUSD)}`)}
-          </Text>
-          <Text style={[styles.tokenInfoSmall, { color: colors.textSecondary }]}>
-            {tokenAggregates[tokenInfoVisible].exchanges} {tokenAggregates[tokenInfoVisible].exchanges === 1 ? 'exchange' : 'exchanges'}
-          </Text>
+          <Pressable 
+            style={[styles.tokenInfoModal, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {tokenInfoVisible && tokenAggregates[tokenInfoVisible] && selectedExchangeId && (
+              <>
+                <View style={styles.modalHeader}>
+                  <View>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>
+                      {tokenInfoVisible.toUpperCase()}
+                    </Text>
+                    <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                      {data?.exchanges?.find((ex: any) => ex.exchange_id === selectedExchangeId)?.name || ''}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setTokenInfoModalVisible(false)
+                      setTokenInfoVisible(null)
+                      setSelectedExchangeId(null)
+                    }}
+                    style={styles.closeButton}
+                  >
+                    <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalContent}>
+                  <View style={styles.infoRow}>
+                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                      {t('token.total') || 'Total'}
+                    </Text>
+                    <Text style={[styles.infoValue, { color: colors.text }]}>
+                      {hideValue(apiService.formatTokenAmount(tokenAggregates[tokenInfoVisible].totalAmount.toString()))}
+                    </Text>
+                  </View>
+
+                  <View style={styles.infoRow}>
+                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                      {t('token.value') || 'Valor'}
+                    </Text>
+                    <Text style={[styles.infoValue, { color: colors.text }]}>
+                      {hideValue(`$${apiService.formatUSD(tokenAggregates[tokenInfoVisible].totalUSD)}`)}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </Pressable>
         </Pressable>
-      )}
+      </Modal>
 
       {/* Modal de Trade */}
       {selectedTrade && (
@@ -1542,6 +1573,74 @@ const styles = StyleSheet.create({
     fontSize: typography.micro,
     fontWeight: fontWeights.regular,
     marginTop: 2,
+  },
+  // Estilos do Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  tokenInfoModal: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    minWidth: 280,
+    maxWidth: 340,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(150, 150, 150, 0.2)',
+  },
+  modalTitle: {
+    fontSize: typography.h3,
+    fontWeight: fontWeights.bold,
+  },
+  modalSubtitle: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.regular,
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  closeButton: {
+    padding: 4,
+    marginRight: -4,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    fontWeight: fontWeights.regular,
+    lineHeight: 24,
+  },
+  modalContent: {
+    gap: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.medium,
+  },
+  infoValue: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.bold,
   },
   emptyStateContainer: {
     flex: 1,

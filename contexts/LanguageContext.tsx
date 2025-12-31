@@ -266,6 +266,8 @@ const translations = {
     'token.totalIn': 'Total em',
     'token.amount': 'Quantidade:',
     'token.noBalance': 'Nenhum token com saldo disponível',
+    'token.total': 'Total',
+    'token.value': 'Valor',
     
     // Common
     'common.close': 'Fechar',
@@ -662,6 +664,8 @@ const translations = {
     'token.totalIn': 'Total in',
     'token.amount': 'Amount:',
     'token.noBalance': 'No tokens with available balance',
+    'token.total': 'Total',
+    'token.value': 'Value',
     
     // Common
     'common.close': 'Close',
