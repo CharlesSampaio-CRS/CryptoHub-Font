@@ -1,0 +1,187 @@
+/Users/charles.roberto/Documents/projects/crs-saturno/automatic/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+✅ Kong public key loaded from /Users/charles.roberto/Documents/projects/crs-saturno/automatic/public.pem
+✅ [32mINFO[0m [src.api.main] ✅ CORS enabled - Frontend can access API
+✅ [32mINFO[0m [src.api.main] MongoDB conectado com sucesso!
+✅ [32mINFO[0m [src.api.main] Kong MongoDB conectado com sucesso!
+✅ [32mINFO[0m [src.api.main] ✅ Scheduler started - Balance snapshots daily at 00:00 UTC
+✅ [32mINFO[0m [src.api.main] ✅ Scheduler started - Tokens update daily at 00:01 UTC
+✅ [32mINFO[0m [src.services.strategy_worker] ✅ Strategy worker started (checking every 5 minutes)
+✅ [32mINFO[0m [src.services.strategy_worker] 🔍 Checking all active strategies...
+✅ [32mINFO[0m [src.services.strategy_worker] No active strategies found
+✅ [32mINFO[0m [src.api.main] ✅ Strategy Worker started in LIVE mode (checking every 5 minutes)
+ * Serving Flask app 'src.api.main'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://100.64.0.1:5000
+[33mPress CTRL+C to quit[0m
+✅ [32mINFO[0m [src.api.main] 📤 Generated Google OAuth URL for state=O2xXWml6FFUd92G942BPUs0h2BKEaliDaHeL2FIr_qY
+127.0.0.1 - - [31/Dec/2025 00:29:06] "GET /api/v1/auth/google HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] ✅ User found in Kong DB: 6950290f5d594da225720e58 (ccharlesroberto@gmail.com)
+✅ [32mINFO[0m [src.api.main] ✅ User reference updated in Python DB: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] ✅ Google OAuth successful for ccharlesroberto@gmail.com
+127.0.0.1 - - [31/Dec/2025 00:29:15] "GET /api/v1/auth/callback?state=O2xXWml6FFUd92G942BPUs0h2BKEaliDaHeL2FIr_qY&code=4/0ATX87lNy4kDNyKruw_kD2EYqIqTGo4FobVrCwf4OJbJ8P--vWpPcy3GIxtIKcVM8zEx52g&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=consent HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:15] "OPTIONS /api/v1/balances?user_id=6950290f5d594da225720e58&force_refresh=true&_t=1767151755419 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:15] "OPTIONS /api/v1/history/evolution?user_id=6950290f5d594da225720e58&days=7 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:15] "OPTIONS /api/v1/balances?user_id=6950290f5d594da225720e58&force_refresh=true&_t=1767151755422 HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.services.balance_service] 🔄 Cache cleared for user 6950290f5d594da225720e58 (force_refresh=True)
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.services.balance_service] 🔄 Cache cleared for user 6950290f5d594da225720e58 (force_refresh=True)
+✅ [32mINFO[0m [src.services.balance_service] ✅ Coinbase: PEM key already has real newlines (no conversion needed)
+✅ [32mINFO[0m [src.services.balance_history_service] 📊 Portfolio evolution: 7 snapshots for 7 days (limit: 50)
+127.0.0.1 - - [31/Dec/2025 00:29:15] "GET /api/v1/history/evolution?user_id=6950290f5d594da225720e58&days=7 HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.services.balance_service] ✅ Coinbase: PEM key already has real newlines (no conversion needed)
+✅ [32mINFO[0m [src.services.balance_service] 📊 NovaDAX sorted tokens: ['LUNC', 'BTC', 'ADA', 'JASMY', 'USDT']
+✅ [32mINFO[0m [src.services.balance_service] 📊 NovaDAX sorted tokens: ['LUNC', 'BTC', 'ADA', 'JASMY', 'USDT']
+✅ [32mINFO[0m [src.services.balance_service] 📊 CoinEx sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] 📊 Bitget sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] 📊 Kraken sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] 📊 Bitget sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] Fetching prices from CoinGecko for 1 tokens: ['ICG']
+✅ [32mINFO[0m [src.services.balance_service] 📊 MEXC sorted tokens: ['REKTCOIN', 'USDT', 'MX', 'UPT', 'ICG']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Kraken sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] 📊 OKX sorted tokens: ['BRL', 'ETH', 'PEPE', 'SOL', 'USDC']
+✅ [32mINFO[0m [src.services.balance_service] 📊 OKX sorted tokens: ['BRL', 'ETH', 'PEPE', 'SOL', 'USDC']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase raw balance keys: ['info', 'USDC', 'PEPE', 'SHIB', 'NEAR', 'USDT', 'ALEO', 'MOG', 'ETC', 'MATIC']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase balance type: <class 'dict'>
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase balance.info type: <class 'dict'>
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase balance.info keys: ['data', 'pagination']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Coinbase sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase raw balance keys: ['info', 'USDC', 'PEPE', 'SHIB', 'NEAR', 'USDT', 'ALEO', 'MOG', 'ETC', 'MATIC']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase balance type: <class 'dict'>
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase balance.info type: <class 'dict'>
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Coinbase balance.info keys: ['data', 'pagination']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Coinbase sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] Fetching prices from CoinGecko for 1 tokens: ['ICG']
+✅ [32mINFO[0m [src.services.balance_service] 📊 MEXC sorted tokens: ['REKTCOIN', 'USDT', 'MX', 'UPT', 'ICG']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Bybit raw balance keys: ['info', 'timestamp', 'datetime', 'USDT', 'CAT', 'free', 'used', 'total', 'debt']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Bybit token found: USDT = 1.52e-06
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Bybit token found: CAT = 3681109.206
+✅ [32mINFO[0m [src.services.balance_service] 📊 CoinEx sorted tokens: []
+✅ [32mINFO[0m [src.services.balance_service] 📊 Binance sorted tokens: ['BRL', '1MBABYDOGE']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Bybit raw balance keys: ['info', 'timestamp', 'datetime', 'USDT', 'CAT', 'free', 'used', 'total', 'debt']
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Bybit token found: USDT = 1.52e-06
+✅ [32mINFO[0m [src.services.balance_service] 🔍 Bybit token found: CAT = 3681109.206
+✅ [32mINFO[0m [src.services.balance_service] 📊 Bybit sorted tokens: ['CAT', 'USDT']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Binance sorted tokens: ['BRL', '1MBABYDOGE']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Bybit sorted tokens: ['CAT', 'USDT']
+✅ [32mINFO[0m [src.services.balance_service] Fetching prices from CoinGecko for 1 tokens: ['AGB']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Gate.io sorted tokens: ['AGB']
+✅ [32mINFO[0m [src.api.main] Balances fetched: 10 exchanges, 0 tokens, from_cache: False
+127.0.0.1 - - [31/Dec/2025 00:29:28] "GET /api/v1/balances?user_id=6950290f5d594da225720e58&force_refresh=true&_t=1767151755419 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb07b HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb079 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=6942d27ffa8ecd38fb975f01 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb078 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=6942d26ffa8ecd38fb975eff HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb075 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb077 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb074 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb073 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:29] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb07a HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb07b
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb079
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 6942d27ffa8ecd38fb975f01
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb078
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 6942d26ffa8ecd38fb975eff
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for mexc
+✅ [32mINFO[0m [src.api.main] 🔍 MEXC detected - fetching open orders per symbol
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for coinex
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for novadax
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from CoinEx (symbol: all)
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from NovaDAX (symbol: all)
+✅ [32mINFO[0m [src.services.balance_service] Fetching prices from CoinGecko for 1 tokens: ['AGB']
+✅ [32mINFO[0m [src.services.balance_service] 📊 Gate.io sorted tokens: ['AGB']
+✅ [32mINFO[0m [src.api.main] Balances fetched: 10 exchanges, 0 tokens, from_cache: False
+127.0.0.1 - - [31/Dec/2025 00:29:29] "GET /api/v1/balances?user_id=6950290f5d594da225720e58&force_refresh=true&_t=1767151755422 HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb075
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for bitget
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from Bitget (symbol: all)
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for bybit
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from Bybit (symbol: all)
+✅ [32mINFO[0m [src.api.main] 🔍 Bybit config: defaultType=spot, accountType=UNIFIED
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for kraken
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from Kraken (symbol: all)
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 1 open orders from NovaDAX for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:30] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb079 HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb077
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for okx
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from OKX (symbol: all)
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 0 open orders from CoinEx for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:31] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=6942d27ffa8ecd38fb975f01 HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb074
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for coinbase
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from Coinbase (symbol: all)
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 0 open orders from Bitget for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:32] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=6942d26ffa8ecd38fb975eff HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb073
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for binance
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from Binance (symbol: all)
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 0 open orders from OKX for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:33] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb077 HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb07a
+✅ [32mINFO[0m [src.api.main] 🔒 Cached CCXT instance for gateio
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from Gate.io (symbol: all)
+❌ [31mERROR[0m [src.api.main] ❌ Authentication error for 693481148b0a41e8b6acb075: kraken {"error":["EGeneral:Permission denied"]}
+127.0.0.1 - - [31/Dec/2025 00:29:34] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb075 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:34] "OPTIONS /api/v1/exchanges/693481148b0a41e8b6acb07b/token/REKTCOIN?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:34] "OPTIONS /api/v1/exchanges/693481148b0a41e8b6acb07b/token/MX?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:34] "OPTIONS /api/v1/exchanges/693481148b0a41e8b6acb078/token/CAT?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:34] "OPTIONS /api/v1/exchanges/693481148b0a41e8b6acb079/token/LUNC?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] 📊 MEXC: Found 3 active symbols: ['UPT/USDT', 'MX/USDT', 'REKTCOIN/USDT']...
+✅ [32mINFO[0m [src.api.main] ✅ MEXC: Collected 1 total open orders
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 1 open orders from MEXC for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:35] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb07b HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 0 open orders from Coinbase for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:36] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb074 HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] 🔍 Bybit returned 1 orders
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 1 open orders from Bybit for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:36] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb078 HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] Complete token info fetched: REKTCOIN = $0.0000002335
+127.0.0.1 - - [31/Dec/2025 00:29:36] "GET /api/v1/exchanges/693481148b0a41e8b6acb07b/token/REKTCOIN?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+127.0.0.1 - - [31/Dec/2025 00:29:36] "OPTIONS /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb079 HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] Complete token info fetched: MX = $2.04
+127.0.0.1 - - [31/Dec/2025 00:29:37] "GET /api/v1/exchanges/693481148b0a41e8b6acb07b/token/MX?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+⚠️ RS256 validation failed: The specified alg value is not allowed, trying HS256...
+✅ Token HS256 validated successfully for user: 6950290f5d594da225720e58
+✅ [32mINFO[0m [src.api.main] 🔄 Fetching fresh open orders from exchange API for 693481148b0a41e8b6acb079
+✅ [32mINFO[0m [src.api.main] ⚡ Reusing cached CCXT instance for novadax
+✅ [32mINFO[0m [src.api.main] 🔍 Fetching open orders from NovaDAX (symbol: all)
+⚠️  [33mWARNING[0m [src.api.main] Error fetching 4h OHLCV: novadax {"code":"A10001","message":"Params error, unit: Failed to convert property value of type 'java.lang.String' to required type 'com.novadax.api.web.enums.KlineUnitEnum' for property 'unit'; nested exception is org.springframework.core.convert.ConversionFailedException: Failed to convert from type [java.lang.String] to type [@javax.validation.constraints.NotNull com.novadax.api.web.enums.KlineUnitEnum] for value '4h'; nested exception is java.lang.IllegalArgumentException: No enum constant com.novadax.api.web.enums.KlineUnitEnum.4h"}
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 1 open orders from NovaDAX for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:37] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb079 HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] Complete token info fetched: LUNC = $0.0002035500
+127.0.0.1 - - [31/Dec/2025 00:29:38] "GET /api/v1/exchanges/693481148b0a41e8b6acb079/token/LUNC?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] Complete token info fetched: REKTCOIN = $0.0000002335
+127.0.0.1 - - [31/Dec/2025 00:29:39] "GET /api/v1/exchanges/693481148b0a41e8b6acb07b/token/REKTCOIN?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 0 open orders from Binance for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:39] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb073 HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] Complete token info fetched: CAT = $0.0000026040
+127.0.0.1 - - [31/Dec/2025 00:29:43] "GET /api/v1/exchanges/693481148b0a41e8b6acb078/token/CAT?user_id=6950290f5d594da225720e58&include_variations=true HTTP/1.1" 200 -
+✅ [32mINFO[0m [src.api.main] 📋 Fetched 0 open orders from Gate.io for user 6950290f5d594da225720e58
+127.0.0.1 - - [31/Dec/2025 00:29:44] "GET /api/v1/orders/open?user_id=6950290f5d594da225720e58&exchange_id=693481148b0a41e8b6acb07a HTTP/1.1" 200 -

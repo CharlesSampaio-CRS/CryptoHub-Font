@@ -1,0 +1,30 @@
+  ✓ Tenant indexes created
+  ✓ User indexes created
+✅ Database indexes initialized successfully
+
+╔══════════════════════════════════════════════════════════════╗
+║          🚀 Kong Security API - Server Started              ║
+╠══════════════════════════════════════════════════════════════╣
+║  📍 Server URL:    http://localhost:8080/api                ║
+║  📊 Swagger UI:    http://localhost:8080/api/swagger-ui/    ║
+║  📖 OpenAPI Spec:  http://localhost:8080/api/api-docs/openapi.json ║
+║  ❤️  Health Check:  http://localhost:8080/api/health         ║
+╠══════════════════════════════════════════════════════════════╣
+║  🔒 Security Features Enabled:                              ║
+║     ✅ CORS Protection                                       ║
+║     ✅ JWT RS256 Authentication                              ║
+║     ✅ BCrypt Password Hashing                               ║
+║     ✅ Input Validation & Sanitization                       ║
+║     ✅ Password Strength Requirements                        ║
+║     ✅ SQL Injection Prevention                              ║
+║     ✅ XSS Prevention                                        ║
+║     ✅ Comprehensive Audit Logging                           ║
+╠══════════════════════════════════════════════════════════════╣
+║  ⚡ Performance Features:                                    ║
+║     ⚠️  Redis Cache (Tenants & Logs)
+║     ✅ MongoDB Connection Pooling (max 10)                   ║
+║     ✅ Response Compression (gzip/brotli)                    ║
+║     ✅ Optimized Database Queries                            ║
+║     ✅ Zstd/Snappy MongoDB Compression                       ║
+╚══════════════════════════════════════════════════════════════╝
+

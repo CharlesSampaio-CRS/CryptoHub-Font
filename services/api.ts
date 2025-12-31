@@ -108,10 +108,15 @@ export const apiService = {
     try {
       const cacheKey = CacheService.balanceKey(userId);
       
-      // Check local cache first (unless force refresh)
-      if (!forceRefresh) {
+      // ⚡ CRITICAL: Clear local cache when force refresh
+      if (forceRefresh) {
+        cacheService.delete(cacheKey);
+        console.log('🔄 [API] Local cache cleared for balances (forceRefresh=true)');
+      } else {
+        // Check local cache first (only when NOT force refresh)
         const cached = cacheService.get<BalanceResponse>(cacheKey, CACHE_TTL.BALANCES);
         if (cached) {
+          console.log('⚡ [API] Returning balances from LOCAL cache');
           return cached;
         }
       }
@@ -134,9 +139,13 @@ export const apiService = {
       
       const data: BalanceResponse = await response.json();
       
-      // Cache locally (whether from backend cache or fresh data)
-      if (!forceRefresh || (data as any).from_cache) {
+      // ⚡ CRITICAL: Only cache when NOT force refresh
+      // This prevents caching fresh data that should remain uncached
+      if (!forceRefresh) {
         cacheService.set(cacheKey, data);
+        console.log('💾 [API] Balances saved to local cache');
+      } else {
+        console.log('🚫 [API] Balances NOT cached (forceRefresh=true)');
       }
       
       return data;
@@ -157,11 +166,15 @@ export const apiService = {
     try {
       const cacheKey = CacheService.balanceSummaryKey(userId);
       
-      // Check local cache first (unless force refresh)
-      if (!forceRefresh) {
+      // ⚡ CRITICAL: Clear local cache when force refresh
+      if (forceRefresh) {
+        cacheService.delete(cacheKey);
+        console.log('🔄 [API] Local cache cleared for balance summary (forceRefresh=true)');
+      } else {
+        // Check local cache first (only when NOT force refresh)
         const cached = cacheService.get<BalanceResponse>(cacheKey, CACHE_TTL.BALANCES);
         if (cached) {
-          console.log('⚡ Returning balance summary from LOCAL cache');
+          console.log('⚡ [API] Returning balance summary from LOCAL cache');
           return cached;
         }
       }
@@ -182,9 +195,12 @@ export const apiService = {
       
       const data: BalanceResponse = await response.json();
       
-      // Cache locally
-      if (!forceRefresh || (data as any).from_cache) {
+      // ⚡ CRITICAL: Only cache when NOT force refresh
+      if (!forceRefresh) {
         cacheService.set(cacheKey, data);
+        console.log('💾 [API] Balance summary saved to local cache');
+      } else {
+        console.log('🚫 [API] Balance summary NOT cached (forceRefresh=true)');
       }
       
       return data;

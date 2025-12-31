@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { typography, fontWeights } from '@/lib/typography'
 import { apiService } from '@/services/api'
 import { ordersCache } from '@/components/open-orders-modal'
+import { AnimatedLogoIcon } from '@/components/AnimatedLogoIcon'
 
 interface TradeModalProps {
   visible: boolean
@@ -46,6 +47,138 @@ export function TradeModal({
   const [marketLimits, setMarketLimits] = useState<{minAmount?: number, minCost?: number} | null>(null)
   const [confirmTradeVisible, setConfirmTradeVisible] = useState(false)
   const [pendingOrder, setPendingOrder] = useState<{amount: number, price: number, total: number} | null>(null)
+  
+  // Estados para loading e erro no modal de confirmação
+  const [createOrderLoading, setCreateOrderLoading] = useState(false)
+  const [createOrderError, setCreateOrderError] = useState<string | null>(null)
+
+  // Função para parsear erros da API (suporta múltiplos formatos de exchanges)
+  const parseErrorResponse = (errorString: string): { code?: string; message: string } => {
+    // 1. Tenta detectar prefixo da exchange (ex: "bybit {...}", "mexc {...}")
+    const exchangeMatch = errorString.match(/^(\w+)\s+(\{.+\})$/)
+    
+    if (exchangeMatch) {
+      const [, exchangeName, jsonPart] = exchangeMatch
+      
+      try {
+        const jsonObj = JSON.parse(jsonPart)
+        
+        // Bybit: retCode + retMsg
+        if (jsonObj.retCode !== undefined) {
+          return {
+            code: String(jsonObj.retCode),
+            message: jsonObj.retMsg || 'Erro desconhecido'
+          }
+        }
+        
+        // Binance: code + msg
+        if (jsonObj.code !== undefined && jsonObj.msg !== undefined) {
+          return {
+            code: String(jsonObj.code),
+            message: jsonObj.msg
+          }
+        }
+        
+        // OKX/Kraken/Coinbase: code + message
+        if (jsonObj.code !== undefined && jsonObj.message !== undefined) {
+          return {
+            code: String(jsonObj.code),
+            message: jsonObj.message
+          }
+        }
+        
+        // KuCoin: code + msg
+        if (jsonObj.code && jsonObj.msg) {
+          return {
+            code: String(jsonObj.code),
+            message: jsonObj.msg
+          }
+        }
+        
+        // Gate.io: label + message
+        if (jsonObj.label && jsonObj.message) {
+          return {
+            code: jsonObj.label,
+            message: jsonObj.message
+          }
+        }
+        
+        // MEXC: error + details
+        if (jsonObj.error && jsonObj.details) {
+          return {
+            message: jsonObj.details
+          }
+        }
+      } catch (e) {
+        // Se falhar o parse do JSON, continua para os próximos métodos
+      }
+    }
+    
+    // 2. Tenta parsear JSON diretamente (sem prefixo)
+    try {
+      const jsonObj = JSON.parse(errorString)
+      
+      // Tenta diferentes combinações de campos
+      if (jsonObj.retCode !== undefined) {
+        return {
+          code: String(jsonObj.retCode),
+          message: jsonObj.retMsg || 'Erro desconhecido'
+        }
+      }
+      
+      if (jsonObj.code !== undefined && jsonObj.msg !== undefined) {
+        return {
+          code: String(jsonObj.code),
+          message: jsonObj.msg
+        }
+      }
+      
+      if (jsonObj.code !== undefined && jsonObj.message !== undefined) {
+        return {
+          code: String(jsonObj.code),
+          message: jsonObj.message
+        }
+      }
+      
+      if (jsonObj.error_code && jsonObj.error_message) {
+        return {
+          code: String(jsonObj.error_code),
+          message: jsonObj.error_message
+        }
+      }
+      
+      if (jsonObj.error && jsonObj.error_description) {
+        return {
+          message: jsonObj.error_description
+        }
+      }
+      
+      if (jsonObj.details) {
+        return {
+          message: jsonObj.details
+        }
+      }
+      
+      if (jsonObj.message) {
+        return {
+          message: jsonObj.message
+        }
+      }
+      
+      if (jsonObj.msg) {
+        return {
+          message: jsonObj.msg
+        }
+      }
+    } catch (e) {
+      // Não é JSON, retorna string original
+    }
+    
+    // 3. Retorna string original se não conseguir parsear
+    return {
+      message: errorString
+    }
+  }
 
   // Busca limites do mercado (quantidade mínima, custo mínimo)
   useEffect(() => {
@@ -192,19 +325,19 @@ export function TradeModal({
   const confirmTrade = async () => {
     if (!pendingOrder) return
     
-    setConfirmTradeVisible(false)
-    await executeOrder(pendingOrder.amount, pendingOrder.price, pendingOrder.total)
-    setPendingOrder(null)
-  }
-
-  const executeOrder = async (amountNum: number, priceNum: number, total: number) => {
     if (!user?.id) {
       Alert.alert('Erro', 'Usuário não autenticado')
       return
     }
 
-    setIsSubmitting(true)
+    setCreateOrderLoading(true)
+    setCreateOrderError(null)
+    
     try {
+      const amountNum = pendingOrder.amount
+      const priceNum = pendingOrder.price
+      const total = pendingOrder.total
+      
       console.log('🔄 [TradeModal] Criando ordem...')
       console.log('📋 [TradeModal] Tipo:', isBuy ? 'COMPRA' : 'VENDA')
       console.log('📋 [TradeModal] Dados:', { userId: user.id, exchangeId, symbol, amountNum, orderType, priceNum })
@@ -237,9 +370,11 @@ export function TradeModal({
         const orderId = result.order?.id || 'N/A'
         const orderStatus = result.order?.status || 'unknown'
         
-        // Fecha o modal IMEDIATAMENTE para feedback visual rápido
-        console.log('📋 [TradeModal] 🚪 Fechando modal...')
-        onClose()
+        // Fecha o modal de confirmação
+        setConfirmTradeVisible(false)
+        setPendingOrder(null)
+        setCreateOrderLoading(false)
+        setCreateOrderError(null)
         
         // Invalida o cache de ordens para forçar atualização
         console.log('🔄 [TradeModal] Invalidando cache de ordens abertas...')
@@ -256,26 +391,59 @@ export function TradeModal({
           console.warn('⚠️ [TradeModal] onOrderCreated não está definido!')
         }
         
+        // Fecha o modal principal
+        onClose()
+        
         // Mostra alerta de sucesso
-        Alert.alert(
-          isDryRun ? '✅ Ordem Simulada' : '✅ Ordem Criada',
-          isDryRun 
-            ? `Ordem ${orderId} foi simulada com sucesso!\n\nStatus: ${orderStatus}\nTipo: ${orderType}\nLado: ${isBuy ? 'Compra' : 'Venda'}\nQuantidade: ${amountNum.toFixed(8)} ${symbol}\n${orderType === 'limit' ? `Preço: ${apiService.formatUSD(priceNum)}` : 'Preço: Mercado'}\nTotal: ${apiService.formatUSD(total)}\n\n⚠️ Sistema em modo DRY-RUN`
-            : `Ordem ${orderId} criada com sucesso!\n\nStatus: ${orderStatus}\nQuantidade: ${amountNum.toFixed(8)} ${symbol}\nTotal: ${apiService.formatUSD(total)}`
-        )
+        setTimeout(() => {
+          Alert.alert(
+            isDryRun ? '✅ Ordem Simulada' : '✅ Ordem Criada',
+            isDryRun 
+              ? `Ordem ${orderId} foi simulada com sucesso!\n\nStatus: ${orderStatus}\nTipo: ${orderType}\nLado: ${isBuy ? 'Compra' : 'Venda'}\nQuantidade: ${amountNum.toFixed(8)} ${symbol}\n${orderType === 'limit' ? `Preço: ${apiService.formatUSD(priceNum)}` : 'Preço: Mercado'}\nTotal: ${apiService.formatUSD(total)}\n\n⚠️ Sistema em modo DRY-RUN`
+              : `Ordem ${orderId} criada com sucesso!\n\nStatus: ${orderStatus}\nQuantidade: ${amountNum.toFixed(8)} ${symbol}\nTotal: ${apiService.formatUSD(total)}`
+          )
+        }, 100)
       } else {
-        console.log('❌ API retornou sucesso=false:', result)
-        throw new Error(result.error || 'Erro desconhecido ao criar ordem')
+        // ❌ API retornou success=false (erro lógico)
+        console.error('❌ [TradeModal] API retornou success=false:', result)
+        
+        // Tenta extrair mensagem de erro de diferentes campos
+        let errorMsg = 'Erro ao criar ordem'
+        
+        // Se for limitação da exchange (ex: MEXC), usa details diretamente
+        if (result.exchange_limitation && result.details) {
+          errorMsg = result.details
+        } else if (result.details) {
+          errorMsg = result.details
+        } else if (result.error) {
+          // Tenta parsear o erro
+          const parsedError = parseErrorResponse(result.error)
+          if (parsedError.code) {
+            errorMsg = `${parsedError.code}: ${parsedError.message}`
+          } else {
+            errorMsg = parsedError.message
+          }
+        } else if (result.message) {
+          errorMsg = result.message
+        }
+        
+        setCreateOrderError(errorMsg)
       }
     } catch (error: any) {
-      console.error('❌ Erro ao criar ordem:', error)
+      console.error('❌ [TradeModal] Erro ao criar ordem:', error)
       console.error('Stack:', error.stack)
-      Alert.alert(
-        'Erro',
-        error.message || 'Não foi possível criar a ordem. Tente novamente.'
-      )
+      
+      // Tenta parsear a mensagem de erro
+      const errorMsg = error.message || 'Não foi possível criar a ordem. Tente novamente.'
+      const parsedError = parseErrorResponse(errorMsg)
+      
+      if (parsedError.code) {
+        setCreateOrderError(`${parsedError.code}: ${parsedError.message}`)
+      } else {
+        setCreateOrderError(parsedError.message)
+      }
     } finally {
-      setIsSubmitting(false)
+      setCreateOrderLoading(false)
     }
   }
 
@@ -549,19 +717,54 @@ export function TradeModal({
               {/* Header */}
               <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmTitle, { color: colors.text }]}>
-                  {isBuy ? 'Compra' : 'Venda'}
+                  {isBuy ? t('trade.buy') : t('trade.sell')}
                 </Text>
               </View>
 
               {/* Content */}
               <View style={styles.confirmContent}>
-                <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-                  {isBuy ? 'Deseja realmente comprar' : 'Deseja realmente vender'} {symbol.toUpperCase()}?
-                </Text>
+                {/* Mostra loading */}
+                {createOrderLoading && (
+                  <View style={styles.loadingContainer}>
+                    <AnimatedLogoIcon size={32} />
+                    <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                      {t('trade.creatingOrder')}
+                    </Text>
+                  </View>
+                )}
                 
-                {pendingOrder && (
-                  <View style={[styles.confirmDetails, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-                    <View style={styles.confirmDetailRow}>
+                {/* Mostra erro */}
+                {createOrderError && (
+                  <View style={styles.errorContainerClean}>
+                    {(() => {
+                      const parsedError = parseErrorResponse(createOrderError)
+                      return (
+                        <>
+                          {parsedError.code && (
+                            <Text style={[styles.errorCodeText, { color: colors.textSecondary }]}>
+                              {t('orders.errorCode')}: {parsedError.code}
+                            </Text>
+                          )}
+                          
+                          <Text style={[styles.errorMessageText, { color: colors.text }]}>
+                            {parsedError.message}
+                          </Text>
+                        </>
+                      )
+                    })()}
+                  </View>
+                )}
+                
+                {/* Mostra mensagem de confirmação apenas se não está em loading e sem erro */}
+                {!createOrderLoading && !createOrderError && (
+                  <>
+                    <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                      {isBuy ? t('trade.confirmBuy') : t('trade.confirmSell')} {symbol.toUpperCase()}?
+                    </Text>
+                    
+                    {pendingOrder && (
+                      <View style={[styles.confirmDetails, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+                        <View style={styles.confirmDetailRow}>
                       <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
                         Par:
                       </Text>
@@ -616,30 +819,41 @@ export function TradeModal({
                     </View>
                   </View>
                 )}
+                  </>
+                )}
               </View>
 
               {/* Footer com botões */}
               <View style={styles.confirmFooter}>
+                {/* Botão Voltar/Fechar - sempre disponível */}
                 <TouchableOpacity
                   onPress={() => {
                     setConfirmTradeVisible(false)
                     setPendingOrder(null)
+                    setCreateOrderError(null) // Limpa erro ao fechar
                   }}
-                  style={[styles.confirmButton, styles.confirmButtonCancel, { borderColor: colors.border }]}
+                  disabled={createOrderLoading}
+                  style={[styles.confirmButton, styles.confirmButtonCancel, { 
+                    borderColor: colors.border,
+                    opacity: createOrderLoading ? 0.5 : 1
+                  }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: colors.textSecondary }]}>
-                    Cancelar
+                    {createOrderError ? t('common.close') : t('common.cancel')}
                   </Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity
-                  onPress={confirmTrade}
-                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: isBuy ? '#10b981' : '#ef4444' }]}
-                >
-                  <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
-                    {isBuy ? 'Compra' : 'Venda'}
-                  </Text>
-                </TouchableOpacity>
+                {/* Botão Confirmar ou Tentar Novamente */}
+                {!createOrderLoading && (
+                  <TouchableOpacity
+                    onPress={confirmTrade}
+                    style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: isBuy ? '#10b981' : '#ef4444' }]}
+                  >
+                    <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+                      {createOrderError ? t('common.tryAgain') : (isBuy ? t('trade.buy') : t('trade.sell'))}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </Pressable>
@@ -909,4 +1123,32 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     fontWeight: fontWeights.semibold,
   },
+  // Estilos para loading e erro
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: 20,
+  },
+  loadingText: {
+    fontSize: typography.body,
+    textAlign: "center",
+  },
+  errorContainerClean: {
+    alignItems: "center",
+    paddingVertical: 12,
+    gap: 4,
+  },
+  errorCodeText: {
+    fontSize: typography.caption,
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  errorMessageText: {
+    fontSize: typography.body,
+    textAlign: "center",
+    lineHeight: 22,
+    marginTop: 8,
+  },
 })
+

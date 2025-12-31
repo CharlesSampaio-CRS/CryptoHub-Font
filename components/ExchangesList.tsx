@@ -744,7 +744,7 @@ export const ExchangesList = memo(function ExchangesList({ onOpenOrdersPress, on
                     {hideValue(`$${apiService.formatUSD(balance)}`)}
                   </Text>
                   
-                  {/* Badge de ordens abertas */}
+                  {/* Link de ordens abertas */}
                   {(() => {
                     const count = openOrdersCount[exchange.exchange_id] || 0
                     const isLoadingThisExchange = loadingOrdersByExchange[exchange.exchange_id]
@@ -1437,3 +1437,4 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 })
+

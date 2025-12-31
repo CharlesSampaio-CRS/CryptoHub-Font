@@ -210,10 +210,21 @@ const translations = {
     'orders.details.close': 'Fechar',
     'orders.count': 'ordens',
     'orders.countSingular': 'ordem',
+    'orders.confirmCancel': 'Confirmar Cancelamento',
+    'orders.cancelingOrder': 'Cancelando ordem...',
+    'orders.cancelingAllOrders': 'Cancelando todas as ordens...',
+    'orders.cancelFailed': 'Não foi possível cancelar',
+    'orders.errorCode': 'Código',
+    'orders.cancelOrder': 'Cancelar Ordem',
     
     // Trade
     'trade.tooltip': 'Negociar',
     'trade.title': 'Trade',
+    'trade.buy': 'Comprar',
+    'trade.sell': 'Vender',
+    'trade.creatingOrder': 'Criando ordem...',
+    'trade.confirmBuy': 'Deseja realmente comprar',
+    'trade.confirmSell': 'Deseja realmente vender',
     
     // Exchanges tooltips and misc
     'exchanges.requiresPassphrase': 'Requer passphrase',
@@ -259,6 +270,7 @@ const translations = {
     // Common
     'common.close': 'Fechar',
     'common.cancel': 'Cancelar',
+    'common.back': 'Voltar',
     'common.save': 'Salvar',
     'common.continue': 'Continuar',
     'common.confirm': 'Confirmar',
@@ -266,6 +278,7 @@ const translations = {
     'common.error': 'Erro',
     'common.success': 'Sucesso',
     'common.refresh': 'Atualizar',
+    'common.tryAgain': 'Tentar Novamente',
     'common.yes': 'Sim',
     'common.no': 'Não',
     'common.warning': 'Aviso',
@@ -603,10 +616,21 @@ const translations = {
     'orders.details.close': 'Close',
     'orders.count': 'orders',
     'orders.countSingular': 'order',
+    'orders.confirmCancel': 'Confirm Cancellation',
+    'orders.cancelingOrder': 'Canceling order...',
+    'orders.cancelingAllOrders': 'Canceling all orders...',
+    'orders.cancelFailed': 'Could not cancel',
+    'orders.errorCode': 'Code',
+    'orders.cancelOrder': 'Cancel Order',
     
     // Trade
     'trade.tooltip': 'Trade',
     'trade.title': 'Trade',
+    'trade.buy': 'Buy',
+    'trade.sell': 'Sell',
+    'trade.creatingOrder': 'Creating order...',
+    'trade.confirmBuy': 'Do you really want to buy',
+    'trade.confirmSell': 'Do you really want to sell',
     
     // Exchanges tooltips and misc
     'exchanges.requiresPassphrase': 'Requires passphrase',
@@ -642,6 +666,7 @@ const translations = {
     // Common
     'common.close': 'Close',
     'common.cancel': 'Cancel',
+    'common.back': 'Back',
     'common.save': 'Save',
     'common.continue': 'Continue',
     'common.confirm': 'Confirm',
@@ -649,6 +674,7 @@ const translations = {
     'common.error': 'Error',
     'common.success': 'Success',
     'common.refresh': 'Refresh',
+    'common.tryAgain': 'Try Again',
     'common.yes': 'Yes',
     'common.no': 'No',
     'common.warning': 'Warning',

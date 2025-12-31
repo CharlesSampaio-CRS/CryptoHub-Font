@@ -1,4 +1,4 @@
-import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native"
+import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Alert, ActivityIndicator } from "react-native"
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "../contexts/ThemeContext"
 import { useLanguage } from "../contexts/LanguageContext"
@@ -41,6 +41,16 @@ export function OpenOrdersModal({
   const [confirmCancelAllVisible, setConfirmCancelAllVisible] = useState(false)
   const [cancellingAll, setCancellingAll] = useState(false)
   const [menuOpenForOrderId, setMenuOpenForOrderId] = useState<string | null>(null)
+  
+  // Estados para modal de cancelamento individual
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [showErrorDetail, setShowErrorDetail] = useState(false)
+  
+  // Estados para modal de cancelar todas
+  const [cancelAllLoading, setCancelAllLoading] = useState(false)
+  const [cancelAllError, setCancelAllError] = useState<string | null>(null)
+  const [showCancelAllErrorDetail, setShowCancelAllErrorDetail] = useState(false)
 
   useEffect(() => {
     if (visible && exchangeId) {
@@ -108,6 +118,161 @@ export function OpenOrdersModal({
   const getSideColor = (side: string) => {
     return side === 'buy' ? '#10b981' : '#ef4444'
   }
+  
+  // Função para extrair informações de erro estruturado de todas as exchanges
+  const parseErrorResponse = (error: string | null): { code?: string, message: string, raw?: any } => {
+    if (!error) return { message: '' }
+    
+    // 1. Verifica se o erro tem prefixo de exchange (ex: "bybit {...}", "binance {...}")
+    const exchangePrefixMatch = error.match(/^(\w+)\s+(\{.+\})$/)
+    if (exchangePrefixMatch) {
+      const exchangeName = exchangePrefixMatch[1]
+      const jsonStr = exchangePrefixMatch[2]
+      try {
+        const jsonObj = JSON.parse(jsonStr)
+        
+        // Bybit: retCode + retMsg
+        if (jsonObj.retCode !== undefined && jsonObj.retMsg) {
+          return {
+            code: String(jsonObj.retCode),
+            message: jsonObj.retMsg,
+            raw: jsonObj
+          }
+        }
+        
+        // Binance: code + msg
+        if (jsonObj.code !== undefined && jsonObj.msg) {
+          return {
+            code: String(jsonObj.code),
+            message: jsonObj.msg,
+            raw: jsonObj
+          }
+        }
+        
+        // Padrão genérico: code + message
+        if (jsonObj.code !== undefined && jsonObj.message) {
+          return {
+            code: String(jsonObj.code),
+            message: jsonObj.message,
+            raw: jsonObj
+          }
+        }
+      } catch (e) {
+        // Se falhar ao parsear, continua para as outras tentativas
+      }
+    }
+    
+    try {
+      // 2. Tenta parsear como JSON direto
+      const jsonObj = JSON.parse(error)
+      
+      // Bybit: retCode + retMsg
+      if (jsonObj.retCode !== undefined && jsonObj.retMsg) {
+        return {
+          code: String(jsonObj.retCode),
+          message: jsonObj.retMsg,
+          raw: jsonObj
+        }
+      }
+      
+      // Binance: code + msg
+      if (jsonObj.code !== undefined && jsonObj.msg) {
+        return {
+          code: String(jsonObj.code),
+          message: jsonObj.msg,
+          raw: jsonObj
+        }
+      }
+      
+      // OKX, Kraken, Coinbase: code + message
+      if (jsonObj.code !== undefined && jsonObj.message) {
+        return {
+          code: String(jsonObj.code),
+          message: jsonObj.message,
+          raw: jsonObj
+        }
+      }
+      
+      // KuCoin: code + msg
+      if (jsonObj.code !== undefined && jsonObj.msg) {
+        return {
+          code: String(jsonObj.code),
+          message: jsonObj.msg,
+          raw: jsonObj
+        }
+      }
+      
+      // Gate.io: label + message
+      if (jsonObj.label && jsonObj.message) {
+        return {
+          code: jsonObj.label,
+          message: jsonObj.message,
+          raw: jsonObj
+        }
+      }
+      
+      // Padrão error_code + error_message
+      if (jsonObj.error_code !== undefined && jsonObj.error_message) {
+        return {
+          code: String(jsonObj.error_code),
+          message: jsonObj.error_message,
+          raw: jsonObj
+        }
+      }
+      
+      // Padrão error + error_description
+      if (jsonObj.error && jsonObj.error_description) {
+        return {
+          code: jsonObj.error,
+          message: jsonObj.error_description,
+          raw: jsonObj
+        }
+      }
+      
+      // MEXC: error + details
+      if (jsonObj.error && jsonObj.details) {
+        return {
+          message: jsonObj.details,
+          raw: jsonObj
+        }
+      }
+      
+      // Se tem apenas details
+      if (jsonObj.details) {
+        return { message: jsonObj.details, raw: jsonObj }
+      }
+      
+      // Se tem apenas message
+      if (jsonObj.message) {
+        return { message: jsonObj.message, raw: jsonObj }
+      }
+      
+      // Se tem apenas msg
+      if (jsonObj.msg) {
+        return { message: jsonObj.msg, raw: jsonObj }
+      }
+      
+      // Se não reconhecer o padrão, retorna o objeto completo como raw
+      return { message: error, raw: jsonObj }
+    } catch {
+      // 3. Se não for JSON, retorna como está
+      return { message: error }
+    }
+  }
+  
+  // Função para formatar erro (tenta parsear JSON)
+  const formatError = (error: string | null): string => {
+    if (!error) return ''
+    
+    try {
+      // Tenta parsear como JSON
+      const jsonObj = JSON.parse(error)
+      return JSON.stringify(jsonObj, null, 2)
+    } catch {
+      // Se não for JSON, retorna como está
+      return error
+    }
+  }
 
   const handleCancelOrder = async (order: OpenOrder) => {
     // Abre o modal de confirmação
@@ -118,7 +283,9 @@ export function OpenOrdersModal({
   const confirmCancelOrder = async () => {
     if (!orderToCancel) return
     
-    setConfirmCancelVisible(false)
+    // NÃO fecha mais o modal - mantém aberto para mostrar progresso
+    setCancelLoading(true)
+    setCancelError(null)
     setCancellingOrderId(orderToCancel.id) // Marca ordem como sendo cancelada
     
     try {
@@ -130,16 +297,18 @@ export function OpenOrdersModal({
       const result = await apiService.cancelOrder(userId, orderToCancel.id, exchangeId, orderToCancel.symbol)
       console.log('📋 [OpenOrdersModal] 📥 Resultado recebido:', result)
       
+      // ✅ SUCESSO: Cancela a ordem e atualiza os dados
       if (result.success) {
         console.log('✅ [OpenOrdersModal] Ordem cancelada com sucesso!')
         
-        // Fecha o modal IMEDIATAMENTE para feedback visual rápido
+        // Fecha o modal de confirmação após sucesso
+        setConfirmCancelVisible(false)
+        
+        // Fecha o modal principal após sucesso
         console.log('📋 [OpenOrdersModal] 🚪 Fechando modal...')
         onClose()
         
-        // Cache removido: consulta sempre fresca
-        
-        // Atualiza APENAS a exchange específica desta ordem (via função global exposta por ExchangesList)
+        // Atualiza APENAS a exchange específica desta ordem
         console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange específica:', exchangeId)
         if (typeof (window as any).__exchangesListRefreshOrdersForExchange === 'function') {
           await (window as any).__exchangesListRefreshOrdersForExchange(exchangeId)
@@ -152,18 +321,37 @@ export function OpenOrdersModal({
         }
         
         // Notifica sucesso
-        Alert.alert('Sucesso', '✅ Ordem cancelada com sucesso!')
+        setTimeout(() => {
+          Alert.alert('Sucesso', '✅ Ordem cancelada com sucesso!')
+        }, 100)
       } else {
+        // ❌ API retornou success=false (erro lógico)
         console.error('❌ [OpenOrdersModal] API retornou success=false:', result)
-        throw new Error(result.error || 'Erro ao cancelar ordem')
+        const errorMsg = result.error || result.message || 'Erro ao cancelar ordem'
+        setCancelError(errorMsg)
+        // Modal de confirmação fica aberto mostrando o erro
       }
     } catch (error: any) {
+      // ❌ Erro de rede, timeout, ou HTTP 400/500
       console.error('❌ [OpenOrdersModal] Erro ao cancelar:', error)
       console.error('❌ [OpenOrdersModal] Stack:', error.stack)
-      Alert.alert('Erro', `❌ Erro ao cancelar ordem: ${error.message}`)
+      
+      // Mensagem de erro mais específica
+      let errorMessage = 'Erro desconhecido ao cancelar ordem'
+      if (error.message) {
+        // Se a mensagem já vem da API (erro HTTP 400/500), usa ela
+        errorMessage = error.message
+      } else if (error.toString().includes('timeout')) {
+        errorMessage = 'Timeout: A exchange não respondeu a tempo'
+      } else if (error.toString().includes('network')) {
+        errorMessage = 'Erro de rede: Verifique sua conexão'
+      }
+      
+      setCancelError(errorMessage)
+      // Modal de confirmação fica aberto mostrando o erro
     } finally {
-      setOrderToCancel(null)
-      setCancellingOrderId(null) // Remove loading
+      setCancelLoading(false)
+      setCancellingOrderId(null) // Remove loading sempre
     }
   }
 
@@ -173,8 +361,8 @@ export function OpenOrdersModal({
   }
 
   const confirmCancelAllOrders = async () => {
-    setConfirmCancelAllVisible(false)
-    setCancellingAll(true)
+    setCancelAllLoading(true)
+    setCancelAllError(null)
     
     try {
       console.log('📋 [OpenOrdersModal] 🔄 Cancelando TODAS as ordens da exchange:', exchangeId)
@@ -183,14 +371,46 @@ export function OpenOrdersModal({
       const result = await apiService.cancelAllOrders(userId, exchangeId)
       console.log('📋 [OpenOrdersModal] 📥 Resultado recebido:', result)
       
+      // ✅ SUCESSO: Cancela todas as ordens e atualiza os dados
       if (result.success) {
+        console.log('✅ [OpenOrdersModal] Resposta recebida:', result)
+        
+        const cancelledCount = result.cancelled_count || result.cancelledCount || result.canceled_count || 0
+        const failedCount = result.failed_count || result.failedCount || 0
+        
+        // Se TODAS falharam, mostra erro no modal
+        if (cancelledCount === 0 && failedCount > 0 && result.failed_orders && result.failed_orders.length > 0) {
+          console.error('❌ [OpenOrdersModal] Todas as ordens falharam:', result.failed_orders)
+          const firstError = result.failed_orders[0].error || 'Erro ao cancelar ordens'
+          setCancelAllError(firstError)
+          // NÃO fecha o modal, NÃO atualiza os dados
+          return
+        }
+        
+        // Se teve falha parcial (algumas canceladas, outras falharam)
+        if (cancelledCount > 0 && failedCount > 0 && result.failed_orders && result.failed_orders.length > 0) {
+          console.warn('⚠️ [OpenOrdersModal] Cancelamento parcial:', { cancelledCount, failedCount })
+          const firstError = result.failed_orders[0].error || 'Algumas ordens falharam'
+          const errorMsg = `${cancelledCount} cancelada(s), ${failedCount} falhou(ram).\n\nPrimeiro erro:\n${firstError}`
+          setCancelAllError(errorMsg)
+          
+          // Atualiza a exchange mesmo com erro parcial
+          console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange (parcial):', exchangeId)
+          if (typeof (window as any).__exchangesListRefreshOrdersForExchange === 'function') {
+            await (window as any).__exchangesListRefreshOrdersForExchange(exchangeId)
+          }
+          
+          // NÃO fecha o modal para mostrar o erro
+          return
+        }
+        
+        // Se teve sucesso total, fecha o modal e mostra resultado
         console.log('✅ [OpenOrdersModal] Todas as ordens canceladas com sucesso!')
         
-        // Fecha o modal IMEDIATAMENTE
+        // Fecha o modal de confirmação após sucesso total
+        setConfirmCancelAllVisible(false)
         console.log('📋 [OpenOrdersModal] 🚪 Fechando modal...')
         onClose()
-        
-        // Cache removido: consulta sempre fresca
         
         // Atualiza a exchange
         console.log('📋 [OpenOrdersModal] ⚡ Atualizando exchange específica:', exchangeId)
@@ -204,18 +424,49 @@ export function OpenOrdersModal({
           onOrderCancelled()
         }
         
-        // Notifica sucesso com informações
-        const cancelledCount = result.cancelled_count || result.cancelledCount || 0
-        Alert.alert('Sucesso', `✅ ${cancelledCount} ordem(ns) cancelada(s) com sucesso!`)
+        // Notifica sucesso total
+        setTimeout(() => {
+          Alert.alert('Sucesso', `✅ ${cancelledCount} ordem(ns) cancelada(s) com sucesso!`)
+        }, 100)
       } else {
+        // ❌ API retornou success=false (erro lógico)
         console.error('❌ [OpenOrdersModal] API retornou success=false:', result)
-        throw new Error(result.error || 'Erro ao cancelar ordens')
+        
+        // Tenta extrair mensagem de erro de diferentes campos
+        let errorMsg = 'Erro ao cancelar ordens'
+        
+        // Se for limitação da exchange (ex: MEXC), usa details diretamente
+        if (result.exchange_limitation && result.details) {
+          errorMsg = result.details
+        } else if (result.details) {
+          errorMsg = result.details // MEXC usa "details"
+        } else if (result.error) {
+          errorMsg = result.error
+        } else if (result.message) {
+          errorMsg = result.message
+        }
+        
+        setCancelAllError(errorMsg)
+        // NÃO fecha o modal, NÃO atualiza os dados
       }
     } catch (error: any) {
+      // ❌ Erro de rede, timeout, ou HTTP 400/500
       console.error('❌ [OpenOrdersModal] Erro ao cancelar todas:', error)
-      Alert.alert('Erro', `❌ Erro ao cancelar ordens: ${error.message}`)
+      
+      // Mensagem de erro mais específica
+      let errorMessage = 'Erro desconhecido ao cancelar ordens'
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error.toString().includes('timeout')) {
+        errorMessage = 'Timeout: A exchange não respondeu a tempo'
+      } else if (error.toString().includes('network')) {
+        errorMessage = 'Erro de rede: Verifique sua conexão'
+      }
+      
+      setCancelAllError(errorMessage)
+      // NÃO fecha o modal, NÃO atualiza os dados
     } finally {
-      setCancellingAll(false)
+      setCancelAllLoading(false) // Remove loading sempre
     }
   }
 
@@ -499,88 +750,138 @@ export function OpenOrdersModal({
               {/* Header */}
               <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.confirmTitle, { color: colors.text }]}>
-                  Confirmar Cancelamento
+                  {t('orders.confirmCancel')}
                 </Text>
               </View>
 
               {/* Content */}
               <View style={styles.confirmContent}>
-                <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-                  {orderToCancel && `Deseja realmente cancelar esta ordem ${orderToCancel.side === 'buy' ? 'de compra' : 'de venda'}?`}
-                </Text>
-                
-                {orderToCancel && (
-                  <View style={[styles.confirmDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <View style={styles.confirmDetailRow}>
-                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
-                        Par:
-                      </Text>
-                      <Text style={[styles.confirmValue, { color: colors.text }]}>
-                        {orderToCancel.symbol}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.confirmDetailRow}>
-                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
-                        Lado:
-                      </Text>
-                      <Text style={[styles.confirmValue, { color: getSideColor(orderToCancel.side) }]}>
-                        {getSideLabel(orderToCancel.side)}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.confirmDetailRow}>
-                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
-                        Quantidade:
-                      </Text>
-                      <Text style={[styles.confirmValue, { color: colors.text }]}>
-                        {formatAmount(orderToCancel.amount)}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.confirmDetailRow}>
-                      <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
-                        Preço:
-                      </Text>
-                      <Text style={[styles.confirmValue, { color: colors.text }]}>
-                        {formatValue(orderToCancel.price)}
-                      </Text>
-                    </View>
-                    
-                    <View style={[styles.confirmDetailRow, styles.confirmTotalRow, { borderTopColor: colors.border }]}>
-                      <Text style={[styles.confirmLabel, { color: colors.textSecondary, fontWeight: fontWeights.semibold }]}>
-                        Total:
-                      </Text>
-                      <Text style={[styles.confirmValue, { color: colors.text, fontWeight: fontWeights.semibold }]}>
-                        {formatValue(orderToCancel.amount * orderToCancel.price)}
-                      </Text>
-                    </View>
+                {/* Mostra loading enquanto cancela */}
+                {cancelLoading && (
+                  <View style={styles.loadingContainer}>
+                    <AnimatedLogoIcon />
+                    <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                      {t('orders.cancelingOrder')}
+                    </Text>
                   </View>
+                )}
+                
+                {/* Mostra erro se houver */}
+                {cancelError && !cancelLoading && (
+                  <View style={styles.errorContainerClean}>
+                    {(() => {
+                      const errorInfo = parseErrorResponse(cancelError)
+                      return (
+                        <>
+                          <Text style={[styles.errorTitleClean, { color: colors.textSecondary }]}>
+                            {t('orders.cancelFailed')}
+                          </Text>
+                          
+                          {errorInfo.code && (
+                            <Text style={[styles.errorCodeText, { color: colors.textSecondary }]}>
+                              {t('orders.errorCode')}: {errorInfo.code}
+                            </Text>
+                          )}
+                          
+                          <Text style={[styles.errorMessageText, { color: colors.text }]}>
+                            {errorInfo.message}
+                          </Text>
+                        </>
+                      )
+                    })()}
+                  </View>
+                )}
+                
+                {/* Mostra detalhes da ordem apenas se não está em loading e sem erro */}
+                {!cancelLoading && !cancelError && (
+                  <>
+                    <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                      {orderToCancel && `Deseja realmente cancelar esta ordem ${orderToCancel.side === 'buy' ? 'de compra' : 'de venda'}?`}
+                    </Text>
+                    
+                    {orderToCancel && (
+                      <View style={[styles.confirmDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <View style={styles.confirmDetailRow}>
+                          <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                            Par:
+                          </Text>
+                          <Text style={[styles.confirmValue, { color: colors.text }]}>
+                            {orderToCancel.symbol}
+                          </Text>
+                        </View>
+                        
+                        <View style={styles.confirmDetailRow}>
+                          <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                            Lado:
+                          </Text>
+                          <Text style={[styles.confirmValue, { color: getSideColor(orderToCancel.side) }]}>
+                            {getSideLabel(orderToCancel.side)}
+                          </Text>
+                        </View>
+                        
+                        <View style={styles.confirmDetailRow}>
+                          <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                            Quantidade:
+                          </Text>
+                          <Text style={[styles.confirmValue, { color: colors.text }]}>
+                            {formatAmount(orderToCancel.amount)}
+                          </Text>
+                        </View>
+                        
+                        <View style={styles.confirmDetailRow}>
+                          <Text style={[styles.confirmLabel, { color: colors.textSecondary }]}>
+                            Preço:
+                          </Text>
+                          <Text style={[styles.confirmValue, { color: colors.text }]}>
+                            {formatValue(orderToCancel.price)}
+                          </Text>
+                        </View>
+                        
+                        <View style={[styles.confirmDetailRow, styles.confirmTotalRow, { borderTopColor: colors.border }]}>
+                          <Text style={[styles.confirmLabel, { color: colors.textSecondary, fontWeight: fontWeights.semibold }]}>
+                            Total:
+                          </Text>
+                          <Text style={[styles.confirmValue, { color: colors.text, fontWeight: fontWeights.semibold }]}>
+                            {formatValue(orderToCancel.amount * orderToCancel.price)}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </>
                 )}
               </View>
 
               {/* Footer com botões */}
               <View style={styles.confirmFooter}>
+                {/* Botão Voltar - sempre disponível */}
                 <TouchableOpacity
                   onPress={() => {
                     setConfirmCancelVisible(false)
                     setOrderToCancel(null)
+                    setCancelError(null) // Limpa erro ao fechar
                   }}
-                  style={[styles.confirmButton, styles.confirmButtonCancel, { borderColor: colors.border }]}
+                  disabled={cancelLoading}
+                  style={[styles.confirmButton, styles.confirmButtonCancel, { 
+                    borderColor: colors.border,
+                    opacity: cancelLoading ? 0.5 : 1
+                  }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: colors.textSecondary }]}>
-                    Voltar
+                    {cancelError ? t('common.close') : t('common.back')}
                   </Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity
-                  onPress={confirmCancelOrder}
-                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: '#ef4444' }]}
-                >
-                  <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
-                    Cancelar Ordem
-                  </Text>
-                </TouchableOpacity>
+                {/* Botão Cancelar Ordem ou Tentar Novamente */}
+                {!cancelLoading && (
+                  <TouchableOpacity
+                    onPress={confirmCancelOrder}
+                    style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+                      {cancelError ? t('common.tryAgain') : t('orders.cancelOrder')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </Pressable>
@@ -612,34 +913,256 @@ export function OpenOrdersModal({
 
               {/* Content */}
               <View style={styles.confirmContent}>
-                <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-                  {t('orders.cancelAllMessage').replace('{count}', String(orders.length))}
-                </Text>
+                {/* Mostra loading enquanto cancela todas */}
+                {cancelAllLoading && (
+                  <View style={styles.loadingContainer}>
+                    <AnimatedLogoIcon />
+                    <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                      {t('orders.cancelingAllOrders')}
+                    </Text>
+                  </View>
+                )}
                 
-                <View style={[styles.confirmWarning, { backgroundColor: '#ef4444' + '10', borderColor: '#ef4444' + '40' }]}>
-                  <Text style={[styles.confirmWarningText, { color: '#ef4444' }]}>
-                    {t('orders.cancelAllWarning')}
-                  </Text>
-                </View>
+                {/* Mostra erro se houver */}
+                {cancelAllError && !cancelAllLoading && (
+                  <View style={styles.errorContainerClean}>
+                    {(() => {
+                      const errorInfo = parseErrorResponse(cancelAllError)
+                      return (
+                        <>
+                          <Text style={[styles.errorTitleClean, { color: colors.textSecondary }]}>
+                            {t('orders.cancelFailed')}
+                          </Text>
+                          
+                          {errorInfo.code && (
+                            <Text style={[styles.errorCodeText, { color: colors.textSecondary }]}>
+                              {t('orders.errorCode')}: {errorInfo.code}
+                            </Text>
+                          )}
+                          
+                          <Text style={[styles.errorMessageText, { color: colors.text }]}>
+                            {errorInfo.message}
+                          </Text>
+                        </>
+                      )
+                    })()}
+                  </View>
+                )}
+                
+                {/* Mostra mensagem de confirmação apenas se não está em loading e sem erro */}
+                {!cancelAllLoading && !cancelAllError && (
+                  <>
+                    <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                      {t('orders.cancelAllMessage').replace('{count}', String(orders.length))}
+                    </Text>
+                    
+                    <Text style={[styles.confirmWarningClean, { color: colors.textSecondary }]}>
+                      {t('orders.cancelAllWarning')}
+                    </Text>
+                  </>
+                )}
               </View>
 
               {/* Footer com botões */}
               <View style={styles.confirmFooter}>
+                {/* Botão Voltar - sempre disponível */}
                 <TouchableOpacity
-                  onPress={() => setConfirmCancelAllVisible(false)}
-                  style={[styles.confirmButton, styles.confirmButtonCancel, { borderColor: colors.border }]}
+                  onPress={() => {
+                    setConfirmCancelAllVisible(false)
+                    setCancelAllError(null) // Limpa erro ao fechar
+                  }}
+                  disabled={cancelAllLoading}
+                  style={[styles.confirmButton, styles.confirmButtonCancel, { 
+                    borderColor: colors.border,
+                    opacity: cancelAllLoading ? 0.5 : 1
+                  }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: colors.textSecondary }]}>
-                    {t('orders.cancelAllNo')}
+                    {cancelAllError ? t('common.close') : t('orders.cancelAllNo')}
                   </Text>
                 </TouchableOpacity>
                 
+                {/* Botão Cancelar Todas ou Tentar Novamente */}
+                {!cancelAllLoading && (
+                  <TouchableOpacity
+                    onPress={confirmCancelAllOrders}
+                    style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+                      {cancelAllError ? t('common.tryAgain') : t('orders.cancelAllYes')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      
+      {/* Modal de Detalhes do Erro - Ordem Individual */}
+      <Modal
+        visible={showErrorDetail}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowErrorDetail(false)}
+      >
+        <Pressable 
+          style={styles.confirmOverlay} 
+          onPress={() => setShowErrorDetail(false)}
+        >
+          <Pressable 
+            style={styles.confirmSafeArea} 
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.confirmContainer, { backgroundColor: colors.surface }]}>
+              {/* Header */}
+              <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                  Detalhes do Erro
+                </Text>
+              </View>
+
+              {/* Content */}
+              <View style={styles.confirmContent}>
+                <ScrollView>
+                  {(() => {
+                    const errorInfo = parseErrorResponse(cancelError)
+                    return (
+                      <>
+                        {errorInfo.code && (
+                          <View style={styles.errorInfoRow}>
+                            <Text style={[styles.errorInfoLabel, { color: colors.textSecondary }]}>
+                              Código:
+                            </Text>
+                            <Text style={[styles.errorInfoValue, { color: colors.text }]}>
+                              {errorInfo.code}
+                            </Text>
+                          </View>
+                        )}
+                        
+                        <View style={styles.errorInfoRow}>
+                          <Text style={[styles.errorInfoLabel, { color: colors.textSecondary }]}>
+                            Mensagem:
+                          </Text>
+                          <Text style={[styles.errorInfoValue, { color: colors.text }]}>
+                            {errorInfo.message}
+                          </Text>
+                        </View>
+                        
+                        {errorInfo.raw && (
+                          <>
+                            <View style={[styles.errorDivider, { backgroundColor: colors.border }]} />
+                            <Text style={[styles.errorRawLabel, { color: colors.textSecondary }]}>
+                              Resposta completa:
+                            </Text>
+                            <Text style={[styles.errorDetailText, { 
+                              color: colors.textSecondary,
+                              backgroundColor: colors.background,
+                            }]}>
+                              {JSON.stringify(errorInfo.raw, null, 2)}
+                            </Text>
+                          </>
+                        )}
+                      </>
+                    )
+                  })()}
+                </ScrollView>
+              </View>
+
+              {/* Footer */}
+              <View style={styles.confirmFooter}>
                 <TouchableOpacity
-                  onPress={confirmCancelAllOrders}
-                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: '#ef4444' }]}
+                  onPress={() => setShowErrorDetail(false)}
+                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: colors.primary }]}
                 >
                   <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
-                    Cancelar Todas
+                    Fechar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      
+      {/* Modal de Detalhes do Erro - Cancelar Todas */}
+      <Modal
+        visible={showCancelAllErrorDetail}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowCancelAllErrorDetail(false)}
+      >
+        <Pressable 
+          style={styles.confirmOverlay} 
+          onPress={() => setShowCancelAllErrorDetail(false)}
+        >
+          <Pressable 
+            style={styles.confirmSafeArea} 
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.confirmContainer, { backgroundColor: colors.surface }]}>
+              {/* Header */}
+              <View style={[styles.confirmHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.confirmTitle, { color: colors.text }]}>
+                  Detalhes do Erro
+                </Text>
+              </View>
+
+              {/* Content */}
+              <View style={styles.confirmContent}>
+                <ScrollView>
+                  {(() => {
+                    const errorInfo = parseErrorResponse(cancelAllError)
+                    return (
+                      <>
+                        {errorInfo.code && (
+                          <View style={styles.errorInfoRow}>
+                            <Text style={[styles.errorInfoLabel, { color: colors.textSecondary }]}>
+                              Código:
+                            </Text>
+                            <Text style={[styles.errorInfoValue, { color: colors.text }]}>
+                              {errorInfo.code}
+                            </Text>
+                          </View>
+                        )}
+                        
+                        <View style={styles.errorInfoRow}>
+                          <Text style={[styles.errorInfoLabel, { color: colors.textSecondary }]}>
+                            Mensagem:
+                          </Text>
+                          <Text style={[styles.errorInfoValue, { color: colors.text }]}>
+                            {errorInfo.message}
+                          </Text>
+                        </View>
+                        
+                        {errorInfo.raw && (
+                          <>
+                            <View style={[styles.errorDivider, { backgroundColor: colors.border }]} />
+                            <Text style={[styles.errorRawLabel, { color: colors.textSecondary }]}>
+                              Resposta completa:
+                            </Text>
+                            <Text style={[styles.errorDetailText, { 
+                              color: colors.textSecondary,
+                              backgroundColor: colors.background,
+                            }]}>
+                              {JSON.stringify(errorInfo.raw, null, 2)}
+                            </Text>
+                          </>
+                        )}
+                      </>
+                    )
+                  })()}
+                </ScrollView>
+              </View>
+
+              {/* Footer */}
+              <View style={styles.confirmFooter}>
+                <TouchableOpacity
+                  onPress={() => setShowCancelAllErrorDetail(false)}
+                  style={[styles.confirmButton, styles.confirmButtonConfirm, { backgroundColor: colors.primary }]}
+                >
+                  <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+                    Fechar
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1098,5 +1621,98 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: typography.body,
     fontWeight: fontWeights.semibold,
+  },
+  errorContainer: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 8,
+  },
+  errorTitle: {
+    fontSize: typography.body,
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: typography.caption,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  errorDetailButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignSelf: 'center',
+  },
+  errorDetailButtonText: {
+    fontSize: typography.caption,
+    fontWeight: fontWeights.semibold,
+  },
+  // Estilos clean e minimalistas
+  errorContainerClean: {
+    paddingVertical: 16,
+    gap: 12,
+    alignItems: 'center',
+  },
+  errorTitleClean: {
+    fontSize: typography.body,
+    textAlign: 'center',
+  },
+  errorCodeText: {
+    fontSize: typography.caption,
+    textAlign: 'center',
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  errorMessageText: {
+    fontSize: typography.body,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  errorDetailButtonClean: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginTop: 4,
+  },
+  errorDetailButtonTextClean: {
+    fontSize: typography.caption,
+  },
+  confirmWarningClean: {
+    fontSize: typography.caption,
+    textAlign: 'center',
+    marginTop: 8,
+    opacity: 0.7,
+  },
+  // Estilos para modal de detalhes de erro
+  errorInfoRow: {
+    marginBottom: 16,
+  },
+  errorInfoLabel: {
+    fontSize: typography.caption,
+    marginBottom: 4,
+    opacity: 0.7,
+  },
+  errorInfoValue: {
+    fontSize: typography.body,
+    lineHeight: 24,
+  },
+  errorDivider: {
+    height: 1,
+    marginVertical: 20,
+  },
+  errorRawLabel: {
+    fontSize: typography.caption,
+    marginBottom: 8,
+    opacity: 0.7,
+  },
+  errorDetailText: {
+    fontSize: typography.caption,
+    fontFamily: 'monospace',
+    padding: 12,
+    borderRadius: 8,
+    lineHeight: 18,
   },
 })
